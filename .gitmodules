@@ -1,0 +1,12 @@
+[submodule "WallyAnmSpinzor"]
+	path = WallyAnmSpinzor
+	url = https://github.com/eyalzus12/WallyAnmSpinzor.git
+[submodule "BrawlhallaSwz"]
+	path = BrawlhallaSwz
+	url = https://github.com/eyalzus12/BrawlhallaSwz.git
+[submodule "SwiffCheese"]
+	path = SwiffCheese
+	url = https://github.com/eyalzus12/SwiffCheese.git
+[submodule "BrawlhallaAnimLib"]
+	path = BrawlhallaAnimLib
+	url = https://github.com/eyalzus12/BrawlhallaAnimLib.git
