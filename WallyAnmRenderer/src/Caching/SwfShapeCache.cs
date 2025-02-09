@@ -1,30 +1,32 @@
 using System;
 using System.Xml;
-using BrawlhallaAnimLib.Math;
-using Raylib_cs;
-using SkiaSharp;
-using Svg.Skia;
-using SwfLib.Tags;
-using SwfLib.Tags.ShapeTags;
-using SwiffCheese.Exporting.Svg;
+
 using SwiffCheese.Shapes;
+using SwiffCheese.Wrappers;
+using SwiffCheese.Exporting.Svg;
+
+using Raylib_cs;
+
+using Svg.Skia;
+using SkiaSharp;
+using BrawlhallaAnimLib.Math;
+using SwfLib.Tags.ShapeTags;
 
 namespace WallyAnmRenderer;
 
-public class SwfShapeToTexture
+public class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfShapeCache.ShapeData, Texture2DWrapper>
 {
-    const int SWF_UNIT_DIVISOR = 20;
-    const double ANIM_SCALE_MULTIPLIER = 1.2;
+    private const int SWF_UNIT_DIVISOR = 20;
+    private const double ANIM_SCALE_MULTIPLIER = 1.2;
 
-    public static (Texture2D, Transform2D) ToTexture(Loader loader, string swfPath, ushort shapeId, double animScale)
+    public readonly record struct TextureInfo(SwfFileData Swf, ushort ShapeId, double AnimScale);
+    public readonly record struct ShapeData(RlImage Img, Transform2D Transform);
+
+    protected override ShapeData LoadIntermediate(TextureInfo textureInfo)
     {
-        if (!loader.TryGetTag(swfPath, shapeId, out SwfTagBase? tag))
-            throw new Exception();
-        if (tag is not ShapeBaseTag shape)
-            throw new Exception();
-
+        (SwfFileData swf, ushort shapeId, double animScale) = textureInfo;
         animScale *= ANIM_SCALE_MULTIPLIER;
-
+        ShapeBaseTag shape = swf.ShapeTags[shapeId];
         SwfShape compiledShape = new(new(shape));
         // logic follows game
         int shapeX = shape.ShapeBounds.XMin;
@@ -57,41 +59,32 @@ public class SwfShapeToTexture
         // Medium and High work the same for downscaling
         using SKBitmap bitmap2 = bitmap1.Resize(new SKSizeI(imageW, imageH), SKFilterQuality.Medium);
         bitmap1.Dispose();
-        RlImage img = SKBitmapToRlImage(bitmap2);
+        RlImage img = RaylibUtils.SKBitmapToRlImage(bitmap2);
         bitmap2.Dispose();
-        Texture2D texture = Rl.LoadTextureFromImage(img);
-        Rl.UnloadImage(img);
 
         // no need for alpha premult since we specify it in the ToBitmap
 
         Transform2D.Invert(transform, out Transform2D inv);
-        return (texture, inv);
+        return new ShapeData(img, inv);
     }
 
-    public static RlImage SKBitmapToRlImage(SKBitmap bitmap)
+    protected override Texture2DWrapper IntermediateToValue(ShapeData shapeData)
     {
-        if (bitmap.ColorType != SKColorType.Rgba8888)
-        {
-            throw new ArgumentException($"{nameof(SKBitmapToRlImage)} only supports Rgba8888, but got {bitmap.ColorType}");
-        }
-
-        unsafe
-        {
-            // use Rl alloc so GC doesn't free the memory
-            void* bufferPtr = Rl.MemAlloc((uint)bitmap.ByteCount);
-            // create a Span from the unmanaged memory
-            Span<byte> buffer = new(bufferPtr, bitmap.ByteCount);
-            // copy the bitmap bytes to the span
-            bitmap.GetPixelSpan().CopyTo(buffer);
-
-            return new()
-            {
-                Data = bufferPtr,
-                Width = bitmap.Width,
-                Height = bitmap.Height,
-                Mipmaps = 1,
-                Format = PixelFormat.UncompressedR8G8B8A8,
-            };
-        }
+        (RlImage img, Transform2D trans) = shapeData;
+        Texture2D texture = Rl.LoadTextureFromImage(img);
+        return new(texture, trans);
     }
+
+    protected override void UnloadIntermediate(ShapeData shapeData)
+    {
+        Rl.UnloadImage(shapeData.Img);
+    }
+
+    protected override void UnloadValue(Texture2DWrapper texture)
+    {
+        texture.Dispose();
+    }
+
+    public void Load(SwfFileData swf, ushort shapeId, double animScale) => Load(new(swf, shapeId, animScale));
+    public void LoadInThread(SwfFileData swf, ushort shapeId, double animScale) => LoadInThread(new(swf, shapeId, animScale));
 }

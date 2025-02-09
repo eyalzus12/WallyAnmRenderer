@@ -1,16 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Anm;
-using BrawlhallaSwz;
-using SwfLib;
-using SwfLib.Data;
 using SwfLib.Tags;
-using SwfLib.Tags.ControlTags;
 using SwfLib.Tags.ShapeTags;
 using WallyAnmSpinzor;
 
@@ -27,22 +22,18 @@ public class Loader : ILoader
         string init = Path.Join(_brawlPath, "Init.swz");
         string boneTypes = SwzUtils.GetFileFromSwz(init, key, "BoneTypes.xml") ?? throw new Exception();
         _boneTypes = [.. XElement.Parse(boneTypes).Elements("Bone").Select((ee) => ee.Value)];
+
+        AssetLoader = new(brawlPath);
     }
 
-    private readonly Dictionary<string, AnmFile> _anms = [];
-    private readonly string[]? _boneTypes = null;
-    private readonly Dictionary<string, SwfFile> _swfs = [];
+    private readonly string[]? _boneTypes;
+    public AssetLoader AssetLoader { get; }
 
-    public bool IsAnmLoaded(string anmPath) => _anms.ContainsKey(anmPath);
     public bool IsBoneTypesLoaded() => _boneTypes is not null;
-    public bool IsSwfLoaded(string swfPath) => _swfs.ContainsKey(swfPath);
-
-    public void LoadAnm(string anmPath)
+    public bool IsSwfLoaded(string swfPath)
     {
-        if (IsAnmLoaded(anmPath)) return;
-        string path = Path.Join(_brawlPath, anmPath);
-        using FileStream file = File.OpenRead(path);
-        _anms[anmPath] = AnmFile.CreateFrom(file);
+        string truePath = Path.Join(_brawlPath, swfPath);
+        return AssetLoader.SwfFileCache.Cache.ContainsKey(truePath);
     }
 
     public void LoadBoneTypes()
@@ -53,21 +44,15 @@ public class Loader : ILoader
 
     public void LoadSwf(string swfPath)
     {
-        if (IsSwfLoaded(swfPath)) return;
-        string path = Path.Join(_brawlPath, swfPath);
-        using FileStream file = File.OpenRead(path);
-        _swfs[swfPath] = SwfFile.ReadFrom(file);
+        AssetLoader.LoadSwf(swfPath);
     }
 
     public bool TryGetAnmClass(string classIdentifier, [NotNullWhen(true)] out IAnmClass? anmClass)
     {
-        foreach (AnmFile anm in _anms.Values)
+        if (AssetLoader.AnmClasses.TryGetValue(classIdentifier, out AnmClass? @class))
         {
-            if (anm.Classes.TryGetValue(classIdentifier, out AnmClass? @class))
-            {
-                anmClass = new AnmClassAdapter(@class);
-                return true;
-            }
+            anmClass = new AnmClassAdapter(@class);
+            return true;
         }
         anmClass = null;
         return false;
@@ -93,20 +78,16 @@ public class Loader : ILoader
 
     public bool TryGetSymbolId(string swfPath, string symbolName, out ushort symbolId)
     {
-        if (!_swfs.TryGetValue(swfPath, out SwfFile? swf))
+        SwfFileData? swf = AssetLoader.LoadSwf(swfPath);
+        if (swf is null)
         {
             symbolId = default;
             return false;
         }
 
-        SymbolClassTag symbolClass = swf.Tags.OfType<SymbolClassTag>().First();
-        foreach (SwfSymbolReference symbolRef in symbolClass.References)
+        if (swf.SymbolClass.TryGetValue(symbolName, out symbolId))
         {
-            if (symbolRef.SymbolName == symbolName)
-            {
-                symbolId = symbolRef.SymbolID;
-                return true;
-            }
+            return true;
         }
 
         symbolId = default;
@@ -115,24 +96,23 @@ public class Loader : ILoader
 
     public bool TryGetTag(string swfPath, ushort tagId, [NotNullWhen(true)] out SwfTagBase? tag)
     {
-        if (!_swfs.TryGetValue(swfPath, out SwfFile? swf))
+        SwfFileData? swf = AssetLoader.LoadSwf(swfPath);
+        if (swf is null)
         {
             tag = null;
             return false;
         }
 
-        foreach (SwfTagBase swfTag in swf.Tags)
+        if (swf.SpriteTags.TryGetValue(tagId, out DefineSpriteTag? sprite))
         {
-            if (swfTag is DefineSpriteTag defineSprite && defineSprite.SpriteID == tagId)
-            {
-                tag = defineSprite;
-                return true;
-            }
-            else if (swfTag is ShapeBaseTag defineShape && defineShape.ShapeID == tagId)
-            {
-                tag = defineShape;
-                return true;
-            }
+            tag = sprite;
+            return true;
+        }
+
+        if (swf.ShapeTags.TryGetValue(tagId, out ShapeBaseTag? shape))
+        {
+            tag = shape;
+            return true;
         }
 
         tag = null;
