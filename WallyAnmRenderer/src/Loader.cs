@@ -25,18 +25,8 @@ public class Loader : ILoader
         _brawlPath = brawlPath;
 
         string init = Path.Join(_brawlPath, "Init.swz");
-        using FileStream file = File.OpenRead(init);
-        using SwzReader reader = new(file, key);
-        while (reader.HasNext())
-        {
-            string swzFile = reader.ReadFile();
-            if (SwzUtils.GetFileName(swzFile) == "BoneTypes.xml")
-            {
-                XElement element = XElement.Parse(swzFile);
-                _boneTypes = element.Elements("Bone").Select((e) => e.Value).ToArray();
-                break;
-            }
-        }
+        string boneTypes = SwzUtils.GetFileFromSwz(init, key, "BoneTypes.xml") ?? throw new Exception();
+        _boneTypes = [.. XElement.Parse(boneTypes).Elements("Bone").Select((ee) => ee.Value)];
     }
 
     private readonly Dictionary<string, AnmFile> _anms = [];

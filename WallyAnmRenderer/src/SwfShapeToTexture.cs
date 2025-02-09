@@ -1,6 +1,5 @@
 using System;
 using System.Xml;
-using BrawlhallaAnimLib.Bones;
 using BrawlhallaAnimLib.Math;
 using Raylib_cs;
 using SkiaSharp;
