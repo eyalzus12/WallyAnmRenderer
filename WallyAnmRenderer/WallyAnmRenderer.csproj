@@ -19,7 +19,7 @@
   
   <ItemGroup>
     <PackageReference Include="Raylib-cs" Version="6.1.1" />
-    <PackageReference Include="Sep" Version="0.5.2" />
+    <PackageReference Include="Sep" Version="0.9.0" />
     <PackageReference Include="Svg.Skia" Version="2.0.0.4" />
   </ItemGroup>
 

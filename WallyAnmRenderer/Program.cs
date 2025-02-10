@@ -22,19 +22,11 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string COSTUME_TYPE = "Anakin";
-const string? WEAPON_SKIN_TYPE = "SwordObiWan";
-const string ANIMATION = "SelectedAnakin";
+const string? COSTUME_TYPE = "DarthMaul";
+const string? WEAPON_SKIN_TYPE = "SpearDarthMaul";
+const string ANIMATION = "SelectedDarthMaul";
 
 LogCallback.Init();
-
-Transform2D center = Transform2D.CreateTranslate(INITIAL_SCREEN_WIDTH / 2, 3 * INITIAL_SCREEN_HEIGHT / 4) * Transform2D.CreateScale(0.75, 0.75);
-Animator animator = new(brawlhallaPath, key);
-
-string game = Path.Join(brawlhallaPath, "Game.swz");
-Dictionary<string, string> initFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv"]);
-string costumeTypes = initFiles["costumeTypes.csv"];
-string weaponSkinTypes = initFiles["weaponSkinTypes.csv"];
 
 IGfxType gfx = new GfxType()
 {
@@ -42,25 +34,49 @@ IGfxType gfx = new GfxType()
     AnimClass = ANIM_CLASS,
     AnimScale = 2,
 };
-
-using (SepReader costumeTypesReader = Sep.New(',').Reader().FromText(costumeTypes.Split('\n', 2)[1]))
+static IGfxType PopulateGfx(IGfxType gfx, string? costumeType, string? weaponSkinType)
 {
-    SepReaderAdapter_CostumeTypes adapter_costumeTypes = new(costumeTypesReader);
-    if (adapter_costumeTypes.TryGetCol(COSTUME_TYPE, out ICsvRow? skin))
+    string game = Path.Join(brawlhallaPath, "Game.swz");
+    Dictionary<string, string> initFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv"]);
+    string costumeTypes = initFiles["costumeTypes.csv"];
+    string weaponSkinTypes = initFiles["weaponSkinTypes.csv"];
+
+    static SepReader readerFromText(string text)
     {
-        CostumeTypesGfxInfo skinInfo = CostumeTypesCsvReader.GetGfxTypeInfo(skin);
-        gfx = skinInfo.ToGfxType(gfx, null);
-        if (WEAPON_SKIN_TYPE is not null)
+        SepReaderOptions reader = new(Sep.New(',')) { DisableColCountCheck = true };
+        return reader.FromText(text.Split('\n', 2)[1]);
+    }
+
+    CostumeTypesGfxInfo? skinInfo = null;
+    if (costumeType is not null)
+    {
+        using SepReader costumeTypesReader = readerFromText(costumeTypes);
+        SepReaderAdapter_CostumeTypes adapter_costumeTypes = new(costumeTypesReader);
+        if (adapter_costumeTypes.TryGetCol(costumeType, out ICsvRow? skin))
         {
-            using SepReader weaponSkinTypesReader = Sep.New(',').Reader().FromText(weaponSkinTypes.Split('\n', 2)[1]);
-            SepReaderAdapter_WeaponSkinTypes adapter_weaponSkinTypes = new(weaponSkinTypesReader);
-            if (adapter_weaponSkinTypes.TryGetCol(WEAPON_SKIN_TYPE!, out ICsvRow? weaponSkin))
-            {
-                gfx = WeaponSkinTypesReader.GetGfxTypeInfo(weaponSkin, adapter_costumeTypes).ToGfxType(gfx, null, skinInfo);
-            }
+            skinInfo = CostumeTypesCsvReader.GetGfxTypeInfo(skin);
+            gfx = skinInfo.ToGfxType(gfx, null);
         }
     }
+
+    if (weaponSkinType is not null)
+    {
+        using SepReader costumeTypesReader = readerFromText(costumeTypes);
+        SepReaderAdapter_CostumeTypes adapter_costumeTypes = new(costumeTypesReader);
+        using SepReader weaponSkinTypesReader = readerFromText(weaponSkinTypes);
+        SepReaderAdapter_WeaponSkinTypes adapter_weaponSkinTypes = new(weaponSkinTypesReader);
+        if (adapter_weaponSkinTypes.TryGetCol(weaponSkinType, out ICsvRow? weaponSkin))
+        {
+            gfx = WeaponSkinTypesReader.GetGfxTypeInfo(weaponSkin, adapter_costumeTypes).ToGfxType(gfx, null, skinInfo);
+        }
+    }
+
+    return gfx;
 }
+gfx = PopulateGfx(gfx, COSTUME_TYPE, WEAPON_SKIN_TYPE);
+
+Transform2D center = Transform2D.CreateTranslate(INITIAL_SCREEN_WIDTH / 2, 3 * INITIAL_SCREEN_HEIGHT / 4) * Transform2D.CreateScale(0.75, 0.75);
+Animator animator = new(brawlhallaPath, key);
 
 Rl.SetConfigFlags(ConfigFlags.VSyncHint);
 Rl.SetConfigFlags(ConfigFlags.ResizableWindow);
