@@ -21,9 +21,9 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string COSTUME_TYPE = "DarthMaul";
-const string? WEAPON_SKIN_TYPE = null;
-const string ANIMATION = "IdleDarthMaul";
+const string COSTUME_TYPE = "Ahsoka";
+const string? WEAPON_SKIN_TYPE = "KatarAhsoka";
+const string ANIMATION = "SelectedAhsoka";
 
 LogCallback.Init();
 
@@ -52,9 +52,8 @@ using (SepReader costumeTypesReader = Sep.New(',').Reader().FromText(costumeType
         {
             using SepReader weaponSkinTypesReader = Sep.New(',').Reader().FromText(weaponSkinTypes.Split('\n', 2)[1]);
             SepReaderAdapter_WeaponSkinTypes adapter_weaponSkinTypes = new(weaponSkinTypesReader);
-            if (adapter_weaponSkinTypes.TryGetCol(WEAPON_SKIN_TYPE, out ICsvRow? weaponSkin))
+            if (adapter_weaponSkinTypes.TryGetCol(WEAPON_SKIN_TYPE!, out ICsvRow? weaponSkin))
             {
-
                 gfx = WeaponSkinTypesReader.GetGfxTypeInfo(weaponSkin, adapter_costumeTypes).ToGfxType(gfx, null, skinInfo);
             }
         }

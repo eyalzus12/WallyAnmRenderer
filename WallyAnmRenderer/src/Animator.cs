@@ -40,7 +40,7 @@ public class Animator
 
             if (shapes.Length == 0)
             {
-                Console.WriteLine("Failed sprite {0} {1}", sprite.SwfFilePath, sprite.SpriteName);
+                //Console.WriteLine("Failed sprite {0} {1}", sprite.SwfFilePath, sprite.SpriteName);
             }
 
             foreach (BoneShape boneShape in shapes)
@@ -58,7 +58,8 @@ public class Animator
                 RaylibUtils.DrawTextureWithTransform(
                     texture,
                     0, 0, texture.Width, texture.Height,
-                    boneShape.Transform * textureTransform
+                    boneShape.Transform * textureTransform,
+                    tintA: (float)boneShape.Opacity
                 );
             }
         }
