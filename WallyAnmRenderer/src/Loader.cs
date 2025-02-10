@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -20,34 +20,51 @@ public class Loader : ILoader
         _brawlPath = brawlPath;
 
         string init = Path.Join(_brawlPath, "Init.swz");
-        string boneTypes = SwzUtils.GetFileFromSwz(init, key, "BoneTypes.xml") ?? throw new Exception();
+        Dictionary<string, string> initFiles = SwzUtils.GetFilesFromSwz(init, key, ["BoneTypes.xml", "BoneSources.xml"]);
+        string boneTypes = initFiles["BoneTypes.xml"];
         _boneTypes = [.. XElement.Parse(boneTypes).Elements("Bone").Select((ee) => ee.Value)];
+        string boneSources = initFiles["BoneSources.xml"];
+        XElement boneSourcesElement = XElement.Parse(boneSources);
+
+        _boneSources = [];
+        foreach (XElement original in boneSourcesElement.Elements("Original"))
+        {
+            XElement target = original.Element("Target")!;
+            string targetName = target.Attribute("name")!.Value;
+            foreach (XElement bone in target.Elements("Bone"))
+            {
+                _boneSources[bone.Value] = "bones/" + targetName;
+            }
+        }
 
         AssetLoader = new(brawlPath);
     }
 
-    private readonly string[]? _boneTypes;
+    private readonly string[] _boneTypes;
+    private readonly Dictionary<string, string> _boneSources;
     public AssetLoader AssetLoader { get; }
 
-    public bool IsBoneTypesLoaded() => _boneTypes is not null;
-    public bool IsSwfLoaded(string swfPath)
+    public bool LoadBoneTypes()
     {
-        string truePath = Path.Join(_brawlPath, swfPath);
-        return AssetLoader.SwfFileCache.Cache.ContainsKey(truePath);
+        return true;
     }
 
-    public void LoadBoneTypes()
+    public bool LoadBoneSources()
     {
-        if (IsBoneTypesLoaded()) return;
-        throw new Exception();
+        return true;
     }
 
-    public void LoadSwf(string swfPath)
+    public bool SwfExists(string swfPath)
     {
-        AssetLoader.LoadSwf(swfPath);
+        return File.Exists(Path.Join(_brawlPath, swfPath));
     }
 
-    public bool TryGetAnmClass(string classIdentifier, [NotNullWhen(true)] out IAnmClass? anmClass)
+    public bool LoadSwf(string swfPath)
+    {
+        return AssetLoader.LoadSwf(swfPath) is not null;
+    }
+
+    public bool TryGetAnmClass(string classIdentifier, [MaybeNullWhen(false)] out IAnmClass anmClass)
     {
         if (AssetLoader.AnmClasses.TryGetValue(classIdentifier, out AnmClass? @class))
         {
@@ -58,7 +75,7 @@ public class Loader : ILoader
         return false;
     }
 
-    public bool TryGetBoneName(short boneId, [NotNullWhen(true)] out string? boneName)
+    public bool TryGetBoneName(short boneId, [MaybeNullWhen(false)] out string boneName)
     {
         boneId--;
         if (_boneTypes is null || boneId < 0 || boneId >= _boneTypes.Length)
@@ -70,7 +87,12 @@ public class Loader : ILoader
         return true;
     }
 
-    public bool TryGetScriptAVar(string swfPath, string spriteName, [NotNullWhen(true)] out uint[]? a)
+    public bool TryGetBoneFilePath(string boneName, [MaybeNullWhen(false)] out string bonePath)
+    {
+        return _boneSources.TryGetValue(boneName, out bonePath);
+    }
+
+    public bool TryGetScriptAVar(string swfPath, string spriteName, [MaybeNullWhen(false)] out uint[] a)
     {
         a = null;
         return false;
@@ -94,7 +116,7 @@ public class Loader : ILoader
         return false;
     }
 
-    public bool TryGetTag(string swfPath, ushort tagId, [NotNullWhen(true)] out SwfTagBase? tag)
+    public bool TryGetTag(string swfPath, ushort tagId, [MaybeNullWhen(false)] out SwfTagBase tag)
     {
         SwfFileData? swf = AssetLoader.LoadSwf(swfPath);
         if (swf is null)

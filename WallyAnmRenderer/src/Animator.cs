@@ -38,6 +38,11 @@ public class Animator
                 continue;
             }
 
+            if (shapes.Length == 0)
+            {
+                Console.WriteLine("Failed sprite {0} {1}", sprite.SwfFilePath, sprite.SpriteName);
+            }
+
             foreach (BoneShape boneShape in shapes)
             {
                 Texture2DWrapper? textureWrapper = _loader.AssetLoader.LoadShapeFromSwf(boneShape.SwfFilePath, boneShape.ShapeId, boneShape.AnimScale);

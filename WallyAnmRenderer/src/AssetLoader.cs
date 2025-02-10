@@ -54,7 +54,7 @@ public class AssetLoader
 
     public SwfFileData? LoadSwf(string filePath)
     {
-        string finalPath = Path.Combine(_brawlPath, filePath);
+        string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
         SwfFileCache.Cache.TryGetValue(finalPath, out SwfFileData? swf);
         if (swf is not null)
             return swf;
@@ -95,6 +95,6 @@ public class AssetLoader
 
     public void LoadAnms()
     {
-        LoadAnmInThread("Sword");
+        LoadAnmInThread("CharacterSelect");
     }
 }
