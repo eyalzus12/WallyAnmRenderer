@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using WallyAnmSpinzor;
@@ -36,7 +37,7 @@ public class AssetLoader
         {
             string anmPath = Path.Combine(_brawlPath, "anims", $"Animation_{name}.anm");
             AnmFile anm;
-            using (FileStream file = new(anmPath, FileMode.Open, FileAccess.Read))
+            using (FileStream file = File.OpenRead(anmPath))
                 anm = AnmFile.CreateFrom(file);
             foreach ((string className, AnmClass @class) in anm.Classes)
             {
@@ -62,15 +63,18 @@ public class AssetLoader
         return null;
     }
 
-    public Texture2DWrapper? LoadShapeFromSwf(string filePath, ushort shapeId, double animScale)
+    public Texture2DWrapper? LoadShapeFromSwf(string filePath, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict)
     {
+        // the game does not take the color swap dict into account when caching
+        // so we don't either
+
         SwfFileData? swf = LoadSwf(filePath);
         if (swf is null)
             return null;
         SwfShapeCache.Cache.TryGetValue(new(swf, shapeId, animScale), out Texture2DWrapper? texture);
         if (texture is not null)
             return texture;
-        SwfShapeCache.LoadInThread(swf, shapeId, animScale);
+        SwfShapeCache.LoadInThread(swf, shapeId, animScale, colorSwapDict);
         return null;
     }
 

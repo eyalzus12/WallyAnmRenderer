@@ -2,6 +2,7 @@ global using Rl = Raylib_cs.Raylib;
 global using RlColor = Raylib_cs.Color;
 global using RlImage = Raylib_cs.Image;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
@@ -21,9 +22,9 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string COSTUME_TYPE = "Ahsoka";
-const string? WEAPON_SKIN_TYPE = "KatarAhsoka";
-const string ANIMATION = "SelectedAhsoka";
+const string COSTUME_TYPE = "Anakin";
+const string? WEAPON_SKIN_TYPE = "SwordObiWan";
+const string ANIMATION = "SelectedAnakin";
 
 LogCallback.Init();
 
@@ -31,8 +32,9 @@ Transform2D center = Transform2D.CreateTranslate(INITIAL_SCREEN_WIDTH / 2, 3 * I
 Animator animator = new(brawlhallaPath, key);
 
 string game = Path.Join(brawlhallaPath, "Game.swz");
-string costumeTypes = SwzUtils.GetFileFromSwz(game, key, "costumeTypes.csv") ?? throw new Exception();
-string weaponSkinTypes = SwzUtils.GetFileFromSwz(game, key, "weaponSkinTypes.csv") ?? throw new Exception();
+Dictionary<string, string> initFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv"]);
+string costumeTypes = initFiles["costumeTypes.csv"];
+string weaponSkinTypes = initFiles["weaponSkinTypes.csv"];
 
 IGfxType gfx = new GfxType()
 {

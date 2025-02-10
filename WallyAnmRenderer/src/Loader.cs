@@ -13,7 +13,7 @@ namespace WallyAnmRenderer;
 
 public class Loader : ILoader
 {
-    private string _brawlPath;
+    private readonly string _brawlPath;
 
     public Loader(string brawlPath, uint key)
     {
@@ -94,8 +94,15 @@ public class Loader : ILoader
 
     public bool TryGetScriptAVar(string swfPath, string spriteName, [MaybeNullWhen(false)] out uint[] a)
     {
-        a = null;
-        return false;
+        SwfFileData? swf = AssetLoader.LoadSwf(swfPath);
+        if (swf is null)
+        {
+            a = null;
+            return false;
+        }
+
+        Dictionary<string, uint[]> dict = swf.SpriteA;
+        return dict.TryGetValue(spriteName, out a);
     }
 
     public bool TryGetSymbolId(string swfPath, string symbolName, out ushort symbolId)

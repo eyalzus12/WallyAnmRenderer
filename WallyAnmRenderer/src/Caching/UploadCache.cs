@@ -4,29 +4,33 @@ using System.Threading.Tasks;
 
 namespace WallyAnmRenderer;
 
-public abstract class UploadCache<K, I, V> where K : notnull
+// K - cache by
+// I - CPU bound value created from K
+// V - GPU bound value created from I
+// M - extra metadata that is not part of cache key
+public abstract class UploadCache<K, I, V, M> where K : notnull
 {
     public Dictionary<K, V> Cache { get; } = [];
     private readonly Queue<V> _deleteQueue = [];
     private readonly Queue<(K, I)> _queue = [];
     private readonly HashSet<K> _queueSet = [];
 
-    protected abstract I LoadIntermediate(K k);
+    protected abstract I LoadIntermediate(K k, M m);
     protected abstract V IntermediateToValue(I i);
     protected abstract void UnloadIntermediate(I i);
     protected abstract void UnloadValue(V v);
 
-    public void Load(K k)
+    public void Load(K k, M m)
     {
         if (Cache.ContainsKey(k))
             return;
-        I i = LoadIntermediate(k);
+        I i = LoadIntermediate(k, m);
         V v = IntermediateToValue(i);
         UnloadIntermediate(i);
         Cache[k] = v;
     }
 
-    public void LoadInThread(K k)
+    public void LoadInThread(K k, M m)
     {
         if (_queueSet.Contains(k) || Cache.ContainsKey(k))
             return;
@@ -36,7 +40,7 @@ public abstract class UploadCache<K, I, V> where K : notnull
         {
             try
             {
-                I i = LoadIntermediate(k);
+                I i = LoadIntermediate(k, m);
                 lock (_queue) _queue.Enqueue((k, i));
             }
             catch (Exception e)

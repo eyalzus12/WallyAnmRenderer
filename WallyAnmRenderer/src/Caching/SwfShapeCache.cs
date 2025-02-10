@@ -2,7 +2,6 @@ using System;
 using System.Xml;
 
 using SwiffCheese.Shapes;
-using SwiffCheese.Wrappers;
 using SwiffCheese.Exporting.Svg;
 
 using Raylib_cs;
@@ -11,10 +10,11 @@ using Svg.Skia;
 using SkiaSharp;
 using BrawlhallaAnimLib.Math;
 using SwfLib.Tags.ShapeTags;
+using System.Collections.Generic;
 
 namespace WallyAnmRenderer;
 
-public class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfShapeCache.ShapeData, Texture2DWrapper>
+public class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfShapeCache.ShapeData, Texture2DWrapper, Dictionary<uint, uint>>
 {
     private const int SWF_UNIT_DIVISOR = 20;
     private const double ANIM_SCALE_MULTIPLIER = 1.2;
@@ -22,11 +22,15 @@ public class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfShapeCach
     public readonly record struct TextureInfo(SwfFileData Swf, ushort ShapeId, double AnimScale);
     public readonly record struct ShapeData(RlImage Img, Transform2D Transform);
 
-    protected override ShapeData LoadIntermediate(TextureInfo textureInfo)
+    protected override ShapeData LoadIntermediate(TextureInfo textureInfo, Dictionary<uint, uint> colorSwapDict)
     {
         (SwfFileData swf, ushort shapeId, double animScale) = textureInfo;
         animScale *= ANIM_SCALE_MULTIPLIER;
         ShapeBaseTag shape = swf.ShapeTags[shapeId];
+
+        // modify the shape with color swaps
+        ColorSwapUtils.ApplyColorSwaps(shape, colorSwapDict);
+
         SwfShape compiledShape = new(new(shape));
         // logic follows game
         int shapeX = shape.ShapeBounds.XMin;
@@ -85,6 +89,6 @@ public class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfShapeCach
         texture.Dispose();
     }
 
-    public void Load(SwfFileData swf, ushort shapeId, double animScale) => Load(new(swf, shapeId, animScale));
-    public void LoadInThread(SwfFileData swf, ushort shapeId, double animScale) => LoadInThread(new(swf, shapeId, animScale));
+    public void Load(SwfFileData swf, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) => Load(new(swf, shapeId, animScale), colorSwapDict);
+    public void LoadInThread(SwfFileData swf, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) => LoadInThread(new(swf, shapeId, animScale), colorSwapDict);
 }
