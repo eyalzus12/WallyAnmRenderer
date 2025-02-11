@@ -1,4 +1,3 @@
-using System;
 using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Bones;
 using BrawlhallaAnimLib.Gfx;

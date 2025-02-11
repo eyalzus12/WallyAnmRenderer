@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
-using BrawlhallaAnimLib.Reading;
 using BrawlhallaAnimLib.Reading.CostumeTypes;
 using BrawlhallaAnimLib.Reading.WeaponSkinTypes;
 using nietras.SeparatedValues;
@@ -22,11 +21,29 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string? COSTUME_TYPE = "DarthMaul";
-const string? WEAPON_SKIN_TYPE = "SpearDarthMaul";
-const string ANIMATION = "SelectedDarthMaul";
+const string? COSTUME_TYPE = "Megaman";
+const string? WEAPON_SKIN_TYPE = "PistolMegaman";
+const string ANIMATION = "SelectedMegaman";
 
-LogCallback.Init();
+
+static SepReader readerFromText(string text)
+{
+    SepReaderOptions reader = new(Sep.New(',')) { DisableColCountCheck = true };
+    return reader.FromText(text.Split('\n', 2)[1]);
+}
+
+string game = Path.Join(brawlhallaPath, "Game.swz");
+Dictionary<string, string> initFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv"]);
+
+string costumeTypesContent = initFiles["costumeTypes.csv"];
+CostumeTypes costumeTypes;
+using (SepReader reader = readerFromText(costumeTypesContent))
+    costumeTypes = new(reader);
+
+string weaponSkinTypesContent = initFiles["weaponSkinTypes.csv"];
+WeaponSkinTypes weaponSkinTypes;
+using (SepReader reader = readerFromText(weaponSkinTypesContent))
+    weaponSkinTypes = new(reader, costumeTypes);
 
 IGfxType gfx = new GfxType()
 {
@@ -34,41 +51,22 @@ IGfxType gfx = new GfxType()
     AnimClass = ANIM_CLASS,
     AnimScale = 2,
 };
-static IGfxType PopulateGfx(IGfxType gfx, string? costumeType, string? weaponSkinType)
+
+LogCallback.Init();
+
+IGfxType PopulateGfx(IGfxType gfx, string? costumeType, string? weaponSkinType)
 {
-    string game = Path.Join(brawlhallaPath, "Game.swz");
-    Dictionary<string, string> initFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv"]);
-    string costumeTypes = initFiles["costumeTypes.csv"];
-    string weaponSkinTypes = initFiles["weaponSkinTypes.csv"];
-
-    static SepReader readerFromText(string text)
-    {
-        SepReaderOptions reader = new(Sep.New(',')) { DisableColCountCheck = true };
-        return reader.FromText(text.Split('\n', 2)[1]);
-    }
-
     CostumeTypesGfxInfo? skinInfo = null;
-    if (costumeType is not null)
+    if (costumeType is not null &&
+        costumeTypes.GfxInfo.TryGetValue(costumeType, out skinInfo))
     {
-        using SepReader costumeTypesReader = readerFromText(costumeTypes);
-        SepReaderAdapter_CostumeTypes adapter_costumeTypes = new(costumeTypesReader);
-        if (adapter_costumeTypes.TryGetCol(costumeType, out ICsvRow? skin))
-        {
-            skinInfo = CostumeTypesCsvReader.GetGfxTypeInfo(skin);
-            gfx = skinInfo.ToGfxType(gfx, null);
-        }
+        gfx = skinInfo.ToGfxType(gfx, null);
     }
 
-    if (weaponSkinType is not null)
+    if (weaponSkinType is not null &&
+        weaponSkinTypes.GfxInfo.TryGetValue(weaponSkinType, out WeaponSkinTypesGfxInfo? weaponSkin))
     {
-        using SepReader costumeTypesReader = readerFromText(costumeTypes);
-        SepReaderAdapter_CostumeTypes adapter_costumeTypes = new(costumeTypesReader);
-        using SepReader weaponSkinTypesReader = readerFromText(weaponSkinTypes);
-        SepReaderAdapter_WeaponSkinTypes adapter_weaponSkinTypes = new(weaponSkinTypesReader);
-        if (adapter_weaponSkinTypes.TryGetCol(weaponSkinType, out ICsvRow? weaponSkin))
-        {
-            gfx = WeaponSkinTypesReader.GetGfxTypeInfo(weaponSkin, adapter_costumeTypes).ToGfxType(gfx, null, skinInfo);
-        }
+        gfx = weaponSkin.ToGfxType(gfx, null, skinInfo);
     }
 
     return gfx;

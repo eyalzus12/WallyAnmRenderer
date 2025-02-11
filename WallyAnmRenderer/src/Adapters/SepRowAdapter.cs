@@ -1,50 +1,88 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Reading;
+using BrawlhallaAnimLib.Reading.CostumeTypes;
+using BrawlhallaAnimLib.Reading.WeaponSkinTypes;
 using nietras.SeparatedValues;
 
 namespace WallyAnmRenderer;
 
-public readonly struct SepReaderAdapter_CostumeTypes(SepReader reader) : ICsvReader
+public readonly struct CostumeTypes : ICsvReader
 {
-    public bool TryGetCol(string key, [MaybeNullWhen(false)] out ICsvRow outRow)
+    private readonly SepReader _reader;
+    private readonly Dictionary<string, SepRowAdapter> _rows = [];
+    public Dictionary<string, CostumeTypesGfxInfo> GfxInfo { get; } = [];
+
+    public CostumeTypes(SepReader reader)
     {
-        foreach (SepReader.Row row in reader)
+        _reader = reader;
+
+        foreach (SepReader.Row row in _reader)
         {
-            if (row["CostumeName"].ToString() == key)
-            {
-                outRow = new SepRowAdapter(reader.Header, row);
-                return true;
-            }
+            string key = row["CostumeName"].ToString();
+            if (key == "Template") continue;
+            SepRowAdapter adapter = new(_reader.Header, row, key);
+            _rows[key] = adapter;
+
+            CostumeTypesGfxInfo info = CostumeTypesCsvReader.GetGfxTypeInfo(adapter);
+            GfxInfo[key] = info;
         }
-        outRow = null;
+    }
+
+    public bool TryGetCol(string key, [MaybeNullWhen(false)] out ICsvRow row)
+    {
+        if (_rows.TryGetValue(key, out SepRowAdapter adapter))
+        {
+            row = adapter;
+            return true;
+        }
+        row = null;
         return false;
     }
 }
 
-public readonly struct SepReaderAdapter_WeaponSkinTypes(SepReader reader) : ICsvReader
+public readonly struct WeaponSkinTypes : ICsvReader
 {
-    public bool TryGetCol(string key, [MaybeNullWhen(false)] out ICsvRow outRow)
+    private readonly SepReader _reader;
+    private readonly Dictionary<string, SepRowAdapter> _rows = [];
+    public Dictionary<string, WeaponSkinTypesGfxInfo> GfxInfo { get; } = [];
+
+    public WeaponSkinTypes(SepReader reader, CostumeTypes costumeTypes)
     {
-        foreach (SepReader.Row row in reader)
+        _reader = reader;
+
+        foreach (SepReader.Row row in _reader)
         {
-            if (row["WeaponSkinName"].ToString() == key)
-            {
-                outRow = new SepRowAdapter(reader.Header, row);
-                return true;
-            }
+            string key = row["WeaponSkinName"].ToString();
+            if (key == "Template") continue;
+            SepRowAdapter adapter = new(_reader.Header, row, key);
+            _rows[key] = adapter;
+
+            WeaponSkinTypesGfxInfo info = WeaponSkinTypesReader.GetGfxTypeInfo(adapter, costumeTypes);
+            GfxInfo[key] = info;
         }
-        outRow = null;
+    }
+
+    public bool TryGetCol(string key, [MaybeNullWhen(false)] out ICsvRow row)
+    {
+        if (_rows.TryGetValue(key, out SepRowAdapter adapter))
+        {
+            row = adapter;
+            return true;
+        }
+        row = null;
         return false;
     }
 }
 
 public readonly struct SepRowAdapter : ICsvRow
 {
+    private readonly string _rowKey;
     private readonly List<KeyValuePair<string, string>> _colEntries = [];
 
-    public SepRowAdapter(SepReaderHeader header, SepReader.Row row)
+    public SepRowAdapter(SepReaderHeader header, SepReader.Row row, string rowKey)
     {
+        _rowKey = rowKey;
         foreach (string colName in header.ColNames)
         {
             SepReader.Col col = row[colName];
@@ -52,5 +90,6 @@ public readonly struct SepRowAdapter : ICsvRow
         }
     }
 
+    public string RowKey => _rowKey;
     public IEnumerable<KeyValuePair<string, string>> ColEntries => _colEntries;
 }
