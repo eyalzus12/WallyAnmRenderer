@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace WallyAnmRenderer;
@@ -8,31 +9,44 @@ namespace WallyAnmRenderer;
 // I - CPU bound value created from K
 // V - GPU bound value created from I
 // M - extra metadata that is not part of cache key
-public abstract class UploadCache<K, I, V, M> where K : notnull
+public abstract class UploadCache<K, I, V> where K : notnull
 {
-    public Dictionary<K, V> Cache { get; } = [];
+    protected abstract IEqualityComparer<K>? KeyEqualityComparer { get; }
+
+    private readonly Dictionary<K, V> _cache;
     private readonly Queue<V> _deleteQueue = [];
     private readonly Queue<(K, I)> _queue = [];
-    private readonly HashSet<K> _queueSet = [];
+    private readonly HashSet<K> _queueSet;
 
-    protected abstract I LoadIntermediate(K k, M m);
+    public UploadCache()
+    {
+        _cache = new(KeyEqualityComparer);
+        _queueSet = new(KeyEqualityComparer);
+    }
+
+    protected abstract I LoadIntermediate(K k);
     protected abstract V IntermediateToValue(I i);
     protected abstract void UnloadIntermediate(I i);
     protected abstract void UnloadValue(V v);
 
-    public void Load(K k, M m)
+    public bool TryGetCached(K k, [MaybeNullWhen(false)] out V? v)
     {
-        if (Cache.ContainsKey(k))
-            return;
-        I i = LoadIntermediate(k, m);
-        V v = IntermediateToValue(i);
-        UnloadIntermediate(i);
-        Cache[k] = v;
+        return _cache.TryGetValue(k, out v);
     }
 
-    public void LoadInThread(K k, M m)
+    public void Load(K k)
     {
-        if (_queueSet.Contains(k) || Cache.ContainsKey(k))
+        if (_cache.ContainsKey(k))
+            return;
+        I i = LoadIntermediate(k);
+        V v = IntermediateToValue(i);
+        UnloadIntermediate(i);
+        _cache[k] = v;
+    }
+
+    public void LoadInThread(K k)
+    {
+        if (_queueSet.Contains(k) || _cache.ContainsKey(k))
             return;
         _queueSet.Add(k);
 
@@ -40,7 +54,7 @@ public abstract class UploadCache<K, I, V, M> where K : notnull
         {
             try
             {
-                I i = LoadIntermediate(k, m);
+                I i = LoadIntermediate(k);
                 lock (_queue) _queue.Enqueue((k, i));
             }
             catch (Exception e)
@@ -64,10 +78,10 @@ public abstract class UploadCache<K, I, V, M> where K : notnull
             {
                 (K k, I i) = _queue.Dequeue();
                 _queueSet.Remove(k);
-                if (!Cache.ContainsKey(k))
+                if (!_cache.ContainsKey(k))
                 {
                     V v = IntermediateToValue(i);
-                    Cache[k] = v;
+                    _cache[k] = v;
                 }
                 UnloadIntermediate(i);
             }
@@ -90,9 +104,9 @@ public abstract class UploadCache<K, I, V, M> where K : notnull
     {
         lock (_deleteQueue)
         {
-            foreach ((_, V v) in Cache)
+            foreach ((_, V v) in _cache)
                 _deleteQueue.Enqueue(v);
-            Cache.Clear();
+            _cache.Clear();
         }
 
         _queueSet.Clear();
@@ -108,7 +122,7 @@ public abstract class UploadCache<K, I, V, M> where K : notnull
 
     public void InsertIntermediate(K k, I i)
     {
-        if (_queueSet.Contains(k) || Cache.ContainsKey(k))
+        if (_queueSet.Contains(k) || _cache.ContainsKey(k))
             return;
 
         _queueSet.Add(k);

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace WallyAnmRenderer;
 
-internal partial class NativeVsPrintf
+internal sealed partial class NativeVsPrintf
 {
     private const string MSVCRT = "msvcrt";
     private const string LIBC = "libc";

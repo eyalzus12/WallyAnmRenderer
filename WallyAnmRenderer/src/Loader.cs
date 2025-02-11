@@ -11,7 +11,7 @@ using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
 
-public class Loader : ILoader
+public sealed class Loader : ILoader
 {
     private readonly string _brawlPath;
 

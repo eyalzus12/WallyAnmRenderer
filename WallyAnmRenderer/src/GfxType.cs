@@ -4,7 +4,7 @@ using BrawlhallaAnimLib.Gfx;
 
 namespace WallyAnmRenderer;
 
-public class GfxType : IGfxType
+public sealed class GfxType : IGfxType
 {
     public required string AnimFile { get; set; }
     public required string AnimClass { get; set; }

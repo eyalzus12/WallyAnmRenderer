@@ -7,7 +7,7 @@ using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
 
-public class AssetLoader
+public sealed class AssetLoader
 {
     private string _brawlPath;
     public string BrawlPath
@@ -63,18 +63,15 @@ public class AssetLoader
         return null;
     }
 
-    public Texture2DWrapper? LoadShapeFromSwf(string filePath, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict)
+    public Texture2DWrapper? LoadShapeFromSwf(string filePath, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, string boneName)
     {
-        // the game does not take the color swap dict into account when caching
-        // so we don't either
-
         SwfFileData? swf = LoadSwf(filePath);
         if (swf is null)
             return null;
-        SwfShapeCache.Cache.TryGetValue(new(swf, shapeId, animScale), out Texture2DWrapper? texture);
+        SwfShapeCache.TryGetCached(boneName, animScale, out Texture2DWrapper? texture);
         if (texture is not null)
             return texture;
-        SwfShapeCache.LoadInThread(swf, shapeId, animScale, colorSwapDict);
+        SwfShapeCache.LoadInThread(swf, shapeId, animScale, colorSwapDict, boneName);
         return null;
     }
 

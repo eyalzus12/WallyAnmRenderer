@@ -12,7 +12,7 @@ using SwfLib.Tags.ShapeTags;
 
 namespace WallyAnmRenderer;
 
-public class SwfFileData
+public sealed class SwfFileData
 {
     public SwfFile Swf { get; private init; } = null!;
     public Dictionary<string, ushort> SymbolClass { get; private init; } = [];

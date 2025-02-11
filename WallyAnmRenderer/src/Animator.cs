@@ -7,7 +7,7 @@ using Raylib_cs;
 
 namespace WallyAnmRenderer;
 
-public class Animator
+public sealed class Animator
 {
     private readonly Loader _loader;
     private readonly AnimationBuilder _builder;
@@ -39,7 +39,13 @@ public class Animator
 
             foreach (BoneShape boneShape in shapes)
             {
-                Texture2DWrapper? textureWrapper = _loader.AssetLoader.LoadShapeFromSwf(boneShape.SwfFilePath, boneShape.ShapeId, boneShape.AnimScale, boneShape.ColorSwapDict);
+                Texture2DWrapper? textureWrapper = _loader.AssetLoader.LoadShapeFromSwf(
+                    boneShape.SwfFilePath,
+                    boneShape.ShapeId,
+                    boneShape.AnimScale,
+                    boneShape.ColorSwapDict,
+                    boneShape.BoneName
+                );
                 if (textureWrapper is null)
                 {
                     result = false;

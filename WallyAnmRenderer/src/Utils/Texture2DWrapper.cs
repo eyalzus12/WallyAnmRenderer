@@ -4,7 +4,7 @@ using Raylib_cs;
 
 namespace WallyAnmRenderer;
 
-public class Texture2DWrapper : IDisposable
+public sealed class Texture2DWrapper : IDisposable
 {
     private bool _disposedValue = false;
 
@@ -26,22 +26,15 @@ public class Texture2DWrapper : IDisposable
         }
     }
 
-    protected virtual void Dispose(bool disposing)
+    public void Dispose()
     {
         if (!_disposedValue)
         {
             if (Texture.Id != 0)
-            {
                 Rl.UnloadTexture(Texture);
-            }
-
             _disposedValue = true;
         }
-    }
 
-    public void Dispose()
-    {
-        Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
 }

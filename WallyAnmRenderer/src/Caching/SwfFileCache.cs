@@ -2,7 +2,7 @@ using System.IO;
 
 namespace WallyAnmRenderer;
 
-public class SwfFileCache : ManagedCache<string, SwfFileData>
+public sealed class SwfFileCache : ManagedCache<string, SwfFileData>
 {
     protected override SwfFileData LoadInternal(string path)
     {
