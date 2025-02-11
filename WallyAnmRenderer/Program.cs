@@ -4,6 +4,8 @@ global using RlImage = Raylib_cs.Image;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Xml.Linq;
+using System.Xml.Serialization;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
 using BrawlhallaAnimLib.Reading.CostumeTypes;
@@ -21,10 +23,10 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string? COSTUME_TYPE = "Megaman";
-const string? WEAPON_SKIN_TYPE = "PistolMegaman";
-const string ANIMATION = "SelectedMegaman";
-
+const string? COSTUME_TYPE = "Elf";
+const string? WEAPON_SKIN_TYPE = "BowElf";
+const string ANIMATION = "SelectedElf";
+const string? COLOR_SCHEME = "Purple";
 
 static SepReader readerFromText(string text)
 {
@@ -33,17 +35,27 @@ static SepReader readerFromText(string text)
 }
 
 string game = Path.Join(brawlhallaPath, "Game.swz");
-Dictionary<string, string> initFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv"]);
+Dictionary<string, string> gameFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv", "ColorSchemeTypes.xml"]);
 
-string costumeTypesContent = initFiles["costumeTypes.csv"];
+string costumeTypesContent = gameFiles["costumeTypes.csv"];
 CostumeTypes costumeTypes;
 using (SepReader reader = readerFromText(costumeTypesContent))
     costumeTypes = new(reader);
 
-string weaponSkinTypesContent = initFiles["weaponSkinTypes.csv"];
+string weaponSkinTypesContent = gameFiles["weaponSkinTypes.csv"];
 WeaponSkinTypes weaponSkinTypes;
 using (SepReader reader = readerFromText(weaponSkinTypesContent))
     weaponSkinTypes = new(reader, costumeTypes);
+
+string colorSchemeTypesContent = gameFiles["ColorSchemeTypes.xml"];
+Dictionary<string, ColorScheme> colorSchemes = [];
+XElement colorSchemeElement = XElement.Parse(colorSchemeTypesContent);
+foreach (XElement colorScheme in colorSchemeElement.Elements())
+{
+    string name = colorScheme.Attribute("ColorSchemeName")?.Value ?? throw new Exception();
+    if (name == "Template") continue;
+    colorSchemes[name] = new(colorScheme);
+}
 
 IGfxType gfx = new GfxType()
 {
@@ -54,24 +66,27 @@ IGfxType gfx = new GfxType()
 
 LogCallback.Init();
 
-IGfxType PopulateGfx(IGfxType gfx, string? costumeType, string? weaponSkinType)
+IGfxType PopulateGfx(IGfxType gfx, string? costumeType, string? weaponSkinType, string? colorScheme)
 {
+    ColorScheme? scheme = null;
+    if (colorScheme is not null) colorSchemes.TryGetValue(colorScheme, out scheme);
+
     CostumeTypesGfxInfo? skinInfo = null;
     if (costumeType is not null &&
         costumeTypes.GfxInfo.TryGetValue(costumeType, out skinInfo))
     {
-        gfx = skinInfo.ToGfxType(gfx, null);
+        gfx = skinInfo.ToGfxType(gfx, scheme);
     }
 
     if (weaponSkinType is not null &&
         weaponSkinTypes.GfxInfo.TryGetValue(weaponSkinType, out WeaponSkinTypesGfxInfo? weaponSkin))
     {
-        gfx = weaponSkin.ToGfxType(gfx, null, skinInfo);
+        gfx = weaponSkin.ToGfxType(gfx, scheme, skinInfo);
     }
 
     return gfx;
 }
-gfx = PopulateGfx(gfx, COSTUME_TYPE, WEAPON_SKIN_TYPE);
+gfx = PopulateGfx(gfx, COSTUME_TYPE, WEAPON_SKIN_TYPE, COLOR_SCHEME);
 
 Transform2D center = Transform2D.CreateTranslate(INITIAL_SCREEN_WIDTH / 2, 3 * INITIAL_SCREEN_HEIGHT / 4) * Transform2D.CreateScale(0.75, 0.75);
 Animator animator = new(brawlhallaPath, key);

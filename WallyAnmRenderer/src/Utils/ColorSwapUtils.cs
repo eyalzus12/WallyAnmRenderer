@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using SwfLib.Data;
 using SwfLib.Gradients;
 using SwfLib.Shapes.FillStyles;
+using SwfLib.Shapes.Records;
 using SwfLib.Tags.ShapeTags;
+using SwiffCheese.Wrappers;
 
 namespace WallyAnmRenderer;
 
@@ -19,12 +21,34 @@ public static class ColorSwapUtils
             {
                 ApplyColorSwapFillStyleRGB(fillStyle, colorSwapDict);
             }
+
+            foreach (IShapeRecordRGB shapeRecord in defineShape.ShapeRecords)
+            {
+                if (shapeRecord is StyleChangeShapeRecordRGB styleChangeShapeRecord)
+                {
+                    foreach (FillStyleRGB fillStyle in styleChangeShapeRecord.FillStyles)
+                    {
+                        ApplyColorSwapFillStyleRGB(fillStyle, colorSwapDict);
+                    }
+                }
+            }
         }
         else if (shape is DefineShape2Tag defineShape2)
         {
             foreach (FillStyleRGB fillStyle in defineShape2.FillStyles)
             {
                 ApplyColorSwapFillStyleRGB(fillStyle, colorSwapDict);
+            }
+
+            foreach (IShapeRecordRGB shapeRecord in defineShape2.ShapeRecords)
+            {
+                if (shapeRecord is StyleChangeShapeRecordRGB styleChangeShapeRecord)
+                {
+                    foreach (FillStyleRGB fillStyle in styleChangeShapeRecord.FillStyles)
+                    {
+                        ApplyColorSwapFillStyleRGB(fillStyle, colorSwapDict);
+                    }
+                }
             }
         }
         else if (shape is DefineShape3Tag defineShape3)
@@ -33,12 +57,34 @@ public static class ColorSwapUtils
             {
                 ApplyColorSwapFillStyleRGBA(fillStyle, colorSwapDict);
             }
+
+            foreach (IShapeRecordRGBA shapeRecord in defineShape3.ShapeRecords)
+            {
+                if (shapeRecord is StyleChangeShapeRecordRGBA styleChangeShapeRecord)
+                {
+                    foreach (FillStyleRGBA fillStyle in styleChangeShapeRecord.FillStyles)
+                    {
+                        ApplyColorSwapFillStyleRGBA(fillStyle, colorSwapDict);
+                    }
+                }
+            }
         }
         else if (shape is DefineShape4Tag defineShape4)
         {
             foreach (FillStyleRGBA fillStyle in defineShape4.FillStyles)
             {
                 ApplyColorSwapFillStyleRGBA(fillStyle, colorSwapDict);
+            }
+
+            foreach (IShapeRecordEx shapeRecord in defineShape4.ShapeRecords)
+            {
+                if (shapeRecord is StyleChangeShapeRecordEx styleChangeShapeRecord)
+                {
+                    foreach (FillStyleRGBA fillStyle in styleChangeShapeRecord.FillStyles)
+                    {
+                        ApplyColorSwapFillStyleRGBA(fillStyle, colorSwapDict);
+                    }
+                }
             }
         }
     }
