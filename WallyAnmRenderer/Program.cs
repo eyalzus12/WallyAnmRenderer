@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
 using BrawlhallaAnimLib.Reading.CostumeTypes;
@@ -23,10 +22,10 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string? COSTUME_TYPE = "Elf";
-const string? WEAPON_SKIN_TYPE = "BowElf";
-const string ANIMATION = "SelectedElf";
-const string? COLOR_SCHEME = "Purple";
+const string? COSTUME_TYPE = "Armortaur";
+const string? WEAPON_SKIN_TYPE = "AxeArmortaur";
+const string ANIMATION = "IdleMinotaur";
+const string? COLOR_SCHEME = "Brawlhalloween";
 
 static SepReader readerFromText(string text)
 {
@@ -35,7 +34,7 @@ static SepReader readerFromText(string text)
 }
 
 string game = Path.Join(brawlhallaPath, "Game.swz");
-Dictionary<string, string> gameFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv", "ColorSchemeTypes.xml"]);
+Dictionary<string, string> gameFiles = SwzUtils.GetFilesFromSwz(game, key, ["costumeTypes.csv", "weaponSkinTypes.csv", "ColorSchemeTypes.xml", "colorExceptionTypes.csv"]);
 
 string costumeTypesContent = gameFiles["costumeTypes.csv"];
 CostumeTypes costumeTypes;
@@ -57,6 +56,11 @@ foreach (XElement colorScheme in colorSchemeElement.Elements())
     colorSchemes[name] = new(colorScheme);
 }
 
+string colorExceptionTypesContent = gameFiles["colorExceptionTypes.csv"];
+ColorExceptionTypes colorExceptionTypes;
+using (SepReader reader = readerFromText(colorExceptionTypesContent))
+    colorExceptionTypes = new(reader);
+
 IGfxType gfx = new GfxType()
 {
     AnimFile = ANIM_FILE,
@@ -69,19 +73,37 @@ LogCallback.Init();
 IGfxType PopulateGfx(IGfxType gfx, string? costumeType, string? weaponSkinType, string? colorScheme)
 {
     ColorScheme? scheme = null;
-    if (colorScheme is not null) colorSchemes.TryGetValue(colorScheme, out scheme);
-
-    CostumeTypesGfxInfo? skinInfo = null;
-    if (costumeType is not null &&
-        costumeTypes.GfxInfo.TryGetValue(costumeType, out skinInfo))
+    if (colorScheme is not null)
     {
-        gfx = skinInfo.ToGfxType(gfx, scheme);
+        if (!colorSchemes.TryGetValue(colorScheme, out scheme))
+        {
+            throw new ArgumentException($"Invalid color scheme {colorScheme}");
+        }
     }
 
-    if (weaponSkinType is not null &&
-        weaponSkinTypes.GfxInfo.TryGetValue(weaponSkinType, out WeaponSkinTypesGfxInfo? weaponSkin))
+    CostumeTypesGfxInfo? skinInfo = null;
+    if (costumeType is not null)
     {
-        gfx = weaponSkin.ToGfxType(gfx, scheme, skinInfo);
+        if (costumeTypes.GfxInfo.TryGetValue(costumeType, out skinInfo))
+        {
+            gfx = skinInfo.ToGfxType(gfx, scheme, colorExceptionTypes);
+        }
+        else
+        {
+            throw new ArgumentException($"Invalid costume type {costumeType}");
+        }
+    }
+
+    if (weaponSkinType is not null)
+    {
+        if (weaponSkinTypes.GfxInfo.TryGetValue(weaponSkinType, out WeaponSkinTypesGfxInfo? weaponSkin))
+        {
+            gfx = weaponSkin.ToGfxType(gfx, scheme, colorExceptionTypes, skinInfo);
+        }
+        else
+        {
+            throw new ArgumentException($"Invalid weapon skin type {weaponSkinType}");
+        }
     }
 
     return gfx;

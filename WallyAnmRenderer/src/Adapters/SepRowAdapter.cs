@@ -9,19 +9,16 @@ namespace WallyAnmRenderer;
 
 public readonly struct CostumeTypes : ICsvReader
 {
-    private readonly SepReader _reader;
     private readonly Dictionary<string, SepRowAdapter> _rows = [];
     public Dictionary<string, CostumeTypesGfxInfo> GfxInfo { get; } = [];
 
     public CostumeTypes(SepReader reader)
     {
-        _reader = reader;
-
-        foreach (SepReader.Row row in _reader)
+        foreach (SepReader.Row row in reader)
         {
             string key = row["CostumeName"].ToString();
             if (key == "Template") continue;
-            SepRowAdapter adapter = new(_reader.Header, row, key);
+            SepRowAdapter adapter = new(reader.Header, row, key);
             _rows[key] = adapter;
 
             CostumeTypesGfxInfo info = CostumeTypesCsvReader.GetGfxTypeInfo(adapter);
@@ -43,19 +40,16 @@ public readonly struct CostumeTypes : ICsvReader
 
 public readonly struct WeaponSkinTypes : ICsvReader
 {
-    private readonly SepReader _reader;
     private readonly Dictionary<string, SepRowAdapter> _rows = [];
     public Dictionary<string, WeaponSkinTypesGfxInfo> GfxInfo { get; } = [];
 
     public WeaponSkinTypes(SepReader reader, CostumeTypes costumeTypes)
     {
-        _reader = reader;
-
-        foreach (SepReader.Row row in _reader)
+        foreach (SepReader.Row row in reader)
         {
             string key = row["WeaponSkinName"].ToString();
             if (key == "Template") continue;
-            SepRowAdapter adapter = new(_reader.Header, row, key);
+            SepRowAdapter adapter = new(reader.Header, row, key);
             _rows[key] = adapter;
 
             WeaponSkinTypesGfxInfo info = WeaponSkinTypesReader.GetGfxTypeInfo(adapter, costumeTypes);

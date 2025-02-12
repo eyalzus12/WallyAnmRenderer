@@ -9,10 +9,12 @@ namespace WallyAnmRenderer;
 
 public sealed class ColorScheme : IColorSchemeType
 {
+    public string Name { get; }
     private readonly Dictionary<ColorSchemeSwapEnum, uint> _swaps = [];
 
     public ColorScheme(XElement element)
     {
+        Name = element.Attribute("ColorSchemeName")?.Value ?? throw new ArgumentException("ColorSchemeName missing");
         foreach (XElement child in element.Elements())
         {
             string name = child.Name.LocalName;
