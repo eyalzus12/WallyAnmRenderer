@@ -10,7 +10,7 @@ namespace WallyAnmRenderer;
 public readonly struct CostumeTypes : ICsvReader
 {
     private readonly Dictionary<string, SepRowAdapter> _rows = [];
-    public Dictionary<string, CostumeTypesGfxInfo> GfxInfo { get; } = [];
+    public Dictionary<string, CostumeTypesGfx> GfxInfo { get; } = [];
 
     public CostumeTypes(SepReader reader)
     {
@@ -21,7 +21,7 @@ public readonly struct CostumeTypes : ICsvReader
             SepRowAdapter adapter = new(reader.Header, row, key);
             _rows[key] = adapter;
 
-            CostumeTypesGfxInfo info = CostumeTypesCsvReader.GetGfxTypeInfo(adapter);
+            CostumeTypesGfx info = new(adapter);
             GfxInfo[key] = info;
         }
     }
@@ -41,7 +41,7 @@ public readonly struct CostumeTypes : ICsvReader
 public readonly struct WeaponSkinTypes : ICsvReader
 {
     private readonly Dictionary<string, SepRowAdapter> _rows = [];
-    public Dictionary<string, WeaponSkinTypesGfxInfo> GfxInfo { get; } = [];
+    public Dictionary<string, WeaponSkinTypesGfx> GfxInfo { get; } = [];
 
     public WeaponSkinTypes(SepReader reader, CostumeTypes costumeTypes)
     {
@@ -52,7 +52,7 @@ public readonly struct WeaponSkinTypes : ICsvReader
             SepRowAdapter adapter = new(reader.Header, row, key);
             _rows[key] = adapter;
 
-            WeaponSkinTypesGfxInfo info = WeaponSkinTypesReader.GetGfxTypeInfo(adapter, costumeTypes);
+            WeaponSkinTypesGfx info = new(adapter, costumeTypes);
             GfxInfo[key] = info;
         }
     }

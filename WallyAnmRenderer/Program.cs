@@ -81,7 +81,7 @@ IGfxType PopulateGfx(IGfxType gfx, string? costumeType, string? weaponSkinType, 
         }
     }
 
-    CostumeTypesGfxInfo? skinInfo = null;
+    CostumeTypesGfx? skinInfo = null;
     if (costumeType is not null)
     {
         if (costumeTypes.GfxInfo.TryGetValue(costumeType, out skinInfo))
@@ -96,7 +96,7 @@ IGfxType PopulateGfx(IGfxType gfx, string? costumeType, string? weaponSkinType, 
 
     if (weaponSkinType is not null)
     {
-        if (weaponSkinTypes.GfxInfo.TryGetValue(weaponSkinType, out WeaponSkinTypesGfxInfo? weaponSkin))
+        if (weaponSkinTypes.GfxInfo.TryGetValue(weaponSkinType, out WeaponSkinTypesGfx? weaponSkin))
         {
             gfx = weaponSkin.ToGfxType(gfx, scheme, colorExceptionTypes, skinInfo);
         }
