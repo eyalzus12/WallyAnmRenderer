@@ -68,7 +68,7 @@ public sealed class AssetLoader
         SwfFileData? swf = LoadSwf(filePath);
         if (swf is null)
             return null;
-        SwfShapeCache.TryGetCached(boneName, animScale, out Texture2DWrapper? texture);
+        SwfShapeCache.TryGetCached(boneName, shapeId, animScale, out Texture2DWrapper? texture);
         if (texture is not null)
             return texture;
         SwfShapeCache.LoadInThread(swf, shapeId, animScale, colorSwapDict, boneName);

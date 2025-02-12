@@ -18,7 +18,8 @@ namespace WallyAnmRenderer;
 public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfShapeCache.ShapeData, Texture2DWrapper>
 {
     // this is how the game checks the cache.
-    // AnimScale only matters for digits
+    // AnimScale only matters for digits.
+    // (deviation from the game: we check the shapeId. this is to handle animations correctly.)
     private sealed class TextureInfoHasher : IEqualityComparer<TextureInfo>
     {
         private static string GetTrueBoneName(TextureInfo texture)
@@ -29,12 +30,12 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
 
         public bool Equals(TextureInfo x, TextureInfo y)
         {
-            return GetTrueBoneName(x) == GetTrueBoneName(y);
+            return x.ShapeId == y.ShapeId && GetTrueBoneName(x) == GetTrueBoneName(y);
         }
 
         public int GetHashCode(TextureInfo obj)
         {
-            return GetTrueBoneName(obj).GetHashCode();
+            return HashCode.Combine(GetTrueBoneName(obj), obj.ShapeId);
         }
     }
 
@@ -116,9 +117,9 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
     public void Load(SwfFileData swf, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, string boneName) => Load(new(swf, shapeId, animScale, colorSwapDict, boneName));
     public void LoadInThread(SwfFileData swf, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, string boneName) => LoadInThread(new(swf, shapeId, animScale, colorSwapDict, boneName));
 
-    public bool TryGetCached(string boneName, double animScale, [MaybeNullWhen(false)] out Texture2DWrapper? texture)
+    public bool TryGetCached(string boneName, ushort shapeId, double animScale, [MaybeNullWhen(false)] out Texture2DWrapper? texture)
     {
-        TextureInfo fake = new(null!, 0, animScale, null!, boneName);
+        TextureInfo fake = new(null!, shapeId, animScale, null!, boneName);
         return TryGetCached(fake, out texture);
     }
 }

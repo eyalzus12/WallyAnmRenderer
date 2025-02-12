@@ -51,16 +51,11 @@ public sealed class SwfFileData
 
         foreach (SwfTagBase tag in swf.Swf.Tags)
         {
-            if (tag is DefineSpriteTag st)
+            if (tag is DefineSpriteTag sprite)
             {
-                swf.SpriteTags[st.SpriteID] = st;
+                swf.SpriteTags[sprite.SpriteID] = sprite;
             }
-        }
-
-        //find matching shape tags
-        foreach (SwfTagBase tag in swf.Swf.Tags)
-        {
-            if (tag is ShapeBaseTag shape)
+            else if (tag is ShapeBaseTag shape)
             {
                 swf.ShapeTags[shape.ShapeID] = shape;
             }

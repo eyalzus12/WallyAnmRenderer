@@ -22,10 +22,10 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string? COSTUME_TYPE = "Armortaur";
-const string? WEAPON_SKIN_TYPE = "AxeArmortaur";
-const string ANIMATION = "IdleMinotaur";
-const string? COLOR_SCHEME = "Brawlhalloween";
+const string? COSTUME_TYPE = "DarthVader";
+const string? WEAPON_SKIN_TYPE = "SwordDarthVader";
+const string ANIMATION = "IdleDarthVader";
+const string? COLOR_SCHEME = "EsportPink";
 
 static SepReader readerFromText(string text)
 {
