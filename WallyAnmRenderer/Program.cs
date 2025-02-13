@@ -22,14 +22,14 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string? COSTUME_TYPE = "DarthMaul";
-const string? WEAPON_SKIN_TYPE = "SpearDarthMaul";
-const string ANIMATION = "SelectedDarthMaul";
+const string? COSTUME_TYPE = "Mando";
+const string? WEAPON_SKIN_TYPE = "PistolMando";
+const string ANIMATION = "IdleMando";
 const string? COLOR_SCHEME = "Blue";
 
 static SepReader readerFromText(string text)
 {
-    SepReaderOptions reader = new(Sep.New(',')) { DisableColCountCheck = true };
+    SepReaderOptions reader = new(Sep.New(',')) { DisableColCountCheck = true, Unescape = true };
     return reader.FromText(text.Split('\n', 2)[1]);
 }
 

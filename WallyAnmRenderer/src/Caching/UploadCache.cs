@@ -8,7 +8,6 @@ namespace WallyAnmRenderer;
 // K - cache by
 // I - CPU bound value created from K
 // V - GPU bound value created from I
-// M - extra metadata that is not part of cache key
 public abstract class UploadCache<K, I, V> where K : notnull
 {
     protected abstract IEqualityComparer<K>? KeyEqualityComparer { get; }
@@ -66,7 +65,9 @@ public abstract class UploadCache<K, I, V> where K : notnull
         });
     }
 
-    // ONLY CALL FROM MAIN THREAD!
+    /// <summary>
+    /// ONLY CALL FROM MAIN THREAD!
+    /// </summary>
     public void Upload(int amount)
     {
         Unload();

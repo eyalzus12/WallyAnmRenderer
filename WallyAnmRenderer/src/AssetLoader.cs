@@ -75,7 +75,6 @@ public sealed class AssetLoader
         return null;
     }
 
-    public const int MAX_TEXTURE_UPLOADS_PER_FRAME = 5;
     public const int MAX_SWF_TEXTURE_UPLOADS_PER_FRAME = 5;
     public void Upload()
     {
