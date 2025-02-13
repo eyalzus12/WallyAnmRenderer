@@ -23,9 +23,9 @@ const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Bra
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
 const string? COSTUME_TYPE = "DarthVader";
-const string? WEAPON_SKIN_TYPE = "SwordDarthVader";
+const string? WEAPON_SKIN_TYPE = null;
 const string ANIMATION = "IdleDarthVader";
-const string? COLOR_SCHEME = "EsportPink";
+const string? COLOR_SCHEME = "Red";
 
 static SepReader readerFromText(string text)
 {

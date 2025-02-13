@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using SwfLib.Data;
 using SwfLib.Gradients;
 using SwfLib.Shapes.FillStyles;
 using SwfLib.Shapes.Records;
 using SwfLib.Tags.ShapeTags;
-using SwiffCheese.Wrappers;
 
 namespace WallyAnmRenderer;
 
@@ -160,6 +158,8 @@ public static class ColorSwapUtils
         uint colorHex = SwfRGBToHex(color);
         if (!colorSwapDict.TryGetValue(colorHex, out uint newColorHex))
             return color;
+        if (newColorHex == 0)
+            return color;
         SwfRGB newColor = HexToSwfRGB(newColorHex);
         return newColor;
     }
@@ -168,6 +168,8 @@ public static class ColorSwapUtils
     {
         uint colorHex = SwfRGBAToHex(color);
         if (!colorSwapDict.TryGetValue(colorHex, out uint newColorHex))
+            return color;
+        if (newColorHex == 0)
             return color;
         SwfRGBA newColor = HexToSwfRGBA(newColorHex);
         return newColor;
@@ -191,6 +193,7 @@ public static class ColorSwapUtils
 
     private static SwfRGBA HexToSwfRGBA(uint hex)
     {
-        return new((byte)(hex >> 16), (byte)(hex >> 8), (byte)hex, (byte)(hex >> 24));
+        // rgba colors become fully opaque
+        return new((byte)(hex >> 16), (byte)(hex >> 8), (byte)hex, 255);
     }
 }
