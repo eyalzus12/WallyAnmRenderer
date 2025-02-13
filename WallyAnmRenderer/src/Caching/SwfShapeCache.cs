@@ -22,34 +22,34 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
     // (deviation from the game: we check the shapeId. this is to handle animations correctly.)
     private sealed class TextureInfoHasher : IEqualityComparer<TextureInfo>
     {
-        private static string GetTrueBoneName(TextureInfo texture)
+        private static string GetTrueSpriteName(TextureInfo texture)
         {
-            if (!texture.BoneName.StartsWith("a_Digit")) return texture.BoneName;
-            return texture.BoneName + Math.Round(texture.AnimScale * ANIM_SCALE_MULTIPLIER, 2).ToString();
+            if (!texture.SpriteName.StartsWith("a_Digit")) return texture.SpriteName;
+            return texture.SpriteName + Math.Round(texture.AnimScale * ANIM_SCALE_MULTIPLIER, 2).ToString();
         }
 
         public bool Equals(TextureInfo x, TextureInfo y)
         {
-            return x.ShapeId == y.ShapeId && GetTrueBoneName(x) == GetTrueBoneName(y);
+            return x.ShapeId == y.ShapeId && GetTrueSpriteName(x) == GetTrueSpriteName(y);
         }
 
         public int GetHashCode(TextureInfo obj)
         {
-            return HashCode.Combine(GetTrueBoneName(obj), obj.ShapeId);
+            return HashCode.Combine(GetTrueSpriteName(obj), obj.ShapeId);
         }
     }
 
     private const int SWF_UNIT_DIVISOR = 20;
     private const double ANIM_SCALE_MULTIPLIER = 1.2;
 
-    public readonly record struct TextureInfo(SwfFileData Swf, ushort ShapeId, double AnimScale, Dictionary<uint, uint> ColorSwapDict, string BoneName);
+    public readonly record struct TextureInfo(SwfFileData Swf, string SpriteName, ushort ShapeId, double AnimScale, Dictionary<uint, uint> ColorSwapDict);
     public readonly record struct ShapeData(RlImage Img, Transform2D Transform);
 
     protected override IEqualityComparer<TextureInfo>? KeyEqualityComparer { get; } = new TextureInfoHasher();
 
     protected override ShapeData LoadIntermediate(TextureInfo textureInfo)
     {
-        (SwfFileData swf, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, _) = textureInfo;
+        (SwfFileData swf, _, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) = textureInfo;
         animScale *= ANIM_SCALE_MULTIPLIER;
         ShapeBaseTag shape = swf.ShapeTags[shapeId];
 
@@ -114,12 +114,12 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         texture.Dispose();
     }
 
-    public void Load(SwfFileData swf, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, string boneName) => Load(new(swf, shapeId, animScale, colorSwapDict, boneName));
-    public void LoadInThread(SwfFileData swf, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, string boneName) => LoadInThread(new(swf, shapeId, animScale, colorSwapDict, boneName));
+    public void Load(SwfFileData swf, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) => Load(new(swf, spriteName, shapeId, animScale, colorSwapDict));
+    public void LoadInThread(SwfFileData swf, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) => LoadInThread(new(swf, spriteName, shapeId, animScale, colorSwapDict));
 
-    public bool TryGetCached(string boneName, ushort shapeId, double animScale, [MaybeNullWhen(false)] out Texture2DWrapper? texture)
+    public bool TryGetCached(string spriteName, ushort shapeId, double animScale, [MaybeNullWhen(false)] out Texture2DWrapper? texture)
     {
-        TextureInfo fake = new(null!, shapeId, animScale, null!, boneName);
+        TextureInfo fake = new(null!, spriteName, shapeId, animScale, null!);
         return TryGetCached(fake, out texture);
     }
 }

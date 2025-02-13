@@ -34,7 +34,7 @@ public sealed class Animator
         bool result = true;
         foreach (BoneSpriteWithName sprite in sprites)
         {
-            BoneShape[]? shapes = _converter.ConvertToShapes(sprite, frame);
+            BoneShape[]? shapes = _converter.ConvertToShapes(sprite);
             if (shapes is null)
             {
                 result = false;
@@ -50,11 +50,11 @@ public sealed class Animator
             foreach (BoneShape boneShape in shapes)
             {
                 Texture2DWrapper? textureWrapper = _loader.AssetLoader.LoadShapeFromSwf(
-                    boneShape.SwfFilePath,
+                    sprite.SwfFilePath,
+                    sprite.SpriteName,
                     boneShape.ShapeId,
-                    boneShape.AnimScale,
-                    boneShape.ColorSwapDict,
-                    boneShape.BoneName
+                    sprite.AnimScale,
+                    sprite.ColorSwapDict
                 );
 
                 if (textureWrapper is null)
@@ -70,7 +70,7 @@ public sealed class Animator
                     texture,
                     0, 0, texture.Width, texture.Height,
                     boneShape.Transform * textureTransform,
-                    tintA: (float)boneShape.Opacity
+                    tintA: (float)sprite.Opacity
                 );
             }
         }

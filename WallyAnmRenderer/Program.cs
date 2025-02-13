@@ -15,17 +15,17 @@ using WallyAnmRenderer;
 
 const int INITIAL_SCREEN_WIDTH = 1280;
 const int INITIAL_SCREEN_HEIGHT = 720;
-const int ANIM_FPS = 24;
+const float ANIM_FPS = 24;
 
 const uint key = 216619030;
 const string brawlhallaPath = "C:/Program Files (x86)/Steam/steamapps/common/Brawlhalla";
 
 const string ANIM_FILE = "Animation_CharacterSelect.swf";
 const string ANIM_CLASS = "a__CharacterSelectAnimation";
-const string? COSTUME_TYPE = "DarthVader";
-const string? WEAPON_SKIN_TYPE = null;
-const string ANIMATION = "IdleDarthVader";
-const string? COLOR_SCHEME = "Red";
+const string? COSTUME_TYPE = "DarthMaul";
+const string? WEAPON_SKIN_TYPE = "SpearDarthMaul";
+const string ANIMATION = "SelectedDarthMaul";
+const string? COLOR_SCHEME = "Blue";
 
 static SepReader readerFromText(string text)
 {

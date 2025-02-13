@@ -63,15 +63,15 @@ public sealed class AssetLoader
         return null;
     }
 
-    public Texture2DWrapper? LoadShapeFromSwf(string filePath, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, string boneName)
+    public Texture2DWrapper? LoadShapeFromSwf(string filePath, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict)
     {
         SwfFileData? swf = LoadSwf(filePath);
         if (swf is null)
             return null;
-        SwfShapeCache.TryGetCached(boneName, shapeId, animScale, out Texture2DWrapper? texture);
+        SwfShapeCache.TryGetCached(spriteName, shapeId, animScale, out Texture2DWrapper? texture);
         if (texture is not null)
             return texture;
-        SwfShapeCache.LoadInThread(swf, shapeId, animScale, colorSwapDict, boneName);
+        SwfShapeCache.LoadInThread(swf, spriteName, shapeId, animScale, colorSwapDict);
         return null;
     }
 
