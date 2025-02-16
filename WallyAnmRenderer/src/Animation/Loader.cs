@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
-using System.Xml.Linq;
 using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Anm;
 using SwfLib.Tags;
@@ -11,38 +9,33 @@ using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
 
-public sealed class Loader : ILoader
+public sealed class Loader(string brawlPath, uint key) : ILoader
 {
-    private readonly string _brawlPath;
-
-    public Loader(string brawlPath, uint key)
+    private string _brawlPath = brawlPath;
+    public string BrawlPath
     {
-        _brawlPath = brawlPath;
-
-        string init = Path.Join(_brawlPath, "Init.swz");
-        Dictionary<string, string> initFiles = SwzUtils.GetFilesFromSwz(init, key, ["BoneTypes.xml", "BoneSources.xml"]);
-        string boneTypes = initFiles["BoneTypes.xml"];
-        _boneTypes = [.. XElement.Parse(boneTypes).Elements("Bone").Select((ee) => ee.Value)];
-        string boneSources = initFiles["BoneSources.xml"];
-        XElement boneSourcesElement = XElement.Parse(boneSources);
-
-        _boneSources = [];
-        foreach (XElement original in boneSourcesElement.Elements("Original"))
+        get => _brawlPath;
+        set
         {
-            XElement target = original.Element("Target")!;
-            string targetName = target.Attribute("name")!.Value;
-            foreach (XElement bone in target.Elements("Bone"))
-            {
-                _boneSources[bone.Value] = "bones/" + targetName;
-            }
+            _brawlPath = value;
+            AssetLoader.BrawlPath = value;
+            SwzFiles.BrawlPath = value;
         }
-
-        AssetLoader = new(brawlPath);
     }
 
-    private readonly string[] _boneTypes;
-    private readonly Dictionary<string, string> _boneSources;
-    public AssetLoader AssetLoader { get; }
+    private uint _key = key;
+    public uint Key
+    {
+        get => _key;
+        set
+        {
+            _key = value;
+            SwzFiles.Key = value;
+        }
+    }
+
+    public SwzFiles SwzFiles { get; } = new(brawlPath, key);
+    public AssetLoader AssetLoader { get; } = new(brawlPath);
 
     public bool LoadBoneTypes()
     {
@@ -82,19 +75,21 @@ public sealed class Loader : ILoader
 
     public bool TryGetBoneName(short boneId, [MaybeNullWhen(false)] out string boneName)
     {
+        BoneTypes boneTypes = SwzFiles.Init.BoneTypes;
         boneId--;
-        if (_boneTypes is null || boneId < 0 || boneId >= _boneTypes.Length)
+        if (boneId < 0 || boneId >= boneTypes.BoneCount)
         {
             boneName = null;
             return false;
         }
-        boneName = _boneTypes[boneId];
+        boneName = boneTypes[boneId];
         return true;
     }
 
     public bool TryGetBoneFilePath(string boneName, [MaybeNullWhen(false)] out string bonePath)
     {
-        return _boneSources.TryGetValue(boneName, out bonePath);
+        BoneSources boneSources = SwzFiles.Init.BoneSources;
+        return boneSources.TryGetBoneFilePath(boneName, out bonePath);
     }
 
     public bool TryGetScriptAVar(string swfPath, string spriteName, [MaybeNullWhen(false)] out uint[] a)

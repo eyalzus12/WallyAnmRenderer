@@ -12,7 +12,7 @@ using BrawlhallaAnimLib.Reading.WeaponSkinTypes;
 using nietras.SeparatedValues;
 using Raylib_cs;
 using WallyAnmRenderer;
-
+/*
 const int INITIAL_SCREEN_WIDTH = 1280;
 const int INITIAL_SCREEN_HEIGHT = 720;
 const float ANIM_FPS = 24;
@@ -133,4 +133,8 @@ while (!Rl.WindowShouldClose())
     Rl.EndDrawing();
 }
 
-Rl.CloseWindow();
+Rl.CloseWindow();*/
+
+PathPreferences prefs = PathPreferences.Load();
+Editor editor = new(prefs);
+editor.Run();

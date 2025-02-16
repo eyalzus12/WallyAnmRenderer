@@ -12,14 +12,10 @@ namespace WallyAnmRenderer;
 public sealed class Animator
 {
     private readonly Loader _loader;
-    private readonly AnimationBuilder _builder;
-    private readonly SpriteToShapeConverter _converter;
 
     public Animator(string brawlPath, uint key)
     {
         _loader = new(brawlPath, key);
-        _builder = new(_loader);
-        _converter = new(_loader);
     }
 
     private readonly HashSet<(string, string)> _h = [];
@@ -28,13 +24,13 @@ public sealed class Animator
     {
         _loader.AssetLoader.Upload();
 
-        BoneSpriteWithName[]? sprites = _builder.BuildAnim(gfx, animation, frame, transform);
+        BoneSpriteWithName[]? sprites = AnimationBuilder.BuildAnim(_loader, gfx, animation, frame, transform);
         if (sprites is null) return false;
 
         bool result = true;
         foreach (BoneSpriteWithName sprite in sprites)
         {
-            BoneShape[]? shapes = _converter.ConvertToShapes(sprite);
+            BoneShape[]? shapes = SpriteToShapeConverter.ConvertToShapes(_loader, sprite);
             if (shapes is null)
             {
                 result = false;

@@ -1,0 +1,169 @@
+using System;
+using System.Numerics;
+using System.IO;
+using System.Threading.Tasks;
+
+using Raylib_cs;
+using rlImGui_cs;
+using ImGuiNET;
+
+namespace WallyAnmRenderer;
+
+public sealed class Editor
+{
+    public const float ZOOM_INCREMENT = 0.15f;
+    public const float MIN_ZOOM = 0.01f;
+    public const float MAX_ZOOM = 5.0f;
+    public const float LINE_WIDTH = 5; // width at Camera zoom = 1
+    public const int INITIAL_SCREEN_WIDTH = 1280;
+    public const int INITIAL_SCREEN_HEIGHT = 720;
+
+    private Camera2D _cam = new();
+    public TimeSpan Time { get; set; } = TimeSpan.FromSeconds(0);
+
+    PathPreferences PathPrefs { get; }
+
+    public ViewportWindow ViewportWindow { get; set; } = new();
+
+    private bool _showMainMenuBar = true;
+
+    public Editor(PathPreferences pathPrefs)
+    {
+        PathPrefs = pathPrefs;
+    }
+
+    public void Run()
+    {
+        Setup();
+
+        while (!Rl.WindowShouldClose())
+        {
+            float delta = Rl.GetFrameTime();
+            Time += TimeSpan.FromSeconds(delta);
+            Draw();
+            Update();
+        }
+
+        Rl.CloseWindow();
+    }
+
+    private void Setup()
+    {
+        LogCallback.Init();
+
+        Rl.SetConfigFlags(ConfigFlags.VSyncHint);
+        Rl.SetConfigFlags(ConfigFlags.ResizableWindow);
+        Rl.InitWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "WallyAnmRenderer");
+        Rl.SetExitKey(KeyboardKey.Null);
+        rlImGui.Setup(true, true);
+        Style.Apply();
+
+        ResetCam(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT);
+    }
+
+    private void Draw()
+    {
+        Rl.BeginDrawing();
+        Rl.ClearBackground(RlColor.Black);
+        Rlgl.SetLineWidth(Math.Max(LINE_WIDTH * _cam.Zoom, 1));
+        rlImGui.Begin();
+        ImGui.PushFont(Style.Font);
+
+        Gui();
+
+        Rl.BeginTextureMode(ViewportWindow.Framebuffer);
+        Rl.BeginMode2D(_cam);
+
+        Rl.ClearBackground(RlColor.Black);
+
+        // draw logic here
+        Rl.DrawRectangle(-100, -100, 200, 200, RlColor.Blue);
+
+        Rl.EndMode2D();
+        Rl.EndTextureMode();
+
+        ImGui.PopFont();
+        rlImGui.End();
+        Rl.EndDrawing();
+    }
+
+    private void Gui()
+    {
+        ImGui.DockSpaceOverViewport();
+        if (_showMainMenuBar)
+            ShowMainMenuBar();
+
+        if (ViewportWindow.Open)
+            ViewportWindow.Show();
+    }
+
+    private void ShowMainMenuBar()
+    {
+        ImGui.BeginMainMenuBar();
+
+        if (ImGui.BeginMenu("Test"))
+        {
+            if (ImGui.MenuItem("Test2")) { }
+            ImGui.EndMenu();
+        }
+
+        ImGui.EndMainMenuBar();
+    }
+
+    private void Update()
+    {
+        ImGuiIOPtr io = ImGui.GetIO();
+        bool wantCaptureKeyboard = io.WantCaptureKeyboard;
+
+        if (ViewportWindow.Hovered)
+        {
+            float wheel = Rl.GetMouseWheelMove();
+            if (wheel != 0)
+            {
+                _cam.Target = ViewportWindow.ScreenToWorld(Rl.GetMousePosition(), _cam);
+                _cam.Offset = Rl.GetMousePosition() - ViewportWindow.Bounds.P1;
+                _cam.Zoom = Math.Clamp(_cam.Zoom + wheel * ZOOM_INCREMENT * _cam.Zoom, MIN_ZOOM, MAX_ZOOM);
+            }
+
+            if (Rl.IsMouseButtonDown(MouseButton.Right))
+            {
+                Vector2 delta = Rl.GetMouseDelta();
+                delta = Raymath.Vector2Scale(delta, -1.0f / _cam.Zoom);
+                _cam.Target += delta;
+            }
+
+            if (!wantCaptureKeyboard && Rl.IsKeyPressed(KeyboardKey.R) && !Rl.IsKeyDown(KeyboardKey.LeftControl))
+                ResetCam((int)ViewportWindow.Bounds.Width, (int)ViewportWindow.Bounds.Height);
+        }
+
+        //if (ViewportWindow.Hovered && Rl.IsMouseButtonReleased(MouseButton.Left))
+        //  Selection.Object = PickingFramebuffer.GetObjectAtCoords(ViewportWindow, Canvas, Level, _cam, _renderConfig, _state);
+
+        if (!wantCaptureKeyboard)
+        {
+            if (Rl.IsKeyPressed(KeyboardKey.F11)) Rl.ToggleFullscreen();
+            if (Rl.IsKeyPressed(KeyboardKey.F1)) _showMainMenuBar = !_showMainMenuBar;
+        }
+    }
+
+    public Vector2 ScreenToWorld(Vector2 screenPos) =>
+        Rl.GetScreenToWorld2D(screenPos - ViewportWindow.Bounds.P1, _cam);
+
+    public void ResetCam() => ResetCam((int)ViewportWindow.Bounds.Width, (int)ViewportWindow.Bounds.Height);
+
+    public void ResetCam(int surfaceW, int surfaceH)
+    {
+        _cam.Zoom = 1.0f;
+        var bounds = new { X = 0, Y = 0, W = 1024, H = 576 };
+        double scale = Math.Min(surfaceW / bounds.W, surfaceH / bounds.H);
+        _cam.Offset = new(0);
+        _cam.Target = new(bounds.X, bounds.Y);
+        _cam.Zoom = (float)scale;
+    }
+
+    ~Editor()
+    {
+        rlImGui.Shutdown();
+        Rl.CloseWindow();
+    }
+}
