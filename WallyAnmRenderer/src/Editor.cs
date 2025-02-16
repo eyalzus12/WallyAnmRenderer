@@ -1,11 +1,12 @@
 using System;
 using System.Numerics;
-using System.IO;
-using System.Threading.Tasks;
 
 using Raylib_cs;
 using rlImGui_cs;
 using ImGuiNET;
+using BrawlhallaAnimLib.Gfx;
+using BrawlhallaAnimLib.Math;
+using System.ComponentModel.DataAnnotations;
 
 namespace WallyAnmRenderer;
 
@@ -21,7 +22,9 @@ public sealed class Editor
     private Camera2D _cam = new();
     public TimeSpan Time { get; set; } = TimeSpan.FromSeconds(0);
 
-    PathPreferences PathPrefs { get; }
+    private PathPreferences PathPrefs { get; }
+    public Animator? Animator { get; private set; }
+    public GfxInfo? Gfx { get; private set; }
 
     public ViewportWindow ViewportWindow { get; set; } = new();
 
@@ -30,6 +33,16 @@ public sealed class Editor
     public Editor(PathPreferences pathPrefs)
     {
         PathPrefs = pathPrefs;
+
+        PathPrefs.BrawlhallaPathChanged += (_, path) =>
+        {
+            if (Animator is not null) Animator.BrawlPath = path;
+        };
+
+        PathPrefs.DecryptionKeyChanged += (_, key) =>
+        {
+            if (Animator is not null) Animator.Key = key;
+        };
     }
 
     public void Run()
@@ -79,6 +92,12 @@ public sealed class Editor
         // draw logic here
         Rl.DrawRectangle(-100, -100, 200, 200, RlColor.Blue);
 
+        if (Animator is not null && Gfx is not null)
+        {
+            (IGfxType gfxType, string animation) = Gfx.ToGfxType(Animator.Loader.SwzFiles.Game);
+            Animator.Animate(gfxType, animation, 0, Transform2D.IDENTITY);
+        }
+
         Rl.EndMode2D();
         Rl.EndTextureMode();
 
@@ -114,6 +133,11 @@ public sealed class Editor
     {
         ImGuiIOPtr io = ImGui.GetIO();
         bool wantCaptureKeyboard = io.WantCaptureKeyboard;
+
+        if (PathPrefs.BrawlhallaPath is not null && PathPrefs.DecryptionKey is not null)
+        {
+            Animator ??= new(PathPrefs.BrawlhallaPath, PathPrefs.DecryptionKey.Value);
+        }
 
         if (ViewportWindow.Hovered)
         {

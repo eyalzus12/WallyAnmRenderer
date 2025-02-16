@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Xml.Linq;
 
 namespace WallyAnmRenderer;
@@ -16,4 +17,11 @@ public sealed class ColorSchemeTypes
             _colorSchemes[name] = new(colorScheme);
         }
     }
+
+    public bool TryGetColorScheme(string name, [MaybeNullWhen(false)] out ColorScheme colorScheme)
+    {
+        return _colorSchemes.TryGetValue(name, out colorScheme);
+    }
+
+    public IEnumerable<string> ColorSchemes => _colorSchemes.Keys;
 }

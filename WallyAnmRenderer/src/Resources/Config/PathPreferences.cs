@@ -10,19 +10,29 @@ public class PathPreferences
     public const string FILE_NAME = "PathPreferences.xml";
 
     public event EventHandler<string>? BrawlhallaPathChanged;
+    public event EventHandler<uint>? DecryptionKeyChanged;
 
     private string? _brawlhallaPath;
     public string? BrawlhallaPath { get => _brawlhallaPath; set => SetBrawlhallaPath(value); }
     public string? BrawlhallaAirPath { get; set; }
 
-    public string? DecryptionKey { get; set; }
+    private uint? _decryptionKey;
+    public uint? DecryptionKey
+    {
+        get => _decryptionKey;
+        set
+        {
+            _decryptionKey = value;
+            if (value is not null)
+                DecryptionKeyChanged?.Invoke(this, value.Value);
+        }
+    }
 
     public static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         APPDATA_DIR_NAME,
         FILE_NAME
     );
-
 
     public static PathPreferences Load()
     {
@@ -57,7 +67,9 @@ public class PathPreferences
     {
         _brawlhallaPath = e.Element(nameof(BrawlhallaPath))?.Value; // don't trigger setter!
         BrawlhallaAirPath = e.Element(nameof(BrawlhallaAirPath))?.Value;
-        DecryptionKey = e.Element(nameof(DecryptionKey))?.Value;
+        string? decryptionKeyString = e.Element(nameof(DecryptionKey))?.Value;
+        if (decryptionKeyString is not null && uint.TryParse(decryptionKeyString, out uint key))
+            _decryptionKey = key;
     }
 
     public void Serialize(XElement e)

@@ -9,28 +9,26 @@ using Raylib_cs;
 
 namespace WallyAnmRenderer;
 
-public sealed class Animator
+public sealed class Animator(string brawlPath, uint key)
 {
-    private readonly Loader _loader;
+    public string BrawlPath { get => Loader.BrawlPath; set => Loader.BrawlPath = value; }
+    public uint Key { get => Loader.Key; set => Loader.Key = value; }
 
-    public Animator(string brawlPath, uint key)
-    {
-        _loader = new(brawlPath, key);
-    }
+    public Loader Loader { get; } = new(brawlPath, key);
 
     private readonly HashSet<(string, string)> _h = [];
 
     public bool Animate(IGfxType gfx, string animation, long frame, Transform2D transform)
     {
-        _loader.AssetLoader.Upload();
+        Loader.AssetLoader.Upload();
 
-        BoneSpriteWithName[]? sprites = AnimationBuilder.BuildAnim(_loader, gfx, animation, frame, transform);
+        BoneSpriteWithName[]? sprites = AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform);
         if (sprites is null) return false;
 
         bool result = true;
         foreach (BoneSpriteWithName sprite in sprites)
         {
-            BoneShape[]? shapes = SpriteToShapeConverter.ConvertToShapes(_loader, sprite);
+            BoneShape[]? shapes = SpriteToShapeConverter.ConvertToShapes(Loader, sprite);
             if (shapes is null)
             {
                 result = false;
@@ -45,7 +43,7 @@ public sealed class Animator
 
             foreach (BoneShape boneShape in shapes)
             {
-                Texture2DWrapper? textureWrapper = _loader.AssetLoader.LoadShapeFromSwf(
+                Texture2DWrapper? textureWrapper = Loader.AssetLoader.LoadShapeFromSwf(
                     sprite.SwfFilePath,
                     sprite.SpriteName,
                     boneShape.ShapeId,
