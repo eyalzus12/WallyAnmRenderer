@@ -64,12 +64,12 @@ public sealed class Animator
                 }
 
                 Texture2D texture = textureWrapper.Texture;
-                Transform2D textureTransform = textureWrapper.Transform;
+                Transform2D drawTransform = boneShape.Transform * textureWrapper.Transform;
 
                 RaylibUtils.DrawTextureWithTransform(
                     texture,
                     0, 0, texture.Width, texture.Height,
-                    boneShape.Transform * textureTransform,
+                    drawTransform,
                     tintA: (float)sprite.Opacity
                 );
             }

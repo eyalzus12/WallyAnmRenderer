@@ -9,6 +9,8 @@ namespace WallyAnmRenderer;
 
 public sealed class AssetLoader
 {
+    public bool AnmLoadingFinished { get; private set; }
+
     private string _brawlPath;
     public string BrawlPath
     {
@@ -31,25 +33,36 @@ public sealed class AssetLoader
     public SwfShapeCache SwfShapeCache { get; } = new();
     public ConcurrentDictionary<string, AnmClass> AnmClasses { get; set; } = [];
 
-    private void LoadAnmInThread(string name)
+    private async Task LoadAnmInThread(string name)
     {
-        Task.Run(() =>
+        await Task.Run(() =>
         {
-            string anmPath = Path.Combine(_brawlPath, "anims", $"Animation_{name}.anm");
-            AnmFile anm;
-            using (FileStream file = File.OpenRead(anmPath))
-                anm = AnmFile.CreateFrom(file);
-            foreach ((string className, AnmClass @class) in anm.Classes)
+            try
             {
-                AnmClasses[className] = @class;
-
-                Console.WriteLine($"Anim class {className} has the following animations:");
-                foreach (string animation in @class.Animations.Keys)
+                Console.WriteLine("Starting to load anm {0}", name);
+                string anmPath = Path.Combine(_brawlPath, "anims", $"{name}.anm");
+                AnmFile anm;
+                using (FileStream file = File.OpenRead(anmPath))
+                    anm = AnmFile.CreateFrom(file);
+                Console.WriteLine("Loaded anm {0}", name);
+                foreach ((string className, AnmClass @class) in anm.Classes)
                 {
-                    Console.WriteLine($"    {animation}");
+                    AnmClasses[className] = @class;
+
+                    Console.WriteLine($"Anim class {className} has the following animations:");
+                    foreach (string animation in @class.Animations.Keys)
+                    {
+                        Console.WriteLine($"    {animation}");
+                    }
                 }
+                Console.WriteLine("Finished loading anm {0}", name);
             }
-            Console.WriteLine($"Loaded {name}");
+            catch (Exception e)
+            {
+                Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
+                Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
+                throw;
+            }
         });
     }
 
@@ -89,12 +102,14 @@ public sealed class AssetLoader
 
     public void ReloadAnmCache()
     {
+        AnmLoadingFinished = false;
         AnmClasses.Clear();
-        LoadAnms();
+        _ = LoadAnms();
     }
 
-    public void LoadAnms()
+    public async Task LoadAnms()
     {
-        LoadAnmInThread("CharacterSelect");
+        await LoadAnmInThread("Animation_CharacterSelect");
+        AnmLoadingFinished = true;
     }
 }

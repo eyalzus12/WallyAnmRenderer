@@ -64,6 +64,11 @@ public sealed class Loader : ILoader
         return AssetLoader.LoadSwf(swfPath) is not null;
     }
 
+    public bool LoadAnms()
+    {
+        return AssetLoader.AnmLoadingFinished;
+    }
+
     public bool TryGetAnmClass(string classIdentifier, [MaybeNullWhen(false)] out IAnmClass anmClass)
     {
         if (AssetLoader.AnmClasses.TryGetValue(classIdentifier, out AnmClass? @class))
