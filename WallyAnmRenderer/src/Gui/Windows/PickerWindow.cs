@@ -26,6 +26,9 @@ public sealed class PickerWindow
         ImGui.SeparatorText("Weapon skin Types");
         WeaponSkinTypeSection(loader, info);
 
+        ImGui.SeparatorText("Color scheme");
+        ColorSchemeSection(loader, info);
+
         ImGui.End();
     }
 
@@ -98,6 +101,23 @@ public sealed class PickerWindow
             {
                 if (ImGui.Selectable(weaponSkinType, weaponSkinType == info.WeaponSkinType))
                     info.WeaponSkinType = weaponSkinType;
+            }
+            ImGui.EndListBox();
+        }
+    }
+
+    private static void ColorSchemeSection(Loader loader, GfxInfo info)
+    {
+        ColorSchemeTypes colorSchemeTypes = loader.SwzFiles.Game.ColorSchemeTypes;
+        if (ImGui.BeginListBox("###colorselect"))
+        {
+            foreach (string? colorScheme in colorSchemeTypes.ColorSchemes.Prepend<string?>(null))
+            {
+                if (ImGui.Selectable(colorScheme ?? "None##none", colorScheme == info.ColorScheme))
+                {
+                    info.ColorScheme = colorScheme;
+                    loader.ClearCache();
+                }
             }
             ImGui.EndListBox();
         }

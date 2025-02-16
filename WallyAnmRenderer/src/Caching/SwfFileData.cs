@@ -25,6 +25,7 @@ public sealed class SwfFileData
     public static SwfFileData CreateFrom(Stream stream)
     {
         SwfFileData swf = new() { Swf = SwfFile.ReadFrom(stream) };
+        stream.Dispose();
         PopulateSpriteADict(swf);
 
         SymbolClassTag? symbolClass = null;

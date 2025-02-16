@@ -37,6 +37,11 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
     public SwzFiles SwzFiles { get; } = new(brawlPath, key);
     public AssetLoader AssetLoader { get; } = new(brawlPath);
 
+    public void ClearCache()
+    {
+        AssetLoader.ClearCache();
+    }
+
     public bool LoadBoneTypes()
     {
         return true;

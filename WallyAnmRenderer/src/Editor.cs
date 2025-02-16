@@ -83,7 +83,7 @@ public sealed class Editor
     {
         Rl.BeginDrawing();
         Rl.ClearBackground(RlColor.Black);
-        Rlgl.SetLineWidth(Math.Max(LINE_WIDTH * _cam.Zoom, 1));
+        //Rlgl.SetLineWidth(Math.Max(LINE_WIDTH * _cam.Zoom, 1));
         rlImGui.Begin();
         ImGui.PushFont(Style.Font);
 
@@ -94,13 +94,13 @@ public sealed class Editor
 
         Rl.ClearBackground(RlColor.Black);
 
-        if (Animator is not null && GfxInfo is not null)
+        if (Animator is not null)
         {
             (IGfxType, string)? info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
             if (info is not null)
             {
                 (IGfxType gfxType, string animation) = info.Value;
-                Animator.Animate(gfxType, animation, 0, Transform2D.IDENTITY);
+                Animator.Animate(gfxType, animation, (long)Math.Floor(24 * Time.TotalSeconds), Transform2D.IDENTITY);
             }
         }
 
