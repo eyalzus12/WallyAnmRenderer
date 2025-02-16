@@ -6,7 +6,6 @@ using rlImGui_cs;
 using ImGuiNET;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
-using System.ComponentModel.DataAnnotations;
 
 namespace WallyAnmRenderer;
 
@@ -24,9 +23,11 @@ public sealed class Editor
 
     private PathPreferences PathPrefs { get; }
     public Animator? Animator { get; private set; }
-    public GfxInfo? Gfx { get; private set; }
+    public GfxInfo GfxInfo { get; private set; } = new();
 
-    public ViewportWindow ViewportWindow { get; set; } = new();
+    public ViewportWindow ViewportWindow { get; } = new();
+    public PathsWindow PathsWindow { get; } = new();
+    public PickerWindow PickerWindow { get; } = new();
 
     private bool _showMainMenuBar = true;
 
@@ -57,12 +58,16 @@ public sealed class Editor
             Update();
         }
 
+        PathPrefs.Save();
+
         Rl.CloseWindow();
     }
 
     private void Setup()
     {
         LogCallback.Init();
+
+        PathsWindow.Open = true;
 
         Rl.SetConfigFlags(ConfigFlags.VSyncHint);
         Rl.SetConfigFlags(ConfigFlags.ResizableWindow);
@@ -89,13 +94,14 @@ public sealed class Editor
 
         Rl.ClearBackground(RlColor.Black);
 
-        // draw logic here
-        Rl.DrawRectangle(-100, -100, 200, 200, RlColor.Blue);
-
-        if (Animator is not null && Gfx is not null)
+        if (Animator is not null && GfxInfo is not null)
         {
-            (IGfxType gfxType, string animation) = Gfx.ToGfxType(Animator.Loader.SwzFiles.Game);
-            Animator.Animate(gfxType, animation, 0, Transform2D.IDENTITY);
+            (IGfxType, string)? info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
+            if (info is not null)
+            {
+                (IGfxType gfxType, string animation) = info.Value;
+                Animator.Animate(gfxType, animation, 0, Transform2D.IDENTITY);
+            }
         }
 
         Rl.EndMode2D();
@@ -114,15 +120,21 @@ public sealed class Editor
 
         if (ViewportWindow.Open)
             ViewportWindow.Show();
+        if (PathsWindow.Open)
+            PathsWindow.Show(PathPrefs);
+        if (PickerWindow.Open && Animator is not null)
+            PickerWindow.Show(Animator.Loader, GfxInfo);
     }
 
     private void ShowMainMenuBar()
     {
         ImGui.BeginMainMenuBar();
 
-        if (ImGui.BeginMenu("Test"))
+        if (ImGui.BeginMenu("View"))
         {
-            if (ImGui.MenuItem("Test2")) { }
+            if (ImGui.MenuItem("Viewport", null, ViewportWindow.Open)) ViewportWindow.Open = !ViewportWindow.Open;
+            if (ImGui.MenuItem("Pick paths", null, PathsWindow.Open)) PathsWindow.Open = !PathsWindow.Open;
+            if (ImGui.MenuItem("Pick animation", null, PickerWindow.Open)) PickerWindow.Open = !PickerWindow.Open;
             ImGui.EndMenu();
         }
 

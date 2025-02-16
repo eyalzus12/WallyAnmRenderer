@@ -7,17 +7,20 @@ namespace WallyAnmRenderer;
 
 public sealed class GfxInfo
 {
-    public required string AnimClass { get; set; }
-    public required string AnimFile { get; set; }
-    public required string Animation { get; set; }
+    public string? AnimClass { get; set; }
+    public string? AnimFile { get; set; }
+    public string? Animation { get; set; }
     public double AnimScale { get; set; } = 2;
 
     public string? CostumeType { get; set; }
     public string? WeaponSkinType { get; set; }
     public string? ColorScheme { get; set; }
 
-    public (IGfxType gfx, string animation) ToGfxType(SwzGameFile gameFiles)
+    public (IGfxType gfx, string animation)? ToGfxType(SwzGameFile gameFiles)
     {
+        if (AnimClass is null || AnimFile is null || Animation is null)
+            return null;
+
         ColorExceptionTypes colorExceptionTypes = gameFiles.ColorExceptionTypes;
 
         IGfxType gfx = new GfxType()
