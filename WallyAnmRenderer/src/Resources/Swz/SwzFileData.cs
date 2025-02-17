@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Xml;
 using System.Xml.Linq;
 using BrawlhallaSwz;
 using nietras.SeparatedValues;
@@ -19,7 +18,7 @@ public sealed class SwzFileData
         while (reader.HasNext())
         {
             string file = reader.ReadFile();
-            string filename = BrawlhallaSwz.SwzUtils.GetFileName(file);
+            string filename = SwzUtils.GetFileName(file);
             if (!filesToRead.Contains(filename)) continue;
             _files[filename] = file;
         }
@@ -69,8 +68,17 @@ public sealed class SwzGameFile
 
         static SepReader readerFromText(string text)
         {
-            SepReaderOptions reader = new(Sep.New(',')) { DisableColCountCheck = true, Unescape = true };
-            return reader.FromText(text.Split('\n', 2)[1]);
+            StringReader textReader = new(text);
+            textReader.ReadLine(); // skip first line bullshit
+            SepReaderOptions reader = Sep.New(',').Reader((opts) =>
+            {
+                return opts with
+                {
+                    DisableColCountCheck = true,
+                    Unescape = true,
+                };
+            });
+            return reader.From(textReader);
         }
 
         string costumeTypesContent = _data["costumeTypes.csv"];
