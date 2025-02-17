@@ -72,6 +72,10 @@ public sealed class Editor
         Rl.SetConfigFlags(ConfigFlags.VSyncHint);
         Rl.SetConfigFlags(ConfigFlags.ResizableWindow);
         Rl.InitWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "WallyAnmRenderer");
+        // window position ends up too high for me. tf?
+        Vector2 windowPos = Rl.GetWindowPosition();
+        Rl.SetWindowPosition((int)windowPos.X, (int)windowPos.Y + 20);
+
         Rl.SetExitKey(KeyboardKey.Null);
         rlImGui.Setup(true, true);
         Style.Apply();
