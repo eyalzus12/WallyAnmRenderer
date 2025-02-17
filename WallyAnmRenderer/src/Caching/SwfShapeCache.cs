@@ -53,7 +53,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         animScale *= ANIM_SCALE_MULTIPLIER;
         ShapeBaseTag shape = swf.ShapeTags[shapeId];
 
-        // modify the shape with color swaps
+        shape = SwfUtils.DeepCloneShape(shape);
         ColorSwapUtils.ApplyColorSwaps(shape, colorSwapDict);
 
         SwfShape compiledShape = new(new(shape));

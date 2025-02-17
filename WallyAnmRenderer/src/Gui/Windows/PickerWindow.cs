@@ -130,7 +130,7 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(colorScheme ?? "None##none", colorScheme == info.ColorScheme))
                 {
                     info.ColorScheme = colorScheme;
-                    loader.ClearCache();
+                    loader.AssetLoader.SwfShapeCache.Clear();
                 }
             }
             ImGui.EndListBox();
