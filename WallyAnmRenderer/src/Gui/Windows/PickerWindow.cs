@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ImGuiNET;
 using WallyAnmSpinzor;
@@ -12,6 +13,7 @@ public sealed class PickerWindow
 
     private string _costumeTypeFilter = "";
     private string _weaponSkinTypeFilter = "";
+    private string _colorSchemeFilter = "";
 
     public void Show(Loader loader, GfxInfo info)
     {
@@ -32,7 +34,9 @@ public sealed class PickerWindow
         ImGui.End();
     }
 
-    private static void AnimationSection(Loader loader, GfxInfo info)
+    private readonly Dictionary<string, string> _animationFilterState = [];
+
+    private void AnimationSection(Loader loader, GfxInfo info)
     {
         if (!loader.AssetLoader.AnmLoadingFinished)
         {
@@ -55,9 +59,17 @@ public sealed class PickerWindow
                 foreach (string animClass in group)
                 {
                     AnmClass anmClass = loader.AssetLoader.AnmClasses[$"{animFile}/{animClass}"];
+
+                    string filter = _animationFilterState.GetValueOrDefault(animClass, "");
+                    if (ImGui.InputText("Filter animations", ref filter, 256))
+                    {
+                        _animationFilterState[animClass] = filter;
+                    }
+
                     if (ImGui.BeginListBox(animClass))
                     {
-                        foreach (string animation in anmClass.Animations.Keys)
+                        IEnumerable<string> filteredAnimations = anmClass.Animations.Keys.Where(a => a.Contains(filter, StringComparison.InvariantCultureIgnoreCase));
+                        foreach (string animation in filteredAnimations)
                         {
                             if (ImGui.Selectable(animation, animation == info.Animation))
                             {
@@ -77,13 +89,13 @@ public sealed class PickerWindow
     private void CostumeTypeSection(Loader loader, GfxInfo info)
     {
         CostumeTypes costumeTypes = loader.SwzFiles.Game.CostumeTypes;
-        string[] filteredCostumeTypes = [.. costumeTypes.Costumes.Where(s => s.Contains(_costumeTypeFilter, StringComparison.InvariantCultureIgnoreCase))];
+        IEnumerable<string> filteredCostumeTypes = costumeTypes.Costumes.Where(s => s.Contains(_costumeTypeFilter, StringComparison.InvariantCultureIgnoreCase));
         ImGui.InputText("Filter costumes", ref _costumeTypeFilter, 256);
         if (ImGui.BeginListBox("###costumeselect"))
         {
-            foreach (string costumeType in filteredCostumeTypes)
+            foreach (string? costumeType in filteredCostumeTypes.Prepend<string?>(null))
             {
-                if (ImGui.Selectable(costumeType, costumeType == info.CostumeType))
+                if (ImGui.Selectable(costumeType ?? "None##none", costumeType == info.CostumeType))
                     info.CostumeType = costumeType;
             }
             ImGui.EndListBox();
@@ -93,25 +105,27 @@ public sealed class PickerWindow
     private void WeaponSkinTypeSection(Loader loader, GfxInfo info)
     {
         WeaponSkinTypes weaponSkinTypes = loader.SwzFiles.Game.WeaponSkinTypes;
-        string[] filteredWeaponSkinTypes = [.. weaponSkinTypes.WeaponSkins.Where(s => s.Contains(_weaponSkinTypeFilter, StringComparison.InvariantCultureIgnoreCase))];
+        IEnumerable<string> filteredWeaponSkinTypes = weaponSkinTypes.WeaponSkins.Where(s => s.Contains(_weaponSkinTypeFilter, StringComparison.InvariantCultureIgnoreCase));
         ImGui.InputText("Filter weapon skins", ref _weaponSkinTypeFilter, 256);
         if (ImGui.BeginListBox("###weaponselect"))
         {
-            foreach (string weaponSkinType in filteredWeaponSkinTypes)
+            foreach (string? weaponSkinType in filteredWeaponSkinTypes.Prepend<string?>(null))
             {
-                if (ImGui.Selectable(weaponSkinType, weaponSkinType == info.WeaponSkinType))
+                if (ImGui.Selectable(weaponSkinType ?? "None##none", weaponSkinType == info.WeaponSkinType))
                     info.WeaponSkinType = weaponSkinType;
             }
             ImGui.EndListBox();
         }
     }
 
-    private static void ColorSchemeSection(Loader loader, GfxInfo info)
+    private void ColorSchemeSection(Loader loader, GfxInfo info)
     {
         ColorSchemeTypes colorSchemeTypes = loader.SwzFiles.Game.ColorSchemeTypes;
+        IEnumerable<string> filteredColorSchemes = colorSchemeTypes.ColorSchemes.Where(s => s.Contains(_weaponSkinTypeFilter, StringComparison.InvariantCultureIgnoreCase));
+        ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
         if (ImGui.BeginListBox("###colorselect"))
         {
-            foreach (string? colorScheme in colorSchemeTypes.ColorSchemes.Prepend<string?>(null))
+            foreach (string? colorScheme in filteredColorSchemes.Prepend<string?>(null))
             {
                 if (ImGui.Selectable(colorScheme ?? "None##none", colorScheme == info.ColorScheme))
                 {
