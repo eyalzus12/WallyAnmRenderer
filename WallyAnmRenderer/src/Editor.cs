@@ -18,7 +18,7 @@ public sealed class Editor
     public const int INITIAL_SCREEN_WIDTH = 1280;
     public const int INITIAL_SCREEN_HEIGHT = 720;
 
-    private Camera2D _cam = new();
+    private Camera2D _cam;
     public TimeSpan Time { get; set; } = TimeSpan.FromSeconds(0);
 
     private PathPreferences PathPrefs { get; }
@@ -30,6 +30,9 @@ public sealed class Editor
     public PickerWindow PickerWindow { get; } = new();
 
     private bool _showMainMenuBar = true;
+
+    private int _preFullScreenW;
+    private int _preFullScreenH;
 
     public Editor(PathPreferences pathPrefs)
     {
@@ -67,7 +70,7 @@ public sealed class Editor
     {
         LogCallback.Init();
 
-        PathsWindow.Open = true;
+        PathsWindow.Open = PathPrefs.DecryptionKey is null || PathPrefs.BrawlhallaPath is null;
 
         Rl.SetConfigFlags(ConfigFlags.VSyncHint);
         Rl.SetConfigFlags(ConfigFlags.ResizableWindow);
@@ -87,7 +90,7 @@ public sealed class Editor
     {
         Rl.BeginDrawing();
         Rl.ClearBackground(RlColor.Black);
-        //Rlgl.SetLineWidth(Math.Max(LINE_WIDTH * _cam.Zoom, 1));
+        Rlgl.SetLineWidth(Math.Max(LINE_WIDTH * _cam.Zoom, 1));
         rlImGui.Begin();
         ImGui.PushFont(Style.Font);
 
@@ -104,7 +107,10 @@ public sealed class Editor
             if (info is not null)
             {
                 (IGfxType gfxType, string animation) = info.Value;
-                Animator.Animate(gfxType, animation, (long)Math.Floor(24 * Time.TotalSeconds), Transform2D.IDENTITY);
+                float width = ViewportWindow.Bounds.Width;
+                float height = ViewportWindow.Bounds.Height;
+                Transform2D center = Transform2D.CreateTranslate(width / 2.0, height / 2.0);
+                Animator.Animate(gfxType, animation, (long)Math.Floor(24 * Time.TotalSeconds), center);
             }
         }
 
@@ -172,8 +178,8 @@ public sealed class Editor
                 _cam.Target += delta;
             }
 
-            if (!wantCaptureKeyboard && Rl.IsKeyPressed(KeyboardKey.R) && !Rl.IsKeyDown(KeyboardKey.LeftControl))
-                ResetCam((int)ViewportWindow.Bounds.Width, (int)ViewportWindow.Bounds.Height);
+            if (!wantCaptureKeyboard && Rl.IsKeyPressed(KeyboardKey.R))
+                ResetCam();
         }
 
         //if (ViewportWindow.Hovered && Rl.IsMouseButtonReleased(MouseButton.Left))
@@ -181,7 +187,23 @@ public sealed class Editor
 
         if (!wantCaptureKeyboard)
         {
-            if (Rl.IsKeyPressed(KeyboardKey.F11)) Rl.ToggleFullscreen();
+            if (Rl.IsKeyPressed(KeyboardKey.F11))
+            {
+                // bullshit to handle multiple monitors
+                if (Rl.IsWindowFullscreen())
+                {
+                    Rl.ToggleFullscreen();
+                    Rl.SetWindowSize(_preFullScreenW, _preFullScreenH);
+                }
+                else
+                {
+                    int monitor = Rl.GetCurrentMonitor();
+                    _preFullScreenW = Rl.GetScreenWidth();
+                    _preFullScreenH = Rl.GetScreenHeight();
+                    Rl.SetWindowSize(Rl.GetMonitorWidth(monitor), Rl.GetMonitorHeight(monitor));
+                    Rl.ToggleFullscreen();
+                }
+            }
             if (Rl.IsKeyPressed(KeyboardKey.F1)) _showMainMenuBar = !_showMainMenuBar;
         }
     }
@@ -189,16 +211,15 @@ public sealed class Editor
     public Vector2 ScreenToWorld(Vector2 screenPos) =>
         Rl.GetScreenToWorld2D(screenPos - ViewportWindow.Bounds.P1, _cam);
 
-    public void ResetCam() => ResetCam((int)ViewportWindow.Bounds.Width, (int)ViewportWindow.Bounds.Height);
+    public void ResetCam() => ResetCam(ViewportWindow.Bounds.Width, ViewportWindow.Bounds.Height);
 
-    public void ResetCam(int surfaceW, int surfaceH)
+    public void ResetCam(float surfaceW, float surfaceH)
     {
-        _cam.Zoom = 1.0f;
-        var bounds = new { X = 0, Y = 0, W = 1024, H = 576 };
-        double scale = Math.Min(surfaceW / bounds.W, surfaceH / bounds.H);
-        _cam.Offset = new(0);
-        _cam.Target = new(bounds.X, bounds.Y);
-        _cam.Zoom = (float)scale;
+        // TODO: pick non-arbitrary size
+        float scale = MathF.Min(surfaceW / 1024, surfaceH / 768);
+        _cam.Offset = new(0, 160); // ~legend height
+        _cam.Target = new(0, 0);
+        _cam.Zoom = scale;
     }
 
     ~Editor()

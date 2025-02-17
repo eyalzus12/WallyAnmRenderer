@@ -35,27 +35,21 @@ public sealed class AssetLoader
 
     private async Task LoadAnmInThread(string name)
     {
-        await Task.Run(() =>
+        await Task.Run(async () =>
         {
             try
             {
-                Console.WriteLine("Starting to load anm {0}", name);
+                await Console.Out.WriteLineAsync($"Starting to load anm {name}");
                 string anmPath = Path.Combine(_brawlPath, "anims", $"{name}.anm");
                 AnmFile anm;
                 using (FileStream file = File.OpenRead(anmPath))
                     anm = AnmFile.CreateFrom(file);
-                Console.WriteLine("Loaded anm {0}", name);
+                await Console.Out.WriteLineAsync($"Loaded anm {name}");
                 foreach ((string className, AnmClass @class) in anm.Classes)
                 {
                     AnmClasses[className] = @class;
-
-                    Console.WriteLine($"Anim class {className} has the following animations:");
-                    foreach (string animation in @class.Animations.Keys)
-                    {
-                        Console.WriteLine($"    {animation}");
-                    }
                 }
-                Console.WriteLine("Finished loading anm {0}", name);
+                await Console.Out.WriteLineAsync($"Finished loading anm {name}");
             }
             catch (Exception e)
             {
