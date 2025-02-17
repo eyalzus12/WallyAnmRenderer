@@ -23,16 +23,7 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
         }
     }
 
-    private uint _key = key;
-    public uint Key
-    {
-        get => _key;
-        set
-        {
-            _key = value;
-            SwzFiles.Key = value;
-        }
-    }
+    public uint Key { get => SwzFiles.Key; set => SwzFiles.Key = value; }
 
     public SwzFiles SwzFiles { get; } = new(brawlPath, key);
     public AssetLoader AssetLoader { get; } = new(brawlPath);

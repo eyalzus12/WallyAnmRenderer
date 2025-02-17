@@ -21,8 +21,8 @@ public sealed class ViewportWindow
         ImGui.Begin("Viewport", ref _open, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
         Focussed = ImGui.IsWindowFocused();
         Hovered = ImGui.IsWindowHovered();
-        Bounds.P1 = ImGui.GetWindowPos();
-        Bounds.P2 = ImGui.GetWindowPos() + ImGui.GetWindowSize();
+        Bounds.P1 = ImGui.GetCursorScreenPos();
+        Bounds.P2 = ImGui.GetCursorScreenPos() + ImGui.GetContentRegionAvail();
 
         if (SizeChanged()) CreateFramebuffer((int)Bounds.Size.X, (int)Bounds.Size.Y);
 

@@ -67,7 +67,7 @@ public sealed class PathsWindow
             });
         }
 
-        if ((key is not null || brawlPath is not null) && ImGui.Button("Load swz files"))
+        if ((key is not null || brawlPath is not null) && ImGui.Button("Load files"))
         {
             if (key is not null)
                 pathPrefs.DecryptionKey = key;
