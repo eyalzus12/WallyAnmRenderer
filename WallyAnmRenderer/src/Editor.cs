@@ -12,8 +12,8 @@ namespace WallyAnmRenderer;
 public sealed class Editor
 {
     public const float ZOOM_INCREMENT = 0.15f;
-    public const float MIN_ZOOM = 0.01f;
-    public const float MAX_ZOOM = 5.0f;
+    public const float MIN_ZOOM = 0.1f;
+    public const float MAX_ZOOM = 20.0f;
     public const float LINE_WIDTH = 5; // width at Camera zoom = 1
     public const int INITIAL_SCREEN_WIDTH = 1280;
     public const int INITIAL_SCREEN_HEIGHT = 720;
