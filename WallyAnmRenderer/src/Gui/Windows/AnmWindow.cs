@@ -77,7 +77,12 @@ public sealed class AnmWindow
                                 IEnumerable<string> filteredAnimations = anmClass.Animations.Keys.Where(a => a.Contains(filter, StringComparison.InvariantCultureIgnoreCase));
                                 foreach (string animation in filteredAnimations)
                                 {
-                                    if (ImGui.Selectable(animation, animation == info.Animation))
+                                    bool selected =
+                                        animFile == info.AnimFile &&
+                                        animClass == info.AnimClass &&
+                                        animation == info.Animation;
+
+                                    if (ImGui.Selectable(animation, selected))
                                     {
                                         info.SourceFilePath = relativePath;
                                         info.AnimFile = animFile;
