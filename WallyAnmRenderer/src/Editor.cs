@@ -53,7 +53,10 @@ public sealed class Editor
         {
             if (GfxInfo.SourceFilePath == file)
             {
-                GfxInfo = new();
+                GfxInfo.SourceFilePath = null;
+                GfxInfo.AnimClass = null;
+                GfxInfo.AnimFile = null;
+                GfxInfo.Animation = null;
             }
         };
     }
