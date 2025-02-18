@@ -14,6 +14,7 @@ public sealed class AnmWindow
 
     public event EventHandler<string>? AnmUnloadRequested;
 
+    private string _fileFilter = "";
     private readonly Dictionary<string, string> _animationFilterState = [];
 
     public void Show(string? brawlPath, AssetLoader assetLoader, GfxInfo info)
@@ -28,7 +29,11 @@ public sealed class AnmWindow
 
         string brawlAnimPath = Path.Join(brawlPath, "anims");
         string[] files = Directory.GetFiles(brawlAnimPath);
-        foreach (string absolutePath in files)
+
+        ImGui.InputText("Filter files", ref _fileFilter, 256);
+        IEnumerable<string> filteredFiles = files.Where((file) => file.Contains(_fileFilter, StringComparison.InvariantCultureIgnoreCase));
+
+        foreach (string absolutePath in filteredFiles)
         {
             if (!absolutePath.EndsWith(".anm")) continue;
 
