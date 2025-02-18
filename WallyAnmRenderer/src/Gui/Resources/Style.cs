@@ -1,23 +1,17 @@
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using ImGuiNET;
-using rlImGui_cs;
 
 namespace WallyAnmRenderer;
 
 public static class Style
 {
-    public static ImFontPtr Font { get; set; }
-
     public static void Apply()
     {
-        Font = LoadEmbeddedFont("WallyMapEditor.res.fonts.Roboto-Regular.ttf");
-
         if (!File.Exists("imgui.ini"))
         {
             Rl.TraceLog(Raylib_cs.TraceLogLevel.Info, "Loading default imgui.ini");
-            LoadDefaultImGuiIni("WallyMapEditor.res.imgui.defaultimgui.ini");
+            LoadDefaultImGuiIni("WallyAnmRenderer.res.imgui.default_imgui.ini");
         }
 
         // stolen from https://github.com/ocornut/imgui/issues/707#issuecomment-917151020
@@ -113,20 +107,5 @@ public static class Style
         string iniFile = reader.ReadToEnd();
 
         ImGui.LoadIniSettingsFromMemory(iniFile);
-    }
-
-    private static ImFontPtr LoadEmbeddedFont(string resourceName)
-    {
-        using Stream? stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
-        if (stream is null) return null;
-
-        using MemoryStream ms = new();
-        stream.CopyTo(ms);
-        byte[] bytes = ms.ToArray();
-
-        nint fontDataPtr = GCHandle.Alloc(bytes, GCHandleType.Pinned).AddrOfPinnedObject();
-        ImFontPtr font = ImGui.GetIO().Fonts.AddFontFromMemoryTTF(fontDataPtr, bytes.Length, 16);
-        rlImGui.ReloadFonts();
-        return font;
     }
 }

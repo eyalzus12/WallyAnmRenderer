@@ -7,6 +7,19 @@
     <WarningsAsErrors>Nullable</WarningsAsErrors>
     <InvariantGlobalization>true</InvariantGlobalization>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishSelfContained>true</PublishSelfContained>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
+
+    <Optimize>true</Optimize>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
   </PropertyGroup>
   
   <ItemGroup>
@@ -20,8 +33,13 @@
   <ItemGroup>
     <PackageReference Include="Sep" Version="0.9.0" />
     <PackageReference Include="Svg.Skia" Version="2.0.0.4" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.9" />
     <PackageReference Include="rlImgui-cs" Version="3.1.0" />
     <PackageReference Include="NativeFileDialogSharp" Version="0.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include=".\res\imgui\default_imgui.ini" />
   </ItemGroup>
 
 </Project>
