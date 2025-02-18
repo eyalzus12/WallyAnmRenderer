@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ImGuiNET;
-using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
 
@@ -17,10 +16,7 @@ public sealed class PickerWindow
 
     public void Show(Loader loader, GfxInfo info)
     {
-        ImGui.Begin("Picker", ref _open);
-
-        ImGui.SeparatorText("Animation");
-        AnimationSection(loader, info);
+        ImGui.Begin("Cosmetics", ref _open);
 
         ImGui.SeparatorText("Costume Types");
         CostumeTypeSection(loader, info);
@@ -32,58 +28,6 @@ public sealed class PickerWindow
         ColorSchemeSection(loader, info);
 
         ImGui.End();
-    }
-
-    private readonly Dictionary<string, string> _animationFilterState = [];
-
-    private void AnimationSection(Loader loader, GfxInfo info)
-    {
-        if (!loader.AssetLoader.AnmLoadingFinished)
-        {
-            ImGui.Text("Loading anm files...");
-        }
-
-        var groups = loader.AssetLoader.AnmClasses.Keys.Select(s =>
-        {
-            string[] parts = s.Split('/', 2);
-            string animFile = parts[0];
-            string animClass = parts[1];
-            return (animFile, animClass);
-        }).GroupBy((item) => item.animFile, (item) => item.animClass);
-
-        foreach (IGrouping<string, string> group in groups)
-        {
-            string animFile = group.Key;
-            if (ImGui.TreeNode(animFile))
-            {
-                foreach (string animClass in group)
-                {
-                    AnmClass anmClass = loader.AssetLoader.AnmClasses[$"{animFile}/{animClass}"];
-
-                    string filter = _animationFilterState.GetValueOrDefault(animClass, "");
-                    if (ImGui.InputText("Filter animations", ref filter, 256))
-                    {
-                        _animationFilterState[animClass] = filter;
-                    }
-
-                    if (ImGui.BeginListBox(animClass))
-                    {
-                        IEnumerable<string> filteredAnimations = anmClass.Animations.Keys.Where(a => a.Contains(filter, StringComparison.InvariantCultureIgnoreCase));
-                        foreach (string animation in filteredAnimations)
-                        {
-                            if (ImGui.Selectable(animation, animation == info.Animation))
-                            {
-                                info.AnimFile = animFile;
-                                info.AnimClass = animClass;
-                                info.Animation = animation;
-                            }
-                        }
-                        ImGui.EndListBox();
-                    }
-                }
-                ImGui.TreePop();
-            }
-        }
     }
 
     private void CostumeTypeSection(Loader loader, GfxInfo info)
@@ -130,7 +74,7 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(colorScheme ?? "None##none", colorScheme == info.ColorScheme))
                 {
                     info.ColorScheme = colorScheme;
-                    loader.AssetLoader.SwfShapeCache.Clear();
+                    loader.AssetLoader.ClearSwfShapeCache();
                 }
             }
             ImGui.EndListBox();

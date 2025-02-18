@@ -28,11 +28,6 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
     public SwzFiles SwzFiles { get; } = new(brawlPath, key);
     public AssetLoader AssetLoader { get; } = new(brawlPath);
 
-    public void ClearCache()
-    {
-        AssetLoader.ClearCache();
-    }
-
     public bool LoadBoneTypes()
     {
         return true;
@@ -53,14 +48,9 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
         return AssetLoader.LoadSwf(swfPath) is not null;
     }
 
-    public bool LoadAnms()
-    {
-        return AssetLoader.AnmLoadingFinished;
-    }
-
     public bool TryGetAnmClass(string classIdentifier, [MaybeNullWhen(false)] out IAnmClass anmClass)
     {
-        if (AssetLoader.AnmClasses.TryGetValue(classIdentifier, out AnmClass? @class))
+        if (AssetLoader.AnmFileCache.TryGetAnmClass(classIdentifier, out AnmClass? @class))
         {
             anmClass = new AnmClassAdapter(@class);
             return true;

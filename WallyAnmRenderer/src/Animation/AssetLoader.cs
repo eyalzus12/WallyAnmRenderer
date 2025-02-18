@@ -1,72 +1,58 @@
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Threading.Tasks;
 using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
 
-public sealed class AssetLoader
+public sealed class AssetLoader(string brawlPath)
 {
-    public bool AnmLoadingFinished { get; private set; }
-
-    private string _brawlPath;
+    private string _brawlPath = brawlPath;
     public string BrawlPath
     {
         get => _brawlPath;
         set
         {
             _brawlPath = value;
-            ClearCache();
-            ReloadAnmCache();
+            ClearSwfFileCache();
+            ClearAnmCache();
+            ClearSwfShapeCache();
         }
     }
 
-    public AssetLoader(string brawlPath)
+    public AnmFileCache AnmFileCache { get; } = new();
+    private readonly SwfFileCache _swfFileCache = new();
+    private readonly SwfShapeCache _swfShapeCache = new();
+
+    public bool IsAnmLoading(string filePath)
     {
-        _brawlPath = brawlPath;
-        ReloadAnmCache();
+        string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
+        return AnmFileCache.IsLoading(finalPath);
     }
 
-    public SwfFileCache SwfFileCache { get; } = new();
-    public SwfShapeCache SwfShapeCache { get; } = new();
-    public ConcurrentDictionary<string, AnmClass> AnmClasses { get; set; } = [];
-
-    private async Task LoadAnmInThread(string name)
+    public bool TryGetAnm(string filePath, [MaybeNullWhen(false)] out AnmFile anm)
     {
-        await Task.Run(async () =>
-        {
-            try
-            {
-                await Console.Out.WriteLineAsync($"Starting to load anm {name}");
-                string anmPath = Path.Combine(_brawlPath, "anims", $"{name}.anm");
-                AnmFile anm;
-                using (FileStream file = File.OpenRead(anmPath))
-                    anm = AnmFile.CreateFrom(file);
-                await Console.Out.WriteLineAsync($"Loaded anm {name}");
-                foreach ((string className, AnmClass @class) in anm.Classes)
-                {
-                    AnmClasses[className] = @class;
-                }
-                await Console.Out.WriteLineAsync($"Finished loading anm {name}");
-            }
-            catch (Exception e)
-            {
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-                throw;
-            }
-        });
+        string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
+        return AnmFileCache.TryGetCached(finalPath, out anm);
+    }
+
+    public AnmFile? LoadAnm(string filePath)
+    {
+        string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
+        AnmFileCache.TryGetCached(finalPath, out AnmFile? anm);
+        if (anm is not null)
+            return anm;
+        AnmFileCache.LoadInThread(finalPath);
+        return null;
     }
 
     public SwfFileData? LoadSwf(string filePath)
     {
         string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
-        SwfFileCache.Cache.TryGetValue(finalPath, out SwfFileData? swf);
+        _swfFileCache.TryGetCached(finalPath, out SwfFileData? swf);
         if (swf is not null)
             return swf;
-        SwfFileCache.LoadInThread(finalPath);
+        _swfFileCache.LoadInThread(finalPath);
         return null;
     }
 
@@ -75,35 +61,31 @@ public sealed class AssetLoader
         SwfFileData? swf = LoadSwf(filePath);
         if (swf is null)
             return null;
-        SwfShapeCache.TryGetCached(spriteName, shapeId, animScale, out Texture2DWrapper? texture);
+        _swfShapeCache.TryGetCached(spriteName, shapeId, animScale, out Texture2DWrapper? texture);
         if (texture is not null)
             return texture;
-        SwfShapeCache.LoadInThread(swf, spriteName, shapeId, animScale, colorSwapDict);
+        _swfShapeCache.LoadInThread(swf, spriteName, shapeId, animScale, colorSwapDict);
         return null;
     }
 
     public const int MAX_SWF_TEXTURE_UPLOADS_PER_FRAME = 5;
     public void Upload()
     {
-        SwfShapeCache.Upload(MAX_SWF_TEXTURE_UPLOADS_PER_FRAME);
+        _swfShapeCache.Upload(MAX_SWF_TEXTURE_UPLOADS_PER_FRAME);
     }
 
-    public void ClearCache()
+    public void ClearSwfShapeCache()
     {
-        SwfShapeCache.Clear();
-        SwfFileCache.Clear();
+        _swfShapeCache.Clear();
     }
 
-    public void ReloadAnmCache()
+    public void ClearSwfFileCache()
     {
-        AnmLoadingFinished = false;
-        AnmClasses.Clear();
-        _ = LoadAnms();
+        _swfFileCache.Clear();
     }
 
-    public async Task LoadAnms()
+    public void ClearAnmCache()
     {
-        await LoadAnmInThread("Animation_CharacterSelect");
-        AnmLoadingFinished = true;
+        AnmFileCache.Clear();
     }
 }

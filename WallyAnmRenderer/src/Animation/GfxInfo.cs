@@ -7,6 +7,8 @@ namespace WallyAnmRenderer;
 
 public sealed class GfxInfo
 {
+    public string? SourceFilePath { get; set; }
+
     public string? AnimClass { get; set; }
     public string? AnimFile { get; set; }
     public string? Animation { get; set; }

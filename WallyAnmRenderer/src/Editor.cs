@@ -27,6 +27,7 @@ public sealed class Editor
 
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();
+    public AnmWindow AnmWindow { get; } = new();
     public PickerWindow PickerWindow { get; } = new();
 
     private bool _showMainMenuBar = true;
@@ -46,6 +47,14 @@ public sealed class Editor
         PathPrefs.DecryptionKeyChanged += (_, key) =>
         {
             if (Animator is not null) Animator.Key = key;
+        };
+
+        AnmWindow.AnmUnloadRequested += (_, file) =>
+        {
+            if (GfxInfo.SourceFilePath == file)
+            {
+                GfxInfo = new();
+            }
         };
     }
 
@@ -110,7 +119,14 @@ public sealed class Editor
                 float width = ViewportWindow.Bounds.Width;
                 float height = ViewportWindow.Bounds.Height;
                 Transform2D center = Transform2D.CreateTranslate(width / 2.0, height / 2.0);
-                Animator.Animate(gfxType, animation, (long)Math.Floor(24 * Time.TotalSeconds), center);
+                bool finishedLoading = Animator.Animate(gfxType, animation, (long)Math.Floor(24 * Time.TotalSeconds), center);
+
+                if (!finishedLoading)
+                {
+                    string text = "Loading...";
+                    int textSize = Rl.MeasureText(text, 100);
+                    Rl.DrawText(text, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, RlColor.RayWhite);
+                }
             }
         }
 
@@ -132,6 +148,8 @@ public sealed class Editor
             ViewportWindow.Show();
         if (PathsWindow.Open)
             PathsWindow.Show(PathPrefs);
+        if (AnmWindow.Open && Animator is not null)
+            AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator.Loader.AssetLoader, GfxInfo);
         if (PickerWindow.Open && Animator is not null)
             PickerWindow.Show(Animator.Loader, GfxInfo);
     }
@@ -144,7 +162,8 @@ public sealed class Editor
         {
             if (ImGui.MenuItem("Viewport", null, ViewportWindow.Open)) ViewportWindow.Open = !ViewportWindow.Open;
             if (ImGui.MenuItem("Pick paths", null, PathsWindow.Open)) PathsWindow.Open = !PathsWindow.Open;
-            if (ImGui.MenuItem("Pick animation", null, PickerWindow.Open)) PickerWindow.Open = !PickerWindow.Open;
+            if (ImGui.MenuItem("Pick animation", null, AnmWindow.Open)) AnmWindow.Open = !AnmWindow.Open;
+            if (ImGui.MenuItem("Pick cosmetics", null, PickerWindow.Open)) PickerWindow.Open = !PickerWindow.Open;
             ImGui.EndMenu();
         }
 
