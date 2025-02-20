@@ -168,6 +168,13 @@ public sealed class Editor
             ImGui.EndMenu();
         }
 
+        if (ImGui.BeginMenu("Cache", Animator is not null) && Animator is not null)
+        {
+            if (ImGui.MenuItem("Clear swf shape cache")) Animator.Loader.AssetLoader.ClearSwfShapeCache();
+            if (ImGui.MenuItem("Clear swf file cache")) Animator.Loader.AssetLoader.ClearSwfFileCache();
+            ImGui.EndMenu();
+        }
+
         ImGui.EndMainMenuBar();
     }
 
