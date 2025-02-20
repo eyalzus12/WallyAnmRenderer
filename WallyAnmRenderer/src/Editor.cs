@@ -4,6 +4,7 @@ using System.Numerics;
 using Raylib_cs;
 using rlImGui_cs;
 using ImGuiNET;
+
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
 
@@ -19,7 +20,9 @@ public sealed class Editor
     public const int INITIAL_SCREEN_HEIGHT = 720;
 
     private Camera2D _cam;
+
     public TimeSpan Time { get; set; } = TimeSpan.FromSeconds(0);
+    private bool _paused = false;
 
     private PathPreferences PathPrefs { get; }
     public Animator? Animator { get; private set; }
@@ -28,6 +31,7 @@ public sealed class Editor
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();
     public AnmWindow AnmWindow { get; } = new();
+    public TimeWindow TimeWindow { get; } = new();
     public PickerWindow PickerWindow { get; } = new();
 
     private bool _showMainMenuBar = true;
@@ -59,6 +63,23 @@ public sealed class Editor
                 GfxInfo.Animation = null;
             }
         };
+
+        TimeWindow.Paused += (_, paused) =>
+        {
+            _paused = paused;
+        };
+
+        TimeWindow.FrameSeeked += (_, frame) =>
+        {
+            Time = TimeSpan.FromSeconds(frame / 24.0);
+            Time += TimeSpan.FromTicks(1); // required due to imprecision
+        };
+
+        TimeWindow.FrameMove += (_, frame) =>
+        {
+            Time += TimeSpan.FromSeconds(frame / 24.0);
+            Time += TimeSpan.FromTicks(frame); // required due to imprecision
+        };
     }
 
     public void Run()
@@ -67,8 +88,11 @@ public sealed class Editor
 
         while (!Rl.WindowShouldClose())
         {
-            float delta = Rl.GetFrameTime();
-            Time += TimeSpan.FromSeconds(delta);
+            if (!_paused)
+            {
+                float delta = Rl.GetFrameTime();
+                Time += TimeSpan.FromSeconds(delta);
+            }
             Draw();
             Update();
         }
@@ -151,6 +175,14 @@ public sealed class Editor
             PathsWindow.Show(PathPrefs);
         if (AnmWindow.Open && Animator is not null)
             AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator.Loader.AssetLoader, GfxInfo);
+        if (TimeWindow.Open && Animator is not null)
+        {
+            long? frameCount = Animator.GetFrameCount(GfxInfo);
+            if (frameCount is not null)
+            {
+                TimeWindow.Show(frameCount.Value, Time, _paused);
+            }
+        }
         if (PickerWindow.Open && Animator is not null)
             PickerWindow.Show(Animator.Loader, GfxInfo);
     }
@@ -165,6 +197,7 @@ public sealed class Editor
             if (ImGui.MenuItem("Pick paths", null, PathsWindow.Open)) PathsWindow.Open = !PathsWindow.Open;
             if (ImGui.MenuItem("Pick animation", null, AnmWindow.Open)) AnmWindow.Open = !AnmWindow.Open;
             if (ImGui.MenuItem("Pick cosmetics", null, PickerWindow.Open)) PickerWindow.Open = !PickerWindow.Open;
+            if (ImGui.MenuItem("Animation timeline", null, TimeWindow.Open)) TimeWindow.Open = !TimeWindow.Open;
             ImGui.EndMenu();
         }
 

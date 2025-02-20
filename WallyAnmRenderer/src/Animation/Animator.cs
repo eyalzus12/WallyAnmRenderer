@@ -71,4 +71,11 @@ public sealed class Animator(string brawlPath, uint key)
 
         return result;
     }
+
+    public long? GetFrameCount(GfxInfo info)
+    {
+        if (info.AnimFile is null || info.AnimClass is null || info.Animation is null)
+            return null;
+        return AnimationBuilder.GetAnimFrameCount(Loader, info.AnimFile, info.AnimClass, info.Animation);
+    }
 }

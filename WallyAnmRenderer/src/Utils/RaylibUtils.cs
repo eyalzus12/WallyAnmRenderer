@@ -50,30 +50,27 @@ public class RaylibUtils
 
     public static double Cross(double X1, double Y1, double X2, double Y2) => X1 * Y2 - X2 * Y1;
 
-    public static RlImage SKBitmapToRlImage(SKBitmap bitmap)
+    public static unsafe RlImage SKBitmapToRlImage(SKBitmap bitmap)
     {
         if (bitmap.ColorType != SKColorType.Rgba8888)
         {
             throw new ArgumentException($"{nameof(SKBitmapToRlImage)} only supports Rgba8888, but got {bitmap.ColorType}");
         }
 
-        unsafe
-        {
-            // use Rl alloc so GC doesn't free the memory
-            void* bufferPtr = Rl.MemAlloc((uint)bitmap.ByteCount);
-            // create a Span from the unmanaged memory
-            Span<byte> buffer = new(bufferPtr, bitmap.ByteCount);
-            // copy the bitmap bytes to the span
-            bitmap.GetPixelSpan().CopyTo(buffer);
+        // use Rl alloc so GC doesn't free the memory
+        void* bufferPtr = Rl.MemAlloc((uint)bitmap.ByteCount);
+        // create a Span from the unmanaged memory
+        Span<byte> buffer = new(bufferPtr, bitmap.ByteCount);
+        // copy the bitmap bytes to the span
+        bitmap.GetPixelSpan().CopyTo(buffer);
 
-            return new()
-            {
-                Data = bufferPtr,
-                Width = bitmap.Width,
-                Height = bitmap.Height,
-                Mipmaps = 1,
-                Format = PixelFormat.UncompressedR8G8B8A8,
-            };
-        }
+        return new()
+        {
+            Data = bufferPtr,
+            Width = bitmap.Width,
+            Height = bitmap.Height,
+            Mipmaps = 1,
+            Format = PixelFormat.UncompressedR8G8B8A8,
+        };
     }
 }
