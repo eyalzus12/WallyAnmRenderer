@@ -40,7 +40,10 @@ public sealed class PickerWindow
             foreach (string? costumeType in filteredCostumeTypes.Prepend<string?>(null))
             {
                 if (ImGui.Selectable(costumeType ?? "None##none", costumeType == info.CostumeType))
+                {
                     info.CostumeType = costumeType;
+                    OnSelect(loader);
+                }
             }
             ImGui.EndListBox();
         }
@@ -74,10 +77,15 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(colorScheme ?? "None##none", colorScheme == info.ColorScheme))
                 {
                     info.ColorScheme = colorScheme;
-                    loader.AssetLoader.ClearSwfShapeCache();
+                    OnSelect(loader);
                 }
             }
             ImGui.EndListBox();
         }
+    }
+
+    private static void OnSelect(Loader loader)
+    {
+        loader.AssetLoader.ClearSwfShapeCache();
     }
 }
