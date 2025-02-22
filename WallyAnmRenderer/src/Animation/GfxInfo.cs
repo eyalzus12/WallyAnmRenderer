@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading.CostumeTypes;
 using BrawlhallaAnimLib.Reading.WeaponSkinTypes;
@@ -17,6 +18,11 @@ public sealed class GfxInfo
     public string? CostumeType { get; set; }
     public string? WeaponSkinType { get; set; }
     public string? ColorScheme { get; set; }
+
+    [MemberNotNullWhen(true, nameof(AnimClass))]
+    [MemberNotNullWhen(true, nameof(AnimFile))]
+    [MemberNotNullWhen(true, nameof(Animation))]
+    public bool AnimationPicked => AnimClass is not null && AnimFile is not null && Animation is not null;
 
     public (IGfxType gfx, string animation)? ToGfxType(SwzGameFile gameFiles)
     {

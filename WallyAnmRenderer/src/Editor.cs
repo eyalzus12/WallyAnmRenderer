@@ -7,6 +7,7 @@ using ImGuiNET;
 
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
+using BrawlhallaAnimLib.Bones;
 
 namespace WallyAnmRenderer;
 
@@ -25,12 +26,17 @@ public sealed class Editor
     private bool _paused = false;
 
     private PathPreferences PathPrefs { get; }
+
     public Animator? Animator { get; private set; }
     public GfxInfo GfxInfo { get; private set; } = new();
+
+    private BoneSpriteWithName[]? _sprites = null;
+    private BoneSpriteWithName? _highlightedSprite = null;
 
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();
     public AnmWindow AnmWindow { get; } = new();
+    public AnimationInfoWindow AnimationInfoWindow { get; } = new();
     public TimeWindow TimeWindow { get; } = new();
     public PickerWindow PickerWindow { get; } = new();
 
@@ -122,6 +128,13 @@ public sealed class Editor
         ResetCam(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT);
     }
 
+    private Transform2D GetCenteringTransform()
+    {
+        float width = ViewportWindow.Bounds.Width;
+        float height = ViewportWindow.Bounds.Height;
+        return Transform2D.CreateTranslate(width / 2.0, height / 2.0);
+    }
+
     private void Draw()
     {
         Rl.BeginDrawing();
@@ -129,6 +142,19 @@ public sealed class Editor
         Rlgl.SetLineWidth(Math.Max(LINE_WIDTH * _cam.Zoom, 1));
         rlImGui.Begin();
 
+        _sprites = null;
+        _highlightedSprite = null;
+        if (Animator is not null)
+        {
+            (IGfxType, string)? info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
+            if (info is not null)
+            {
+                long frame = (long)Math.Floor(24 * Time.TotalSeconds);
+                (IGfxType gfxType, string animation) = info.Value;
+                Transform2D center = GetCenteringTransform();
+                _sprites = Animator.GetAnimationInfo(gfxType, animation, frame, center);
+            }
+        }
         Gui();
 
         Rl.BeginTextureMode(ViewportWindow.Framebuffer);
@@ -136,23 +162,41 @@ public sealed class Editor
 
         Rl.ClearBackground(RlColor.Black);
 
-        if (Animator is not null)
+        if (Animator is not null && _sprites is not null)
         {
-            (IGfxType, string)? info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
-            if (info is not null)
+            Animator.Loader.AssetLoader.Upload();
+
+            bool finishedLoading = true;
+            foreach (BoneSpriteWithName sprite in _sprites)
             {
-                (IGfxType gfxType, string animation) = info.Value;
+                bool highlighted = sprite == _highlightedSprite;
+
+                Texture2DWrapper[]? textures = Animator.SpriteToTextures(sprite);
+                if (textures is null)
+                {
+                    finishedLoading = false;
+                    continue;
+                }
+
+                foreach (Texture2DWrapper texture in textures)
+                {
+                    RaylibUtils.DrawTextureWithTransform(
+                        texture.Texture,
+                        0, 0, texture.Width, texture.Height,
+                        texture.Transform,
+                        tintB: highlighted ? 0 : 1,
+                        tintA: (float)sprite.Opacity
+                    );
+                }
+            }
+
+            if (!finishedLoading)
+            {
+                string text = "Loading...";
+                int textSize = Rl.MeasureText(text, 100);
                 float width = ViewportWindow.Bounds.Width;
                 float height = ViewportWindow.Bounds.Height;
-                Transform2D center = Transform2D.CreateTranslate(width / 2.0, height / 2.0);
-                bool finishedLoading = Animator.Animate(gfxType, animation, (long)Math.Floor(24 * Time.TotalSeconds), center);
-
-                if (!finishedLoading)
-                {
-                    string text = "Loading...";
-                    int textSize = Rl.MeasureText(text, 100);
-                    Rl.DrawText(text, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, RlColor.RayWhite);
-                }
+                Rl.DrawText(text, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, RlColor.RayWhite);
             }
         }
 
@@ -175,13 +219,18 @@ public sealed class Editor
             PathsWindow.Show(PathPrefs);
         if (AnmWindow.Open && Animator is not null)
             AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator.Loader.AssetLoader, GfxInfo);
-        if (TimeWindow.Open && Animator is not null)
+        if (TimeWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
         {
             long? frameCount = Animator.GetFrameCount(GfxInfo);
             if (frameCount is not null)
             {
                 TimeWindow.Show(frameCount.Value, Time, _paused);
             }
+        }
+        if (AnimationInfoWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
+        {
+            Transform2D center = GetCenteringTransform();
+            AnimationInfoWindow.Show(center, _sprites, ref _highlightedSprite);
         }
         if (PickerWindow.Open && Animator is not null)
             PickerWindow.Show(Animator.Loader, GfxInfo);
@@ -198,6 +247,7 @@ public sealed class Editor
             if (ImGui.MenuItem("Pick animation", null, AnmWindow.Open)) AnmWindow.Open = !AnmWindow.Open;
             if (ImGui.MenuItem("Pick cosmetics", null, PickerWindow.Open)) PickerWindow.Open = !PickerWindow.Open;
             if (ImGui.MenuItem("Animation timeline", null, TimeWindow.Open)) TimeWindow.Open = !TimeWindow.Open;
+            if (ImGui.MenuItem("Animation info", null, AnimationInfoWindow.Open)) AnimationInfoWindow.Open = !AnimationInfoWindow.Open;
             ImGui.EndMenu();
         }
 

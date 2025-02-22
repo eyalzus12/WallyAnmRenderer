@@ -24,6 +24,7 @@ public sealed class AnmWindow
         if (brawlPath is null)
         {
             ImGui.Text("You must select your brawlhalla path to choose an animation");
+            ImGui.End();
             return;
         }
 
@@ -113,5 +114,4 @@ public sealed class AnmWindow
 
         ImGui.End();
     }
-
 }

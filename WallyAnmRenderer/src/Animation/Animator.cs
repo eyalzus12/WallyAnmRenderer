@@ -5,7 +5,6 @@ using BrawlhallaAnimLib.Bones;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
 using BrawlhallaAnimLib.Swf;
-using Raylib_cs;
 
 namespace WallyAnmRenderer;
 
@@ -18,63 +17,51 @@ public sealed class Animator(string brawlPath, uint key)
 
     private readonly HashSet<(string, string)> _h = [];
 
-    public bool Animate(IGfxType gfx, string animation, long frame, Transform2D transform)
+    public BoneSpriteWithName[]? GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
     {
-        Loader.AssetLoader.Upload();
+        return AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform);
+    }
 
-        BoneSpriteWithName[]? sprites = AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform);
-        if (sprites is null) return false;
+    public Texture2DWrapper[]? SpriteToTextures(BoneSpriteWithName sprite)
+    {
+        BoneShape[]? shapes = SpriteToShapeConverter.ConvertToShapes(Loader, sprite);
+        if (shapes is null)
+            return null;
+
+        if (!_h.Contains((sprite.SpriteName, sprite.SwfFilePath)))
+        {
+            Console.WriteLine($"Loading {sprite.SpriteName} from {sprite.SwfFilePath}");
+            _h.Add((sprite.SpriteName, sprite.SwfFilePath));
+        }
 
         bool result = true;
-        foreach (BoneSpriteWithName sprite in sprites)
+        List<Texture2DWrapper> textures = [];
+        foreach (BoneShape boneShape in shapes)
         {
-            BoneShape[]? shapes = SpriteToShapeConverter.ConvertToShapes(Loader, sprite);
-            if (shapes is null)
+            Texture2DWrapper? texture = Loader.AssetLoader.LoadShapeFromSwf(
+                sprite.SwfFilePath,
+                sprite.SpriteName,
+                boneShape.ShapeId,
+                sprite.AnimScale,
+                sprite.ColorSwapDict
+            );
+
+            if (texture is null)
             {
                 result = false;
                 continue;
             }
 
-            if (!_h.Contains((sprite.SpriteName, sprite.SwfFilePath)))
-            {
-                Console.WriteLine($"Loading {sprite.SpriteName} from {sprite.SwfFilePath}");
-                _h.Add((sprite.SpriteName, sprite.SwfFilePath));
-            }
-
-            foreach (BoneShape boneShape in shapes)
-            {
-                Texture2DWrapper? textureWrapper = Loader.AssetLoader.LoadShapeFromSwf(
-                    sprite.SwfFilePath,
-                    sprite.SpriteName,
-                    boneShape.ShapeId,
-                    sprite.AnimScale,
-                    sprite.ColorSwapDict
-                );
-
-                if (textureWrapper is null)
-                {
-                    result = false;
-                    continue;
-                }
-
-                Texture2D texture = textureWrapper.Texture;
-                Transform2D drawTransform = boneShape.Transform * textureWrapper.Transform;
-
-                RaylibUtils.DrawTextureWithTransform(
-                    texture,
-                    0, 0, texture.Width, texture.Height,
-                    drawTransform,
-                    tintA: (float)sprite.Opacity
-                );
-            }
+            textures.Add(new(texture.Texture, boneShape.Transform * texture.Transform, false));
         }
 
-        return result;
+        if (result) return [.. textures];
+        return null;
     }
 
     public long? GetFrameCount(GfxInfo info)
     {
-        if (info.AnimFile is null || info.AnimClass is null || info.Animation is null)
+        if (!info.AnimationPicked)
             return null;
         return AnimationBuilder.GetAnimFrameCount(Loader, info.AnimFile, info.AnimClass, info.Animation);
     }
