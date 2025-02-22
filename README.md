@@ -10,6 +10,7 @@
 * Listing the sprites and their data.
 
 #### Upcoming features:
+* Exporting as svg/png.
 * Rendering of sidekicks, companions, and podiums.
 * Support for animation loop points.
 * Translating internal names.
