@@ -146,12 +146,13 @@ public sealed class Editor
         _highlightedSprite = null;
         if (Animator is not null)
         {
-            (IGfxType, string)? info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
+            var info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
             if (info is not null)
             {
                 long frame = (long)Math.Floor(24 * Time.TotalSeconds);
-                (IGfxType gfxType, string animation) = info.Value;
+                (IGfxType gfxType, string animation, bool flip) = info.Value;
                 Transform2D center = GetCenteringTransform();
+                if (flip) center *= Transform2D.FLIP_X;
                 _sprites = Animator.GetAnimationInfo(gfxType, animation, frame, center);
             }
         }

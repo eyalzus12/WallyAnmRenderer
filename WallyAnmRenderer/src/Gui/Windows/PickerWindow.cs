@@ -16,7 +16,13 @@ public sealed class PickerWindow
 
     public void Show(Loader loader, GfxInfo info)
     {
-        ImGui.Begin("Cosmetics", ref _open);
+        ImGui.Begin("Options", ref _open);
+
+        ImGui.SeparatorText("Config");
+
+        bool flip = info.Flip;
+        if (ImGui.Checkbox("Flip", ref flip))
+            info.Flip = flip;
 
         ImGui.SeparatorText("Costume Types");
         CostumeTypeSection(loader, info);

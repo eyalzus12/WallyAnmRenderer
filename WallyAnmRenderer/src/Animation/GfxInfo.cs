@@ -14,6 +14,7 @@ public sealed class GfxInfo
     public string? AnimFile { get; set; }
     public string? Animation { get; set; }
     public double AnimScale { get; set; } = 2;
+    public bool Flip { get; set; } = false;
 
     public string? CostumeType { get; set; }
     public string? WeaponSkinType { get; set; }
@@ -24,7 +25,7 @@ public sealed class GfxInfo
     [MemberNotNullWhen(true, nameof(Animation))]
     public bool AnimationPicked => AnimClass is not null && AnimFile is not null && Animation is not null;
 
-    public (IGfxType gfx, string animation)? ToGfxType(SwzGameFile gameFiles)
+    public (IGfxType gfx, string animation, bool flip)? ToGfxType(SwzGameFile gameFiles)
     {
         if (AnimClass is null || AnimFile is null || Animation is null)
             return null;
@@ -75,6 +76,6 @@ public sealed class GfxInfo
             }
         }
 
-        return (gfx, Animation);
+        return (gfx, Animation, Flip);
     }
 }
