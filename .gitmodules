@@ -9,7 +9,7 @@
 	url = https://github.com/eyalzus12/SwiffCheese.git
 [submodule "AbcDisassembler"]
 	path = AbcDisassembler
-	url = https://github.com/eyalzus12/AbcDisassembler.git
+	url = https://github.com/moffel1020/AbcDisassembler.git
 [submodule "BrawlhallaAnimLib"]
 	path = BrawlhallaAnimLib
 	url = https://github.com/eyalzus12/BrawlhallaAnimLib.git
