@@ -5,6 +5,7 @@ using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Anm;
 using SwfLib.Tags;
 using SwfLib.Tags.ShapeTags;
+using SwfLib.Tags.TextTags;
 using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
@@ -127,6 +128,12 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
         if (swf.ShapeTags.TryGetValue(tagId, out ShapeBaseTag? shape))
         {
             tag = shape;
+            return true;
+        }
+
+        if (swf.TextTags.TryGetValue(tagId, out DefineTextBaseTag? text))
+        {
+            tag = text;
             return true;
         }
 
