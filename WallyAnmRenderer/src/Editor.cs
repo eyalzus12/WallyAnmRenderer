@@ -30,9 +30,6 @@ public sealed class Editor
     public Animator? Animator { get; private set; }
     public GfxInfo GfxInfo { get; private set; } = new();
 
-    private BoneSpriteWithName[]? _sprites = null;
-    private BoneSpriteWithName? _highlightedSprite = null;
-
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();
     public AnmWindow AnmWindow { get; } = new();
@@ -142,8 +139,9 @@ public sealed class Editor
         Rlgl.SetLineWidth(Math.Max(LINE_WIDTH * _cam.Zoom, 1));
         rlImGui.Begin();
 
-        _sprites = null;
-        _highlightedSprite = null;
+        Gui();
+        BoneSpriteWithName[]? sprites = null;
+        BoneSpriteWithName? highlightedSprite = null;
         if (Animator is not null)
         {
             var info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
@@ -153,24 +151,30 @@ public sealed class Editor
                 (IGfxType gfxType, string animation, bool flip) = info.Value;
                 Transform2D center = GetCenteringTransform();
                 if (flip) center *= Transform2D.FLIP_X;
-                _sprites = Animator.GetAnimationInfo(gfxType, animation, frame, center);
+                sprites = Animator.GetAnimationInfo(gfxType, animation, frame, center);
             }
         }
-        Gui();
+
+        // done separate from other UI to have access to the animation information
+        if (AnimationInfoWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
+        {
+            Transform2D center = GetCenteringTransform();
+            AnimationInfoWindow.Show(center, sprites, ref highlightedSprite);
+        }
 
         Rl.BeginTextureMode(ViewportWindow.Framebuffer);
         Rl.BeginMode2D(_cam);
 
         Rl.ClearBackground(RlColor.Black);
 
-        if (Animator is not null && _sprites is not null)
+        if (Animator is not null && sprites is not null)
         {
             Animator.Loader.AssetLoader.Upload();
 
             bool finishedLoading = true;
-            foreach (BoneSpriteWithName sprite in _sprites)
+            foreach (BoneSpriteWithName sprite in sprites)
             {
-                bool highlighted = sprite == _highlightedSprite;
+                bool highlighted = sprite == highlightedSprite;
 
                 Texture2DWrapper[]? textures = Animator.SpriteToTextures(sprite);
                 if (textures is null)
@@ -227,11 +231,6 @@ public sealed class Editor
             {
                 TimeWindow.Show(frameCount.Value, Time, _paused);
             }
-        }
-        if (AnimationInfoWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
-        {
-            Transform2D center = GetCenteringTransform();
-            AnimationInfoWindow.Show(center, _sprites, ref _highlightedSprite);
         }
         if (PickerWindow.Open && Animator is not null)
             PickerWindow.Show(Animator.Loader, GfxInfo);
