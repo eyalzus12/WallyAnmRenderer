@@ -29,6 +29,7 @@ public sealed class Editor
 
     public Animator? Animator { get; private set; }
     public GfxInfo GfxInfo { get; private set; } = new();
+    private RlColor _bgColor = RlColor.Black;
 
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();
@@ -165,7 +166,7 @@ public sealed class Editor
         Rl.BeginTextureMode(ViewportWindow.Framebuffer);
         Rl.BeginMode2D(_cam);
 
-        Rl.ClearBackground(RlColor.Black);
+        Rl.ClearBackground(_bgColor);
 
         if (Animator is not null && sprites is not null)
         {
@@ -233,7 +234,7 @@ public sealed class Editor
             }
         }
         if (PickerWindow.Open && Animator is not null)
-            PickerWindow.Show(Animator.Loader, GfxInfo);
+            PickerWindow.Show(Animator.Loader, GfxInfo, ref _bgColor);
     }
 
     private void ShowMainMenuBar()

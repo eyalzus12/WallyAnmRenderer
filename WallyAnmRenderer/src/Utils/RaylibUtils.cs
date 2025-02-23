@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using BrawlhallaAnimLib.Math;
 using Raylib_cs;
 using SkiaSharp;
@@ -72,5 +73,15 @@ public class RaylibUtils
             Mipmaps = 1,
             Format = PixelFormat.UncompressedR8G8B8A8,
         };
+    }
+
+    public static Vector3 RlColorToVector3(RlColor color)
+    {
+        return new(color.R / 255.0f, color.G / 255.0f, color.B / 255.0f);
+    }
+
+    public static RlColor Vector3ToRlColor(Vector3 color)
+    {
+        return new((byte)(color.X * 255), (byte)(color.Y * 255), (byte)(color.Z * 255));
     }
 }

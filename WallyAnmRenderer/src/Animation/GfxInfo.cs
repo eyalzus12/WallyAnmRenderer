@@ -43,7 +43,9 @@ public sealed class GfxInfo
         ColorScheme? scheme = null;
         if (ColorScheme is not null)
         {
-            if (!colorSchemeTypes.TryGetColorScheme(ColorScheme, out scheme))
+            if (ColorScheme == "DEBUG")
+                scheme = WallyAnmRenderer.ColorScheme.DEBUG;
+            else if (!colorSchemeTypes.TryGetColorScheme(ColorScheme, out scheme))
             {
                 throw new ArgumentException($"Invalid color scheme {ColorScheme}");
             }

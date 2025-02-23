@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using ImGuiNET;
 
 namespace WallyAnmRenderer;
@@ -14,7 +15,7 @@ public sealed class PickerWindow
     private string _weaponSkinTypeFilter = "";
     private string _colorSchemeFilter = "";
 
-    public void Show(Loader loader, GfxInfo info)
+    public void Show(Loader loader, GfxInfo info, ref RlColor bgColor)
     {
         ImGui.Begin("Options", ref _open);
 
@@ -23,6 +24,10 @@ public sealed class PickerWindow
         bool flip = info.Flip;
         if (ImGui.Checkbox("Flip", ref flip))
             info.Flip = flip;
+
+        Vector3 bgColor2 = RaylibUtils.RlColorToVector3(bgColor);
+        if (ImGui.ColorEdit3("Background color", ref bgColor2, ImGuiColorEditFlags.NoInputs))
+            bgColor = RaylibUtils.Vector3ToRlColor(bgColor2);
 
         ImGui.SeparatorText("Costume Types");
         CostumeTypeSection(loader, info);
@@ -78,14 +83,27 @@ public sealed class PickerWindow
         ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
         if (ImGui.BeginListBox("###colorselect"))
         {
-            foreach (string? colorScheme in filteredColorSchemes.Prepend<string?>(null))
+            if (ImGui.Selectable("None##none", info.ColorScheme is null))
             {
-                if (ImGui.Selectable(colorScheme ?? "None##none", colorScheme == info.ColorScheme))
+                info.ColorScheme = null;
+                OnSelect(loader);
+            }
+
+            foreach (string colorScheme in filteredColorSchemes)
+            {
+                if (ImGui.Selectable(colorScheme, colorScheme == info.ColorScheme))
                 {
                     info.ColorScheme = colorScheme;
                     OnSelect(loader);
                 }
             }
+
+            if (ImGui.Selectable("DEBUG (not a real color scheme)", info.ColorScheme == "DEBUG"))
+            {
+                info.ColorScheme = "DEBUG";
+                OnSelect(loader);
+            }
+
             ImGui.EndListBox();
         }
     }
