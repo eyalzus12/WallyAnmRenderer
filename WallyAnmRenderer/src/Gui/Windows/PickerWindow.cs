@@ -53,18 +53,34 @@ public sealed class PickerWindow
         ImGui.End();
     }
 
-    private void CostumeTypeSection(Loader loader, GfxInfo info)
+    private void CostumeTypeSection(Loader loader, GfxInfo gfxInfo)
     {
         CostumeTypes costumeTypes = loader.SwzFiles.Game.CostumeTypes;
-        IEnumerable<string> filteredCostumeTypes = costumeTypes.Costumes.Where(s => s.Contains(_costumeTypeFilter, StringComparison.InvariantCultureIgnoreCase));
         ImGui.InputText("Filter costumes", ref _costumeTypeFilter, 256);
         if (ImGui.BeginListBox("###costumeselect"))
         {
-            foreach (string? costumeType in filteredCostumeTypes.Prepend<string?>(null))
+            if (ImGui.Selectable("None##none", gfxInfo.CostumeType is null))
             {
-                if (ImGui.Selectable(costumeType ?? "None##none", costumeType == info.CostumeType))
+                gfxInfo.CostumeType = null;
+                OnSelect(loader);
+            }
+
+            foreach (string costumeType in costumeTypes.Costumes)
+            {
+                string costumeName = costumeType;
+                if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
                 {
-                    info.CostumeType = costumeType;
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realCostumeName))
+                        costumeName = $"{realCostumeName} ({costumeType})";
+                }
+
+                if (!costumeName.Contains(_costumeTypeFilter, StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+
+                if (ImGui.Selectable(costumeName, costumeType == gfxInfo.CostumeType))
+                {
+                    gfxInfo.CostumeType = costumeType;
                     OnSelect(loader);
                 }
             }
@@ -72,17 +88,29 @@ public sealed class PickerWindow
         }
     }
 
-    private void WeaponSkinTypeSection(Loader loader, GfxInfo info)
+    private void WeaponSkinTypeSection(Loader loader, GfxInfo gfxInfo)
     {
         WeaponSkinTypes weaponSkinTypes = loader.SwzFiles.Game.WeaponSkinTypes;
-        IEnumerable<string> filteredWeaponSkinTypes = weaponSkinTypes.WeaponSkins.Where(s => s.Contains(_weaponSkinTypeFilter, StringComparison.InvariantCultureIgnoreCase));
         ImGui.InputText("Filter weapon skins", ref _weaponSkinTypeFilter, 256);
         if (ImGui.BeginListBox("###weaponselect"))
         {
-            foreach (string? weaponSkinType in filteredWeaponSkinTypes.Prepend<string?>(null))
+            if (ImGui.Selectable("None##none", gfxInfo.WeaponSkinType is null))
             {
-                if (ImGui.Selectable(weaponSkinType ?? "None##none", weaponSkinType == info.WeaponSkinType))
-                    info.WeaponSkinType = weaponSkinType;
+                gfxInfo.CostumeType = null;
+            }
+
+            foreach (string weaponSkinType in weaponSkinTypes.WeaponSkins)
+            {
+                string weaponSkinName = weaponSkinType;
+                if (weaponSkinTypes.TryGetInfo(weaponSkinType, out WeaponSkinTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realWeaponSkinName))
+                        weaponSkinName = $"{realWeaponSkinName} ({weaponSkinType})";
+                }
+
+                if (ImGui.Selectable(weaponSkinName, weaponSkinType == gfxInfo.WeaponSkinType))
+                    gfxInfo.WeaponSkinType = weaponSkinType;
             }
             ImGui.EndListBox();
         }

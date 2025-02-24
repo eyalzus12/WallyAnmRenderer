@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using BrawlhallaAnimLib;
-using BrawlhallaAnimLib.Anm;
 using SwfLib.Tags;
 using SwfLib.Tags.ShapeTags;
 using SwfLib.Tags.TextTags;
+using BrawlhallaAnimLib;
+using BrawlhallaAnimLib.Anm;
+using BrawlhallaLangReader;
 using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
@@ -26,8 +27,9 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
 
     public uint Key { get => SwzFiles.Key; set => SwzFiles.Key = value; }
 
-    public SwzFiles SwzFiles { get; } = new(brawlPath, key);
     public AssetLoader AssetLoader { get; } = new(brawlPath);
+    public SwzFiles SwzFiles { get; } = new(brawlPath, key);
+    public LangFile LangFile { get; } = LangFile.Load(Path.Join(brawlPath, "languages", "language.1.bin"));
 
     public bool LoadBoneTypes()
     {
@@ -139,5 +141,10 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
 
         tag = null;
         return false;
+    }
+
+    public bool TryGetStringName(string stringKey, [MaybeNullWhen(false)] out string stringName)
+    {
+        return LangFile.Entries.TryGetValue(stringKey, out stringName);
     }
 }

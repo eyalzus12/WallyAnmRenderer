@@ -6,22 +6,28 @@ using nietras.SeparatedValues;
 
 namespace WallyAnmRenderer;
 
+public readonly record struct WeaponSkinTypeInfo(string WeaponSkinName, string DisplayNameKey);
+
 public readonly struct WeaponSkinTypes : ICsvReader
 {
     private readonly Dictionary<string, SepRowAdapter> _rows = [];
+    private readonly Dictionary<string, WeaponSkinTypeInfo> _infos = [];
     private readonly Dictionary<string, WeaponSkinTypesGfx> _gfx = [];
 
     public WeaponSkinTypes(SepReader reader, CostumeTypes costumeTypes)
     {
         foreach (SepReader.Row row in reader)
         {
-            string key = row["WeaponSkinName"].ToString();
-            if (key == "Template") continue;
-            SepRowAdapter adapter = new(reader.Header, row, key);
-            _rows[key] = adapter;
+            string weaponSkinName = row["WeaponSkinName"].ToString();
+            if (weaponSkinName == "Template") continue;
+            SepRowAdapter adapter = new(reader.Header, row, weaponSkinName);
+            _rows[weaponSkinName] = adapter;
+
+            string displayNameKey = row["DisplayNameKey"].ToString();
+            _infos[weaponSkinName] = new(weaponSkinName, displayNameKey);
 
             WeaponSkinTypesGfx info = new(adapter, costumeTypes);
-            _gfx[key] = info;
+            _gfx[weaponSkinName] = info;
         }
     }
 
@@ -39,6 +45,11 @@ public readonly struct WeaponSkinTypes : ICsvReader
     public bool TryGetGfx(string name, [MaybeNullWhen(false)] out WeaponSkinTypesGfx costume)
     {
         return _gfx.TryGetValue(name, out costume);
+    }
+
+    public bool TryGetInfo(string name, [MaybeNullWhen(false)] out WeaponSkinTypeInfo info)
+    {
+        return _infos.TryGetValue(name, out info);
     }
 
     public IEnumerable<string> WeaponSkins => _gfx.Keys;

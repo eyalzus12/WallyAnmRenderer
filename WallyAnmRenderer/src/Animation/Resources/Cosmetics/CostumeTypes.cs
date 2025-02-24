@@ -6,22 +6,28 @@ using nietras.SeparatedValues;
 
 namespace WallyAnmRenderer;
 
+public readonly record struct CostumeTypeInfo(string CostumeName, string DisplayNameKey);
+
 public readonly struct CostumeTypes : ICsvReader
 {
     private readonly Dictionary<string, SepRowAdapter> _rows = [];
+    private readonly Dictionary<string, CostumeTypeInfo> _infos = [];
     private readonly Dictionary<string, CostumeTypesGfx> _gfx = [];
 
     public CostumeTypes(SepReader reader)
     {
         foreach (SepReader.Row row in reader)
         {
-            string key = row["CostumeName"].ToString();
-            if (key == "Template") continue;
-            SepRowAdapter adapter = new(reader.Header, row, key);
-            _rows[key] = adapter;
+            string costumeName = row["CostumeName"].ToString();
+            if (costumeName == "Template") continue;
+            SepRowAdapter adapter = new(reader.Header, row, costumeName);
+            _rows[costumeName] = adapter;
+
+            string displayNameKey = row["DisplayNameKey"].ToString();
+            _infos[costumeName] = new(costumeName, displayNameKey);
 
             CostumeTypesGfx info = new(adapter);
-            _gfx[key] = info;
+            _gfx[costumeName] = info;
         }
     }
 
@@ -39,6 +45,11 @@ public readonly struct CostumeTypes : ICsvReader
     public bool TryGetGfx(string name, [MaybeNullWhen(false)] out CostumeTypesGfx costume)
     {
         return _gfx.TryGetValue(name, out costume);
+    }
+
+    public bool TryGetInfo(string name, [MaybeNullWhen(false)] out CostumeTypeInfo info)
+    {
+        return _infos.TryGetValue(name, out info);
     }
 
     public IEnumerable<string> Costumes => _gfx.Keys;

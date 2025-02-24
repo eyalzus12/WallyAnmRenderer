@@ -27,6 +27,7 @@
     <ProjectReference Include="..\BrawlhallaSwz\BrawlhallaSwz\BrawlhallaSwz.csproj" />
     <ProjectReference Include="..\AbcDisassembler\AbcDisassembler\AbcDisassembler.csproj" />
     <ProjectReference Include="..\WallyAnmSpinzor\WallyAnmSpinzor.csproj" />
+    <ProjectReference Include="..\BrawlhallaLangReader\BrawlhallaLangReader.csproj" />
     <ProjectReference Include="..\BrawlhallaAnimLib\BrawlhallaAnimLib.csproj" />
   </ItemGroup>
   

@@ -13,3 +13,6 @@
 [submodule "BrawlhallaAnimLib"]
 	path = BrawlhallaAnimLib
 	url = https://github.com/eyalzus12/BrawlhallaAnimLib.git
+[submodule "BrawlhallaLangReader"]
+	path = BrawlhallaLangReader
+	url = https://github.com/eyalzus12/BrawlhallaLangReader.git
