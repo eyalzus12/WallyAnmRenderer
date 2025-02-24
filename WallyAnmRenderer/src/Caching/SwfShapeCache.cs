@@ -83,6 +83,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         using XmlReader reader = exporter.Document.CreateReader();
         using SKSvg svg = SKSvg.CreateFromXmlReader(reader);
         reader.Dispose();
+        // 20 seems to work, but does it? it's also expensive...
         using SKBitmap bitmap1 = svg.Picture!.ToBitmap(SKColors.Transparent, 20, 20, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb())!;
         svg.Dispose();
         // Medium and High work the same for downscaling

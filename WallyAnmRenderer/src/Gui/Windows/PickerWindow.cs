@@ -29,6 +29,18 @@ public sealed class PickerWindow
         if (ImGui.ColorEdit3("Background color", ref bgColor2, ImGuiColorEditFlags.NoInputs))
             bgColor = RaylibUtils.Vector3ToRlColor(bgColor2);
 
+        ImGui.Spacing();
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(new(1, 1, 0, 1), "WARNING! Increasing this can make your CPU (and GPU) cry. The game seems to never use a value above 2.");
+        ImGui.PopTextWrapPos();
+
+        double animScale = info.AnimScale;
+        if (ImGuiEx.InputDouble("Render quality", ref animScale))
+        {
+            info.AnimScale = animScale;
+            loader.AssetLoader.ClearSwfShapeCache();
+        }
+
         ImGui.SeparatorText("Costume Types");
         CostumeTypeSection(loader, info);
 
