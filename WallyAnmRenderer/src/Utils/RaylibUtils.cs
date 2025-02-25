@@ -53,6 +53,7 @@ public class RaylibUtils
 
     public static double Cross(double X1, double Y1, double X2, double Y2) => X1 * Y2 - X2 * Y1;
 
+    [SkipLocalsInit]
     public static unsafe RlImage SKBitmapToRlImage(SKBitmap bitmap)
     {
         if (bitmap.ColorType != SKColorType.Rgba8888)
@@ -66,9 +67,25 @@ public class RaylibUtils
         which would allow us to reuse its memory.
         */
         void* bitmapPtr = (void*)bitmap.GetPixels(out nint length_);
+        if (length_ < 0)
+        {
+            throw new ArgumentException("Bitmap has pixel buffer with negative length");
+        }
+
         nuint length = (nuint)length_;
-        void* bufferPtr = NativeMemory.Alloc(length);
-        Buffer.MemoryCopy(bitmapPtr, bufferPtr, length, length);
+
+        void* bufferPtr = null;
+        try
+        {
+            bufferPtr = NativeMemory.Alloc(length);
+            NativeMemory.Copy(bitmapPtr, bufferPtr, length);
+        }
+        catch
+        {
+            // avoid memory leak, although NativeMemory.Copy shouldn't throw
+            NativeMemory.Free(bufferPtr);
+            throw;
+        }
 
         return new()
         {
