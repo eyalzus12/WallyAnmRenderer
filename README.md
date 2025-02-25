@@ -8,12 +8,12 @@
 * A full implementation of the game's animation system.
 * Pause, frame step, and seeing exact animation timeline.
 * Listing the sprites and their data.
+* Translating internal names.
 
 #### Upcoming features:
 * Exporting as svg/png.
 * Rendering of sidekicks, companions, and podiums.
 * Support for animation loop points.
-* Translating internal names.
 * Correct timing for attack animations.
 
 #### Unsupported swf features:
@@ -55,6 +55,8 @@ run the project (inside the WallyAnmRenderer folder created by git clone):
 - SwiffCheese - C# library for converting flash vector graphics into svg.
 
 - AbcDisassembler - C# library for parsing actionscript bytecode. Used to find the swz decryption key and the .a array for sprites.
+
+- BrawlhallaLangReader - C# library for parsing Brawlhalla language .bin files.
 
 ## Package Dependencies
 
