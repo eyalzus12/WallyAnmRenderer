@@ -1,7 +1,6 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using BrawlhallaAnimLib.Math;
 using Raylib_cs;
 using SkiaSharp;
@@ -54,7 +53,7 @@ public class RaylibUtils
     public static double Cross(double X1, double Y1, double X2, double Y2) => X1 * Y2 - X2 * Y1;
 
     /// <remarks>
-    /// WARNING! Do not try to access the bitmap after calling this function.
+    /// The bitmap passed to this function is disposed.
     /// </remarks>
     [SkipLocalsInit]
     public static unsafe RlImage SKBitmapToRlImage(SKBitmap bitmap)
@@ -77,6 +76,8 @@ public class RaylibUtils
         [UnsafeAccessor(UnsafeAccessorKind.Method, Name = nameof(set_Handle))]
         extern static void set_Handle(SKObject obj, IntPtr handle);
         set_Handle(bitmap, IntPtr.Zero);
+        // now dispose rest to prevent misuse of this function
+        bitmap.Dispose();
 
         return image;
     }
