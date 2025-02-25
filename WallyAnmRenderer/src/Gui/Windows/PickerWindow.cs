@@ -56,6 +56,7 @@ public sealed class PickerWindow
     private void CostumeTypeSection(Loader loader, GfxInfo gfxInfo)
     {
         CostumeTypes costumeTypes = loader.SwzFiles.Game.CostumeTypes;
+        HeroTypes heroTypes = loader.SwzFiles.Game.HeroTypes;
         ImGui.InputText("Filter costumes", ref _costumeTypeFilter, 256);
         if (ImGui.BeginListBox("###costumeselect"))
         {
@@ -70,9 +71,14 @@ public sealed class PickerWindow
                 string costumeName = costumeType;
                 if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
                 {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realCostumeName))
-                        costumeName = $"{realCostumeName} ({costumeType})";
+                    heroTypes.TryGetBioName(info.OwnerHero, out string? bioName);
+                    if (info.CostumeIndex == 0 && !string.IsNullOrEmpty(bioName)) costumeName = $"{bioName} ({costumeType})";
+                    else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
+                    {
+                        costumeName = !string.IsNullOrEmpty(bioName)
+                            ? $"{realCostumeName} ({bioName}: {costumeType})"
+                            : $"{realCostumeName} ({costumeType})";
+                    }
                 }
 
                 if (!costumeName.Contains(_costumeTypeFilter, StringComparison.InvariantCultureIgnoreCase))
