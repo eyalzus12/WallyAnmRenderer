@@ -29,7 +29,7 @@ public sealed class Editor
 
     public Animator? Animator { get; private set; }
     public GfxInfo GfxInfo { get; private set; } = new();
-    private RlColor _bgColor = RlColor.Black;
+    private RlColor _bgColor = new RlColor(0, 0, 51, 255); // #000033
 
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();

@@ -6,7 +6,7 @@ using nietras.SeparatedValues;
 
 namespace WallyAnmRenderer;
 
-public readonly record struct CostumeTypeInfo(string CostumeName, string DisplayNameKey);
+public readonly record struct CostumeTypeInfo(string CostumeName, string DisplayNameKey, string OwnerHero, uint CostumeIndex);
 
 public readonly struct CostumeTypes : ICsvReader
 {
@@ -24,7 +24,9 @@ public readonly struct CostumeTypes : ICsvReader
             _rows[costumeName] = adapter;
 
             string displayNameKey = row["DisplayNameKey"].ToString();
-            _infos[costumeName] = new(costumeName, displayNameKey);
+            string ownerHero = row["OwnerHero"].ToString();
+            uint costumeIndex = uint.Parse(row["CostumeIndex"].ToString());
+            _infos[costumeName] = new(costumeName, displayNameKey, ownerHero, costumeIndex);
 
             CostumeTypesGfx info = new(adapter);
             _gfx[costumeName] = info;

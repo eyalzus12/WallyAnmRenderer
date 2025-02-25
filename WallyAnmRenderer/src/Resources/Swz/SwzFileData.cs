@@ -61,10 +61,11 @@ public sealed class SwzGameFile
     public WeaponSkinTypes WeaponSkinTypes { get; }
     public ColorSchemeTypes ColorSchemeTypes { get; }
     public ColorExceptionTypes ColorExceptionTypes { get; }
+    public HeroTypes HeroTypes { get; }
 
     public SwzGameFile(string filePath, uint key)
     {
-        _data = new(filePath, key, ["costumeTypes.csv", "weaponSkinTypes.csv", "ColorSchemeTypes.xml", "colorExceptionTypes.csv"]);
+        _data = new(filePath, key, ["costumeTypes.csv", "weaponSkinTypes.csv", "ColorSchemeTypes.xml", "colorExceptionTypes.csv", "HeroTypes.xml"]);
 
         static SepReader readerFromText(string text)
         {
@@ -96,5 +97,9 @@ public sealed class SwzGameFile
         string colorExceptionTypesContent = _data["colorExceptionTypes.csv"];
         using (SepReader reader = readerFromText(colorExceptionTypesContent))
             ColorExceptionTypes = new(reader);
+
+        string heroTypesContent = _data["HeroTypes.xml"];
+        XElement heroTypesElement = XElement.Parse(heroTypesContent);
+        HeroTypes = new(heroTypesElement);
     }
 }

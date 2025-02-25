@@ -3,4 +3,5 @@
 [Bb]in/
 [Oo]bj/
 .vscode/
+.vs/
 imgui.ini
