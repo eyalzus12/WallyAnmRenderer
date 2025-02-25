@@ -91,6 +91,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         bitmap1.Dispose();
         RlImage img = RaylibUtils.SKBitmapToRlImage(bitmap2);
         bitmap2.Dispose();
+        Rl.ImageMipmaps(ref img);
 
         // no need for alpha premult since we specify it in the ToBitmap
 
@@ -102,6 +103,8 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
     {
         (RlImage img, Transform2D trans) = shapeData;
         Texture2D texture = Rl.LoadTextureFromImage(img);
+        Rl.SetTextureWrap(texture, TextureWrap.Clamp);
+        Rl.GenTextureMipmaps(ref texture);
         return new(texture, trans);
     }
 

@@ -18,7 +18,6 @@ public sealed class Texture2DWrapper : IDisposable
     public Texture2DWrapper(Texture2D texture, Transform2D transform, bool ownTexture = true)
     {
         Texture = texture;
-        Rl.SetTextureWrap(texture, TextureWrap.Clamp);
         Transform = transform;
         OwnTexture = ownTexture;
     }
