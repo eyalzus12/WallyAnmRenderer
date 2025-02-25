@@ -116,7 +116,7 @@ public static class ColorSwapUtils
         if (fillStyle.Type == FillStyleType.SolidColor)
         {
             SolidFillStyleRGBA solidFill = (SolidFillStyleRGBA)fillStyle;
-            solidFill.Color = SwapSwfRGBA(solidFill.Color, colorSwapDict, true);
+            solidFill.Color = SwapSwfRGBA(solidFill.Color, colorSwapDict);
         }
         else if (fillStyle.Type == FillStyleType.LinearGradient)
         {
@@ -148,9 +148,9 @@ public static class ColorSwapUtils
     {
         IList<GradientRecordRGBA> gradientRecords = gradient.GradientRecords;
         GradientRecordRGBA first = gradientRecords[0];
-        first.Color = SwapSwfRGBA(first.Color, colorSwapDict, false);
+        first.Color = SwapSwfRGBA(first.Color, colorSwapDict);
         GradientRecordRGBA second = gradientRecords[1];
-        second.Color = SwapSwfRGBA(second.Color, colorSwapDict, false);
+        second.Color = SwapSwfRGBA(second.Color, colorSwapDict);
     }
 
     private static SwfRGB SwapSwfRGB(SwfRGB color, Dictionary<uint, uint> colorSwapDict)
@@ -164,7 +164,7 @@ public static class ColorSwapUtils
         return newColor;
     }
 
-    private static SwfRGBA SwapSwfRGBA(SwfRGBA color, Dictionary<uint, uint> colorSwapDict, bool retainAlpha)
+    private static SwfRGBA SwapSwfRGBA(SwfRGBA color, Dictionary<uint, uint> colorSwapDict)
     {
         uint colorHex = SwfRGBAToHex(color);
         if (!colorSwapDict.TryGetValue(colorHex, out uint newColorHex))
@@ -172,7 +172,8 @@ public static class ColorSwapUtils
         if (newColorHex == 0)
             return color;
         SwfRGBA newColor = HexToSwfRGBA(newColorHex);
-        if (retainAlpha) newColor.Alpha = color.Alpha;
+        // retain alpha
+        newColor.Alpha = color.Alpha;
         return newColor;
     }
 
@@ -194,6 +195,6 @@ public static class ColorSwapUtils
 
     private static SwfRGBA HexToSwfRGBA(uint hex)
     {
-        return new((byte)(hex >> 16), (byte)(hex >> 8), (byte)hex, 255);
+        return new((byte)(hex >> 16), (byte)(hex >> 8), (byte)hex, (byte)(hex >> 24));
     }
 }
