@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using ImGuiNET;
 
@@ -72,7 +70,7 @@ public sealed class PickerWindow
                 if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
                 {
                     heroTypes.TryGetBioName(info.OwnerHero, out string? bioName);
-                    if (info.CostumeIndex == 0 && !string.IsNullOrEmpty(bioName)) 
+                    if (info.CostumeIndex == 0 && !string.IsNullOrEmpty(bioName))
                     {
                         costumeName = $"{bioName} ({costumeType})";
                     }
@@ -84,7 +82,7 @@ public sealed class PickerWindow
                     }
                 }
 
-                if (!costumeName.Contains(_costumeTypeFilter, StringComparison.InvariantCultureIgnoreCase))
+                if (!costumeName.Contains(_costumeTypeFilter, StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
                 if (ImGui.Selectable(costumeName, costumeType == gfxInfo.CostumeType))
@@ -93,6 +91,7 @@ public sealed class PickerWindow
                     OnSelect(loader);
                 }
             }
+
             ImGui.EndListBox();
         }
     }
@@ -105,7 +104,7 @@ public sealed class PickerWindow
         {
             if (ImGui.Selectable("None##none", gfxInfo.WeaponSkinType is null))
             {
-                gfxInfo.CostumeType = null;
+                gfxInfo.WeaponSkinType = null;
             }
 
             foreach (string weaponSkinType in weaponSkinTypes.WeaponSkins)
@@ -118,9 +117,13 @@ public sealed class PickerWindow
                         weaponSkinName = $"{realWeaponSkinName} ({weaponSkinType})";
                 }
 
+                if (!weaponSkinName.Contains(_weaponSkinTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
                 if (ImGui.Selectable(weaponSkinName, weaponSkinType == gfxInfo.WeaponSkinType))
                     gfxInfo.WeaponSkinType = weaponSkinType;
             }
+
             ImGui.EndListBox();
         }
     }
@@ -128,7 +131,6 @@ public sealed class PickerWindow
     private void ColorSchemeSection(Loader loader, GfxInfo info)
     {
         ColorSchemeTypes colorSchemeTypes = loader.SwzFiles.Game.ColorSchemeTypes;
-        IEnumerable<string> filteredColorSchemes = colorSchemeTypes.ColorSchemes.Where(s => s.Contains(_colorSchemeFilter, StringComparison.InvariantCultureIgnoreCase));
         ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
         if (ImGui.BeginListBox("###colorselect"))
         {
@@ -138,8 +140,11 @@ public sealed class PickerWindow
                 OnSelect(loader);
             }
 
-            foreach (string colorScheme in filteredColorSchemes)
+            foreach (string colorScheme in colorSchemeTypes.ColorSchemes)
             {
+                if (!colorScheme.Contains(_colorSchemeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
                 if (ImGui.Selectable(colorScheme, colorScheme == info.ColorScheme))
                 {
                     info.ColorScheme = colorScheme;

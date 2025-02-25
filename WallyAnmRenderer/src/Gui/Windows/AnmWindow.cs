@@ -32,7 +32,7 @@ public sealed class AnmWindow
         string[] files = Directory.GetFiles(brawlAnimPath);
 
         ImGui.InputText("Filter files", ref _fileFilter, 256);
-        IEnumerable<string> filteredFiles = files.Where((file) => file.Contains(_fileFilter, StringComparison.InvariantCultureIgnoreCase));
+        IEnumerable<string> filteredFiles = files.Where((file) => file.Contains(_fileFilter, StringComparison.CurrentCultureIgnoreCase));
 
         foreach (string absolutePath in filteredFiles)
         {
@@ -75,7 +75,7 @@ public sealed class AnmWindow
 
                             if (ImGui.BeginListBox(""))
                             {
-                                IEnumerable<string> filteredAnimations = anmClass.Animations.Keys.Where(a => a.Contains(filter, StringComparison.InvariantCultureIgnoreCase));
+                                IEnumerable<string> filteredAnimations = anmClass.Animations.Keys.Where(a => a.Contains(filter, StringComparison.CurrentCultureIgnoreCase));
                                 foreach (string animation in filteredAnimations)
                                 {
                                     bool selected =
