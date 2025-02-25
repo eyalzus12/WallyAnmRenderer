@@ -6,7 +6,7 @@ namespace WallyAnmRenderer;
 
 public sealed class HeroTypes
 {
-    private readonly Dictionary<string, Hero> _Heroes = [];
+    private readonly Dictionary<string, HeroType> _heroes = [];
 
     public HeroTypes(XElement element)
     {
@@ -14,14 +14,13 @@ public sealed class HeroTypes
         {
             string name = hero.Attribute("HeroName")?.Value!;
             if (name == "Template") continue;
-            _Heroes[name] = new(hero);
+            _heroes[name] = new(hero);
         }
     }
 
     public bool TryGetBioName(string heroName, [MaybeNullWhen(false)] out string bioName)
     {
-        Hero? hero;
-        if (_Heroes.TryGetValue(heroName, out hero))
+        if (_heroes.TryGetValue(heroName, out HeroType? hero))
         {
             bioName = hero.BioName;
             return true;
@@ -30,5 +29,5 @@ public sealed class HeroTypes
         return false;
     }
 
-    public IEnumerable<string> Heroes => _Heroes.Keys;
+    public IEnumerable<string> Heroes => _heroes.Keys;
 }
