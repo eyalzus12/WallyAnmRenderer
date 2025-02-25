@@ -1,5 +1,7 @@
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using BrawlhallaAnimLib.Math;
 using Raylib_cs;
 using SkiaSharp;
@@ -58,12 +60,15 @@ public class RaylibUtils
             throw new ArgumentException($"{nameof(SKBitmapToRlImage)} only supports Rgba8888, but got {bitmap.ColorType}");
         }
 
-        // use Rl alloc so GC doesn't free the memory
-        void* bufferPtr = Rl.MemAlloc((uint)bitmap.ByteCount);
-        // create a Span from the unmanaged memory
-        Span<byte> buffer = new(bufferPtr, bitmap.ByteCount);
-        // copy the bitmap bytes to the span
-        bitmap.GetPixelSpan().CopyTo(buffer);
+        /*
+        this seems to be the fastest possible way to clone the bitmap bytes.
+        only way to be faster would be to get the bitmap to give up on deallocating.
+        which would allow us to reuse its memory.
+        */
+        void* bitmapPtr = (void*)bitmap.GetPixels(out nint length_);
+        nuint length = (nuint)length_;
+        void* bufferPtr = NativeMemory.Alloc(length);
+        Buffer.MemoryCopy(bitmapPtr, bufferPtr, length, length);
 
         return new()
         {
