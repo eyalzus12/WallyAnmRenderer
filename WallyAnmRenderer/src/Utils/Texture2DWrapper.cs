@@ -8,8 +8,8 @@ public sealed class Texture2DWrapper : IDisposable
 {
     private bool _disposedValue = false;
 
-    public Texture2D Texture { get; }
-    public Transform2D Transform { get; }
+    public Texture2D Texture { get; internal set; }
+    public Transform2D Transform { get; set; }
     public bool OwnTexture { get; }
 
     public int Width => Texture.Width;

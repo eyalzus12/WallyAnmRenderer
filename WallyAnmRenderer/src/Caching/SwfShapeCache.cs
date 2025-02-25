@@ -103,9 +103,14 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
     {
         (RlImage img, Transform2D trans) = shapeData;
         Texture2D texture = Rl.LoadTextureFromImage(img);
+        return new(texture, trans);
+    }
+
+    protected override void InitValue(Texture2DWrapper v)
+    {
+        Texture2D texture = v.Texture;
         Rl.SetTextureWrap(texture, TextureWrap.Clamp);
         Rl.GenTextureMipmaps(ref texture);
-        return new(texture, trans);
     }
 
     protected override void UnloadIntermediate(ShapeData shapeData)
