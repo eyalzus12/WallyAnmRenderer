@@ -53,6 +53,9 @@ public class RaylibUtils
 
     public static double Cross(double X1, double Y1, double X2, double Y2) => X1 * Y2 - X2 * Y1;
 
+    /// <remarks>
+    /// WARNING! Do not try to access the bitmap after calling this function.
+    /// </remarks>
     [SkipLocalsInit]
     public static unsafe RlImage SKBitmapToRlImage(SKBitmap bitmap)
     {
@@ -61,40 +64,21 @@ public class RaylibUtils
             throw new ArgumentException($"{nameof(SKBitmapToRlImage)} only supports Rgba8888, but got {bitmap.ColorType}");
         }
 
-        /*
-        this seems to be the fastest possible way to clone the bitmap bytes.
-        only way to be faster would be to get the bitmap to give up on deallocating.
-        which would allow us to reuse its memory.
-        */
-        void* bitmapPtr = (void*)bitmap.GetPixels(out nint length_);
-        if (length_ < 0)
+        RlImage image = new()
         {
-            throw new ArgumentException("Bitmap has pixel buffer with negative length");
-        }
-
-        nuint length = (nuint)length_;
-
-        void* bufferPtr = null;
-        try
-        {
-            bufferPtr = NativeMemory.Alloc(length);
-            NativeMemory.Copy(bitmapPtr, bufferPtr, length);
-        }
-        catch
-        {
-            // avoid memory leak, although NativeMemory.Copy shouldn't throw
-            NativeMemory.Free(bufferPtr);
-            throw;
-        }
-
-        return new()
-        {
-            Data = bufferPtr,
+            Data = (void*)bitmap.GetPixels(),
             Width = bitmap.Width,
             Height = bitmap.Height,
             Mipmaps = 1,
             Format = PixelFormat.UncompressedR8G8B8A8,
         };
+
+        // very evil. gaslight the bitmap into thinking it disposed its pixels.
+        [UnsafeAccessor(UnsafeAccessorKind.Method, Name = nameof(set_Handle))]
+        extern static void set_Handle(SKObject obj, IntPtr handle);
+        set_Handle(bitmap, IntPtr.Zero);
+
+        return image;
     }
 
     public static Vector3 RlColorToVector3(RlColor color)
