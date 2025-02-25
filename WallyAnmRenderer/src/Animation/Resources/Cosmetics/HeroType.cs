@@ -26,7 +26,7 @@ public sealed class HeroType
 
         if (string.IsNullOrEmpty(BioName))
         {
-            string heroDisplayName = element.Attribute("HeroDisplayName")?.Value;
+            string heroDisplayName = element.Attribute("HeroDisplayName")!.Value;
             BioName = !string.IsNullOrEmpty(heroDisplayName)
                 ? CultureInfo.CurrentCulture.TextInfo.ToTitleCase(heroDisplayName.ToLower())
                 : Name;

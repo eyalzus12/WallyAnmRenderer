@@ -12,7 +12,7 @@ public sealed class ColorSchemeTypes
     {
         foreach (XElement colorScheme in element.Elements())
         {
-            string name = colorScheme.Attribute("ColorSchemeName")?.Value!;
+            string name = colorScheme.Attribute("ColorSchemeName")!.Value;
             if (name == "Template") continue;
             _colorSchemes[name] = new(colorScheme);
         }

@@ -12,7 +12,7 @@ public sealed class HeroTypes
     {
         foreach (XElement hero in element.Elements())
         {
-            string name = hero.Attribute("HeroName")?.Value!;
+            string name = hero.Attribute("HeroName")!.Value;
             if (name == "Template") continue;
             _heroes[name] = new(hero);
         }
