@@ -72,7 +72,10 @@ public sealed class PickerWindow
                 if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
                 {
                     heroTypes.TryGetBioName(info.OwnerHero, out string? bioName);
-                    if (info.CostumeIndex == 0 && !string.IsNullOrEmpty(bioName)) costumeName = $"{bioName} ({costumeType})";
+                    if (info.CostumeIndex == 0 && !string.IsNullOrEmpty(bioName)) 
+                    {
+                        costumeName = $"{bioName} ({costumeType})";
+                    }
                     else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
                     {
                         costumeName = !string.IsNullOrEmpty(bioName)
