@@ -27,7 +27,7 @@ public sealed class GfxInfo
 
     public (IGfxType gfx, string animation, bool flip)? ToGfxType(SwzGameFile gameFiles)
     {
-        if (AnimClass is null || AnimFile is null || Animation is null)
+        if (!AnimationPicked)
             return null;
 
         ColorExceptionTypes colorExceptionTypes = gameFiles.ColorExceptionTypes;

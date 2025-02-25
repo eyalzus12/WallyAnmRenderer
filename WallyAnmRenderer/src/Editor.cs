@@ -141,12 +141,17 @@ public sealed class Editor
         rlImGui.Begin();
 
         Gui();
+        bool finishedLoading = true;
         BoneSpriteWithName[]? sprites = null;
         BoneSpriteWithName? highlightedSprite = null;
-        if (Animator is not null)
+        if (Animator is not null && GfxInfo.AnimationPicked)
         {
             var info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
-            if (info is not null)
+            if (info is null)
+            {
+                finishedLoading = false;
+            }
+            else
             {
                 long frame = (long)Math.Floor(24 * Time.TotalSeconds);
                 (IGfxType gfxType, string animation, bool flip) = info.Value;
@@ -172,7 +177,6 @@ public sealed class Editor
         {
             Animator.Loader.AssetLoader.Upload();
 
-            bool finishedLoading = true;
             foreach (BoneSpriteWithName sprite in sprites)
             {
                 bool highlighted = sprite == highlightedSprite;
@@ -195,15 +199,15 @@ public sealed class Editor
                     );
                 }
             }
+        }
 
-            if (!finishedLoading)
-            {
-                string text = "Loading...";
-                int textSize = Rl.MeasureText(text, 100);
-                float width = ViewportWindow.Bounds.Width;
-                float height = ViewportWindow.Bounds.Height;
-                Rl.DrawText(text, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, RlColor.RayWhite);
-            }
+        if (!finishedLoading)
+        {
+            string text = "Loading...";
+            int textSize = Rl.MeasureText(text, 100);
+            float width = ViewportWindow.Bounds.Width;
+            float height = ViewportWindow.Bounds.Height;
+            Rl.DrawText(text, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, RlColor.RayWhite);
         }
 
         Rl.EndMode2D();
