@@ -67,10 +67,13 @@ public sealed class ColorScheme : IColorSchemeType
         [ColorSchemeSwapEnum.SpecialVD] = 0x004000,
         [ColorSchemeSwapEnum.SpecialAcc] = 0x00FFC0,
 
+        // No ingame color scheme defines hand swaps
+        /*
         [ColorSchemeSwapEnum.HandsLt] = 0x00FFFF,
         [ColorSchemeSwapEnum.HandsDk] = 0x008080,
         [ColorSchemeSwapEnum.HandsSkinLt] = 0x8000FF,
         [ColorSchemeSwapEnum.HandsSkinDk] = 0x400080,
+        */
 
         [ColorSchemeSwapEnum.ClothVL] = 0xC0C0FF,
         [ColorSchemeSwapEnum.ClothLt] = 0x8080FF,
