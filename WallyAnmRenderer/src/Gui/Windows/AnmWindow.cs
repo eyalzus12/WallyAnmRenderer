@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using ImGuiNET;
 using WallyAnmSpinzor;
 
@@ -32,13 +31,13 @@ public sealed class AnmWindow
         string[] files = Directory.GetFiles(brawlAnimPath);
 
         ImGui.InputText("Filter files", ref _fileFilter, 256);
-        IEnumerable<string> filteredFiles = files.Where((file) => file.Contains(_fileFilter, StringComparison.CurrentCultureIgnoreCase));
-
-        foreach (string absolutePath in filteredFiles)
+        foreach (string absolutePath in files)
         {
             if (!absolutePath.EndsWith(".anm")) continue;
 
             string fileName = Path.GetRelativePath(brawlAnimPath, absolutePath);
+            if (!fileName.Contains(_fileFilter, StringComparison.CurrentCultureIgnoreCase))
+                continue;
             string relativePath = Path.GetRelativePath(brawlPath, absolutePath);
 
             if (assetLoader.IsAnmLoading(relativePath))
@@ -75,9 +74,11 @@ public sealed class AnmWindow
 
                             if (ImGui.BeginListBox(""))
                             {
-                                IEnumerable<string> filteredAnimations = anmClass.Animations.Keys.Where(a => a.Contains(filter, StringComparison.CurrentCultureIgnoreCase));
-                                foreach (string animation in filteredAnimations)
+                                foreach (string animation in anmClass.Animations.Keys)
                                 {
+                                    if (!animation.Contains(filter, StringComparison.CurrentCultureIgnoreCase))
+                                        continue;
+
                                     bool selected =
                                         animFile == info.AnimFile &&
                                         animClass == info.AnimClass &&
