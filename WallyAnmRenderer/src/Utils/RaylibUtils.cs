@@ -1,6 +1,5 @@
 using System;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using BrawlhallaAnimLib.Math;
 using Raylib_cs;
 using SkiaSharp;
@@ -52,34 +51,25 @@ public class RaylibUtils
 
     public static double Cross(double X1, double Y1, double X2, double Y2) => X1 * Y2 - X2 * Y1;
 
-    /// <remarks>
-    /// The bitmap passed to this function is disposed.
-    /// </remarks>
-    [SkipLocalsInit]
-    public static unsafe RlImage SKBitmapToRlImage(SKBitmap bitmap)
+    public static unsafe RlImage SKBitmapAsRlImage(SKBitmap bitmap)
     {
-        if (bitmap.ColorType != SKColorType.Rgba8888)
+        PixelFormat format = bitmap.ColorType switch
         {
-            throw new ArgumentException($"{nameof(SKBitmapToRlImage)} only supports Rgba8888, but got {bitmap.ColorType}");
-        }
+            SKColorType.Rgb565 => PixelFormat.UncompressedR5G6B5,
+            SKColorType.Rgba8888 => PixelFormat.UncompressedR8G8B8A8,
+            SKColorType.Rgb888x => PixelFormat.UncompressedR8G8B8,
+            SKColorType.Gray8 => PixelFormat.UncompressedGrayscale,
+            _ => throw new NotImplementedException($"Unsupported color type {bitmap.ColorType}"),
+        };
 
-        RlImage image = new()
+        return new()
         {
             Data = (void*)bitmap.GetPixels(),
             Width = bitmap.Width,
             Height = bitmap.Height,
             Mipmaps = 1,
-            Format = PixelFormat.UncompressedR8G8B8A8,
+            Format = format,
         };
-
-        // very evil. gaslight the bitmap into thinking it disposed its pixels.
-        [UnsafeAccessor(UnsafeAccessorKind.Method, Name = nameof(set_Handle))]
-        extern static void set_Handle(SKObject obj, IntPtr handle);
-        set_Handle(bitmap, IntPtr.Zero);
-        // now dispose rest to prevent misuse of this function
-        bitmap.Dispose();
-
-        return image;
     }
 
     public static Vector3 RlColorToVector3(RlColor color)

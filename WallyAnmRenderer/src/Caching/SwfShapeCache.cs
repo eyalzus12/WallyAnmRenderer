@@ -89,14 +89,14 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         // Medium and High work the same for downscaling
         using SKBitmap bitmap2 = bitmap1.Resize(new SKSizeI(imageW, imageH), SKFilterQuality.Medium);
         bitmap1.Dispose();
-        RlImage img = RaylibUtils.SKBitmapToRlImage(bitmap2);
-        bitmap2.Dispose();
-        Rl.ImageMipmaps(ref img);
+        RlImage img1 = RaylibUtils.SKBitmapAsRlImage(bitmap2);
+        RlImage img2 = RaylibEx.ImageCopyWithMipmaps(img1);
+        bitmap2.Dispose(); // also unloads img1
 
         // no need for alpha premult since we specify it in the ToBitmap
 
         Transform2D.Invert(transform, out Transform2D inv);
-        return new ShapeData(img, inv);
+        return new ShapeData(img2, inv);
     }
 
     protected override Texture2DWrapper IntermediateToValue(ShapeData shapeData)
