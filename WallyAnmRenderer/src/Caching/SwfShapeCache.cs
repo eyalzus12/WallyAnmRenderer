@@ -1,17 +1,14 @@
 using System;
 using System.Xml;
-
-using SwiffCheese.Shapes;
-using SwiffCheese.Exporting.Svg;
-
-using Raylib_cs;
-
-using Svg.Skia;
-using SkiaSharp;
-using BrawlhallaAnimLib.Math;
-using SwfLib.Tags.ShapeTags;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Raylib_cs;
+using Svg.Skia;
+using SkiaSharp;
+using SwfLib.Tags.ShapeTags;
+using SwiffCheese.Shapes;
+using SwiffCheese.Exporting.Svg;
+using BrawlhallaAnimLib.Math;
 
 namespace WallyAnmRenderer;
 
@@ -83,8 +80,10 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         using XmlReader reader = exporter.Document.CreateReader();
         using SKSvg svg = SKSvg.CreateFromXmlReader(reader);
         reader.Dispose();
-        // 20 seems to work, but does it? it's also expensive...
-        using SKBitmap bitmap1 = svg.Picture!.ToBitmap(SKColors.Transparent, 20, 20, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb())!;
+        // should turn twips into pixels. need to find a better solution.
+        // this is the main thing preventing rendering at high AnimScale
+        double rasterScale = 20 / 1.2;
+        using SKBitmap bitmap1 = svg.Picture!.ToBitmap(SKColors.Transparent, (float)rasterScale, (float)rasterScale, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb())!;
         svg.Dispose();
         // Medium and High work the same for downscaling
         using SKBitmap bitmap2 = bitmap1.Resize(new SKSizeI(imageW, imageH), SKFilterQuality.Medium);
