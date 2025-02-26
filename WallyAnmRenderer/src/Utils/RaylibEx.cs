@@ -7,9 +7,9 @@ namespace WallyAnmRenderer;
 public static class RaylibEx
 {
     // modified from raylib to properly supported bigger sizes
-    public static nuint GetPixelDataSize(nuint width, nuint height, PixelFormat format)
+    public static ulong GetPixelDataSize(int width, int height, PixelFormat format)
     {
-        nuint bpp = 0;            // Bits per pixel
+        ulong bpp = 0;            // Bits per pixel
 
         switch (format)
         {
@@ -31,7 +31,7 @@ public static class RaylibEx
             case PixelFormat.CompressedAstc4X4Rgba:
                 bpp = 8;
                 break;
-            // case PixelFormat.UncompressedR16:
+            case PixelFormat.UncompressedR16:
             case PixelFormat.UncompressedGrayAlpha:
             case PixelFormat.UncompressedR5G6B5:
             case PixelFormat.UncompressedR5G5B5A1:
@@ -45,14 +45,12 @@ public static class RaylibEx
             case PixelFormat.UncompressedR32:
                 bpp = 32;
                 break;
-            /*
             case PixelFormat.UncompressedR16G16B16:
                 bpp = 48;
                 break;
             case PixelFormat.UncompressedR16G16B16A16:
                 bpp = 64;
                 break;
-            */
             case PixelFormat.UncompressedR32G32B32:
                 bpp = 96;
                 break;
@@ -61,7 +59,7 @@ public static class RaylibEx
                 break;
         }
 
-        nuint dataSize = bpp * width * height / 8;
+        ulong dataSize = bpp * (ulong)width * (ulong)height / 8;
 
         // Most compressed formats works on 4x4 blocks,
         // if texture is smaller, minimum dataSize is 8 or 16
@@ -81,18 +79,18 @@ public static class RaylibEx
         // Security check to avoid program crash
         if ((image.Data == null) || (image.Width == 0) || (image.Height == 0)) return image;
 
-        nuint width = (nuint)image.Width;
-        nuint height = (nuint)image.Height;
-        nuint imageSize = GetPixelDataSize(width, height, image.Format);
+        int width = image.Width;
+        int height = image.Height;
+        ulong imageSize = GetPixelDataSize(width, height, image.Format);
 
         // Required mipmap levels count (including base level)
         int mipCount = 1;
         // Base image width
-        nuint mipWidth = width;
+        int mipWidth = width;
         // Base image height
-        nuint mipHeight = height;
+        int mipHeight = height;
         // Image data size (in bytes)
-        nuint mipSize = imageSize;
+        ulong mipSize = imageSize;
 
         // Count mipmap levels required
         while ((mipWidth != 1) || (mipHeight != 1))
@@ -110,26 +108,40 @@ public static class RaylibEx
 
         if (image.Mipmaps < mipCount)
         {
+            // this check ensures that any future cast to nuint is valid
+            if (mipSize > nuint.MaxValue)
+            {
+                Rl.TraceLog(TraceLogLevel.Warning, "IMAGE: Reqreuid mipmap memory exceeds addressable range");
+            }
+
             // modification is here: copy instead of realloc
-            void* temp = NativeMemory.Alloc(mipSize);
+            void* temp = NativeMemory.Alloc((nuint)mipSize);
             if (temp == null)
             {
                 Rl.TraceLog(TraceLogLevel.Warning, "IMAGE: Mipmaps required memory could not be allocated");
             }
             else
             {
-                NativeMemory.Copy(image.Data, temp, imageSize);
-                image.Data = temp;
+                try
+                {
+                    NativeMemory.Copy(image.Data, temp, (nuint)imageSize);
+                    image.Data = temp;
+                }
+                catch
+                {
+                    NativeMemory.Free(image.Data);
+                    throw;
+                }
             }
 
             // Pointer to allocated memory point where store next mipmap level data
             byte* nextmip = (byte*)image.Data;
 
-            mipWidth = (nuint)image.Width;
-            mipHeight = (nuint)image.Height;
+            mipWidth = image.Width;
+            mipHeight = image.Height;
             mipSize = GetPixelDataSize(mipWidth, mipHeight, image.Format);
-            RlImage imCopy = Rl.ImageCopy(image);
 
+            RlImage imCopy = Rl.ImageCopy(image);
             for (int i = 1; i < mipCount; i++)
             {
                 nextmip += mipSize;
@@ -145,11 +157,10 @@ public static class RaylibEx
 
                 if (i < image.Mipmaps) continue;
 
-                Rl.ImageResize(ref imCopy, (int)mipWidth, (int)mipHeight); // Uses internally Mitchell cubic downscale filter
+                Rl.ImageResize(ref imCopy, mipWidth, mipHeight); // Uses internally Mitchell cubic downscale filter
 
-                NativeMemory.Copy(nextmip, imCopy.Data, mipSize);
+                NativeMemory.Copy(nextmip, imCopy.Data, (nuint)mipSize);
             }
-
             Rl.UnloadImage(imCopy);
 
             image.Mipmaps = mipCount;

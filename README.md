@@ -66,7 +66,7 @@ This list includes the dependencies from submodules.
 
 - NativeFileDialogSharp (0.5.0) - C# bindings for nativefiledialog, a C library for opening the platform's default file explorer dialog.
 
-- Raylib-cs (7.0.0) - C# bindings for Raylib, a C rendering library.
+- Raylib-cs (7.0.1) - C# bindings for Raylib, a C rendering library.
 
 - ImGui.NET (1.91.6.1) - C# bindings for ImGui, a C++ ui library.
 

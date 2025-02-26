@@ -59,6 +59,8 @@ public class RaylibUtils
             SKColorType.Rgba8888 => PixelFormat.UncompressedR8G8B8A8,
             SKColorType.Rgb888x => PixelFormat.UncompressedR8G8B8,
             SKColorType.Gray8 => PixelFormat.UncompressedGrayscale,
+            SKColorType.RgbaF16 => PixelFormat.UncompressedR16G16B16A16,
+            SKColorType.RgbaF32 => PixelFormat.UncompressedR32G32B32A32,
             _ => throw new NotImplementedException($"Unsupported color type {bitmap.ColorType}"),
         };
 
