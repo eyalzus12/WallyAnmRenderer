@@ -134,12 +134,6 @@ public sealed class PickerWindow
         ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
         if (ImGui.BeginListBox("###colorselect"))
         {
-            if (ImGui.Selectable("None##none", info.ColorScheme is null))
-            {
-                info.ColorScheme = null;
-                OnSelect(loader);
-            }
-
             foreach (string colorScheme in colorSchemeTypes.ColorSchemes)
             {
                 if (!colorScheme.Contains(_colorSchemeFilter, StringComparison.CurrentCultureIgnoreCase))
