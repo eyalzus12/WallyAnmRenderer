@@ -12,9 +12,10 @@ public abstract class UploadCache<K, I, V> where K : notnull
 {
     protected abstract IEqualityComparer<K>? KeyEqualityComparer { get; }
 
+    protected ulong CacheVersion { get; private set; } = 0;
     private readonly Dictionary<K, V> _cache;
     private readonly Queue<V> _deleteQueue = [];
-    private readonly Queue<(K, I)> _queue = [];
+    private readonly Queue<(K, I, ulong)> _queue = [];
     private readonly HashSet<K> _queueSet;
 
     public UploadCache()
@@ -51,12 +52,19 @@ public abstract class UploadCache<K, I, V> where K : notnull
             return;
         _queueSet.Add(k);
 
+        ulong currentVersion = CacheVersion;
         Task.Run(() =>
         {
             try
             {
                 I i = LoadIntermediate(k);
-                lock (_queue) _queue.Enqueue((k, i));
+                if (currentVersion != CacheVersion)
+                {
+                    UnloadIntermediate(i);
+                    return;
+                }
+
+                lock (_queue) _queue.Enqueue((k, i, currentVersion));
             }
             catch (Exception e)
             {
@@ -76,15 +84,15 @@ public abstract class UploadCache<K, I, V> where K : notnull
 
         for (int j = 0; j < amount; j++)
         {
-            K k; I i;
+            K k; I i; ulong version;
             lock (_queue)
             {
                 if (_queue.Count == 0) break;
-                (k, i) = _queue.Dequeue();
+                (k, i, version) = _queue.Dequeue();
             }
-
             _queueSet.Remove(k);
-            if (!_cache.ContainsKey(k))
+
+            if (version == CacheVersion && !_cache.ContainsKey(k))
             {
                 V v = IntermediateToValue(i);
                 _cache[k] = v;
@@ -112,6 +120,8 @@ public abstract class UploadCache<K, I, V> where K : notnull
 
     public void Clear()
     {
+        CacheVersion++;
+
         lock (_deleteQueue)
         {
             foreach ((_, V v) in _cache)
@@ -124,18 +134,9 @@ public abstract class UploadCache<K, I, V> where K : notnull
         {
             while (_queue.Count > 0)
             {
-                (_, I i) = _queue.Dequeue();
+                (_, I i, _) = _queue.Dequeue();
                 UnloadIntermediate(i);
             }
         }
-    }
-
-    public void InsertIntermediate(K k, I i)
-    {
-        if (_queueSet.Contains(k) || _cache.ContainsKey(k))
-            return;
-
-        _queueSet.Add(k);
-        lock (_queue) _queue.Enqueue((k, i));
     }
 }

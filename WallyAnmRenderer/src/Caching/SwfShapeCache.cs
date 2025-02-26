@@ -46,6 +46,8 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
 
     protected override ShapeData LoadIntermediate(TextureInfo textureInfo)
     {
+        ulong currentVersion = CacheVersion;
+
         (SwfFileData swf, _, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) = textureInfo;
         animScale *= ANIM_SCALE_MULTIPLIER;
         ShapeBaseTag shape = swf.ShapeTags[shapeId];
@@ -77,20 +79,37 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         SvgShapeExporter exporter = new(size, matrix);
         compiledShape.Export(exporter);
 
+        if (currentVersion != CacheVersion) return default;
+
         using XmlReader reader = exporter.Document.CreateReader();
         using SKSvg svg = SKSvg.CreateFromXmlReader(reader);
         reader.Dispose();
+
+        if (currentVersion != CacheVersion) return default;
+
         // should turn twips into pixels. need to find a better solution.
         // this is the main thing preventing rendering at high AnimScale
         double rasterScale = 20 / 1.2;
         using SKBitmap bitmap1 = svg.Picture!.ToBitmap(SKColors.Transparent, (float)rasterScale, (float)rasterScale, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb())!;
         svg.Dispose();
+
+        if (currentVersion != CacheVersion) return default;
+
         // Medium and High work the same for downscaling
         using SKBitmap bitmap2 = bitmap1.Resize(new SKSizeI(imageW, imageH), SKFilterQuality.Medium);
         bitmap1.Dispose();
+
+        if (currentVersion != CacheVersion) return default;
+
         RlImage img1 = RaylibUtils.SKBitmapAsRlImage(bitmap2);
         RlImage img2 = RaylibEx.ImageCopyWithMipmaps(img1);
         bitmap2.Dispose(); // also unloads img1
+
+        if (currentVersion != CacheVersion)
+        {
+            Rl.UnloadImage(img2);
+            return default;
+        }
 
         // no need for alpha premult since we specify it in the ToBitmap
 

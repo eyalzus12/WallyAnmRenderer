@@ -111,7 +111,7 @@ public static class RaylibEx
             // this check ensures that any future cast to nuint is valid
             if (mipSize > nuint.MaxValue)
             {
-                Rl.TraceLog(TraceLogLevel.Warning, "IMAGE: Reqreuid mipmap memory exceeds addressable range");
+                Rl.TraceLog(TraceLogLevel.Warning, "IMAGE: Required mipmap memory exceeds addressable range");
             }
 
             // modification is here: copy instead of realloc
