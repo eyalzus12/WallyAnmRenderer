@@ -136,10 +136,18 @@ public sealed class PickerWindow
         {
             foreach (string colorScheme in colorSchemeTypes.ColorSchemes)
             {
-                if (!colorScheme.Contains(_colorSchemeFilter, StringComparison.CurrentCultureIgnoreCase))
+                string colorSchemeName = colorScheme;
+                if (colorSchemeTypes.TryGetColorScheme(colorScheme, out ColorScheme? scheme))
+                {
+                    string? displayNameKey = scheme.DisplayNameKey;
+                    if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
+                        colorSchemeName = $"{realSchemeName} ({colorScheme})";
+                }
+
+                if (!colorSchemeName.Contains(_colorSchemeFilter, StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
-                if (ImGui.Selectable(colorScheme, colorScheme == info.ColorScheme))
+                if (ImGui.Selectable(colorSchemeName, colorScheme == info.ColorScheme))
                 {
                     info.ColorScheme = colorScheme;
                     OnSelect(loader);
