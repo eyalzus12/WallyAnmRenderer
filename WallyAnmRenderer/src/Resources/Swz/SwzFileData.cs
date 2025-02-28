@@ -82,9 +82,13 @@ public sealed class SwzGameFile
             return reader.From(textReader);
         }
 
+        string heroTypesContent = _data["HeroTypes.xml"];
+        XElement heroTypesElement = XElement.Parse(heroTypesContent);
+        HeroTypes = new(heroTypesElement);
+
         string costumeTypesContent = _data["costumeTypes.csv"];
         using (SepReader reader = readerFromText(costumeTypesContent))
-            CostumeTypes = new(reader);
+            CostumeTypes = new(reader, HeroTypes);
 
         string weaponSkinTypesContent = _data["weaponSkinTypes.csv"];
         using (SepReader reader = readerFromText(weaponSkinTypesContent))
@@ -97,9 +101,5 @@ public sealed class SwzGameFile
         string colorExceptionTypesContent = _data["colorExceptionTypes.csv"];
         using (SepReader reader = readerFromText(colorExceptionTypesContent))
             ColorExceptionTypes = new(reader);
-
-        string heroTypesContent = _data["HeroTypes.xml"];
-        XElement heroTypesElement = XElement.Parse(heroTypesContent);
-        HeroTypes = new(heroTypesElement);
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using BrawlhallaAnimLib.Reading;
 using BrawlhallaAnimLib.Reading.CostumeTypes;
 using nietras.SeparatedValues;
@@ -14,7 +15,7 @@ public readonly struct CostumeTypes : ICsvReader
     private readonly Dictionary<string, CostumeTypeInfo> _infos = [];
     private readonly Dictionary<string, CostumeTypesGfx> _gfx = [];
 
-    public CostumeTypes(SepReader reader)
+    public CostumeTypes(SepReader reader, HeroTypes heroTypes)
     {
         foreach (SepReader.Row row in reader)
         {
@@ -31,6 +32,21 @@ public readonly struct CostumeTypes : ICsvReader
             CostumeTypesGfx info = new(adapter);
             _gfx[costumeName] = info;
         }
+
+        _infos = _infos.OrderBy(x => heroTypes.TryGetHero(x.Value.OwnerHero, out HeroType? hero) ? hero.ReleaseOrderId : 0)
+                .ThenBy(x => x.Value.CostumeIndex)
+                .ThenBy(x => x.Value.CostumeName)
+                .ToDictionary(x => x.Key, x => x.Value);
+
+        Dictionary<string, CostumeTypesGfx> sortedGfx = [];
+        foreach (string key in _infos.Keys)
+        {
+            if (_gfx.TryGetValue(key, out CostumeTypesGfx? gfxValue))
+            {
+                sortedGfx[key] = gfxValue;
+            }
+        }
+        _gfx = sortedGfx;
     }
 
     public bool TryGetCol(string key, [MaybeNullWhen(false)] out ICsvRow row)

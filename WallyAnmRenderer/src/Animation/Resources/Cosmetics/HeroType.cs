@@ -8,6 +8,7 @@ public sealed class HeroType
 {
     public string Name { get; }
     public string BioName { get; }
+    public uint ReleaseOrderId { get; } = 0;
 
     public HeroType(string name, string bioName)
     {
@@ -19,6 +20,7 @@ public sealed class HeroType
     {
         Name = element.Attribute("HeroName")?.Value ?? throw new ArgumentException("HeroName missing");
         BioName = element.Element("BioName")?.Value ?? string.Empty;
+        ReleaseOrderId = uint.TryParse(element.Element("ReleaseOrderID")?.Value, out uint releaseOrderId) ? releaseOrderId : 0;
 
         if (string.IsNullOrEmpty(BioName))
         {

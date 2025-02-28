@@ -18,6 +18,11 @@ public sealed class HeroTypes
         }
     }
 
+    public bool TryGetHero(string heroName, [MaybeNullWhen(false)] out HeroType hero)
+    {
+        return _heroes.TryGetValue(heroName, out hero);
+    }
+
     public bool TryGetBioName(string heroName, [MaybeNullWhen(false)] out string bioName)
     {
         if (_heroes.TryGetValue(heroName, out HeroType? hero))
