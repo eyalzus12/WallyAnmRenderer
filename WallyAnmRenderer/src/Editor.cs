@@ -112,12 +112,9 @@ public sealed class Editor
 
         PathsWindow.Open = PathPrefs.DecryptionKey is null || PathPrefs.BrawlhallaPath is null;
 
-        Rl.SetConfigFlags(ConfigFlags.VSyncHint);
-        Rl.SetConfigFlags(ConfigFlags.ResizableWindow);
+        Rl.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.MaximizedWindow | ConfigFlags.VSyncHint);
         Rl.InitWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "WallyAnmRenderer");
-        // window position ends up too high for me. tf?
-        Vector2 windowPos = Rl.GetWindowPosition();
-        Rl.SetWindowPosition((int)windowPos.X, (int)windowPos.Y + 20);
+        Rl.MaximizeWindow(); // why is the config flag not working smh
 
         Rl.SetExitKey(KeyboardKey.Null);
         rlImGui.Setup(true, true);
