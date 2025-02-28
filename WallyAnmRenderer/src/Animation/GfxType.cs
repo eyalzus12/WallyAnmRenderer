@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Gfx;
 
 namespace WallyAnmRenderer;
@@ -33,9 +32,6 @@ public sealed class GfxType : IGfxType
     public bool HideRightPistol2D { get; set; }
     public bool UseTrueLeftRightTorso { get; set; }
 
-    public Dictionary<string, string> BoneOverrides { get; set; } = [];
-    public bool TryGetBoneOverride(string bone, [MaybeNullWhen(false)] out string newBone)
-    {
-        return BoneOverrides.TryGetValue(bone, out newBone);
-    }
+    public Dictionary<string, string> BoneOverride { get; set; } = [];
+    IReadOnlyDictionary<string, string> IGfxType.BoneOverride => BoneOverride;
 }
