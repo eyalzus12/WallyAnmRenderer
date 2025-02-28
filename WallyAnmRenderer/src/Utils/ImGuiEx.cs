@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using ImGuiNET;
 
@@ -27,5 +28,48 @@ public static class ImGuiEx
         IntPtr stepPtr = (IntPtr)(&step);
         IntPtr stepFastPtr = (IntPtr)(&stepFast);
         return ImGui.InputScalar(label, ImGuiDataType.Double, valuePtr, stepPtr, stepFastPtr);
+    }
+
+    public static uint ColorPicker3Hex(string label, uint col, Vector2 size)
+    {
+        byte r = (byte)(col >> 16), g = (byte)(col >> 8), b = (byte)col;
+        Vector3 imCol = new((float)r / 255, (float)g / 255, (float)b / 255);
+        if (ImGui.ColorButton(label, new(imCol, 1), ImGuiColorEditFlags.NoAlpha, size))
+            ImGui.OpenPopup(label);
+        if (ImGui.BeginPopup(label))
+        {
+            ImGui.ColorPicker3(label, ref imCol);
+            ImGui.EndPopup();
+        }
+        r = (byte)(imCol.X * 255); g = (byte)(imCol.Y * 255); b = (byte)(imCol.Z * 255);
+        return ((uint)r << 16) | ((uint)g << 8) | b;
+    }
+
+    public static bool DisabledButton(string label, bool disabled)
+    {
+        if (disabled) ImGui.BeginDisabled();
+        bool result = ImGui.Button(label);
+        if (disabled) ImGui.EndDisabled();
+        return result;
+    }
+
+    public static bool DisabledSelectable(string label, bool disabled)
+    {
+        if (disabled) ImGui.BeginDisabled();
+        bool result = ImGui.Selectable(label);
+        if (disabled) ImGui.EndDisabled();
+        return result;
+    }
+
+    public static void BeginStyledChild(string label)
+    {
+        unsafe { ImGui.PushStyleColor(ImGuiCol.ChildBg, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg)); }
+        ImGui.BeginChild(label, new Vector2(0, ImGui.GetTextLineHeightWithSpacing() * 8), ImGuiChildFlags.ResizeY | ImGuiChildFlags.Borders);
+    }
+
+    public static void EndStyledChild()
+    {
+        ImGui.EndChild();
+        ImGui.PopStyleColor();
     }
 }

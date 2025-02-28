@@ -16,13 +16,19 @@ public sealed class AnmWindow
     private string _fileFilter = "";
     private readonly Dictionary<string, string> _animationFilterState = [];
 
-    public void Show(string? brawlPath, AssetLoader assetLoader, GfxInfo info)
+    public void Show(string? brawlPath, AssetLoader? assetLoader, GfxInfo info)
     {
         ImGui.Begin("Animations", ref _open);
 
         if (brawlPath is null)
         {
             ImGui.Text("You must select your brawlhalla path to choose an animation");
+            ImGui.End();
+            return;
+        }
+
+        if (assetLoader is null)
+        {
             ImGui.End();
             return;
         }
