@@ -224,8 +224,8 @@ public sealed class Editor
             ViewportWindow.Show();
         if (PathsWindow.Open)
             PathsWindow.Show(PathPrefs);
-        if (AnmWindow.Open && Animator is not null)
-            AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator.Loader.AssetLoader, GfxInfo);
+        if (AnmWindow.Open)
+            AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator?.Loader.AssetLoader, GfxInfo);
         if (TimeWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
         {
             long? frameCount = Animator.GetFrameCount(GfxInfo);
@@ -234,8 +234,8 @@ public sealed class Editor
                 TimeWindow.Show(frameCount.Value, Time, _paused);
             }
         }
-        if (PickerWindow.Open && Animator is not null)
-            PickerWindow.Show(Animator.Loader, GfxInfo, ref _bgColor);
+        if (PickerWindow.Open)
+            PickerWindow.Show(Animator?.Loader, GfxInfo, ref _bgColor);
     }
 
     private void ShowMainMenuBar()

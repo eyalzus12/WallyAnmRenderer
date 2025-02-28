@@ -13,9 +13,16 @@ public sealed class PickerWindow
     private string _weaponSkinTypeFilter = "";
     private string _colorSchemeFilter = "";
 
-    public void Show(Loader loader, GfxInfo info, ref RlColor bgColor)
+    private readonly CustomColorList _customColors = new();
+
+    public void Show(Loader? loader, GfxInfo info, ref RlColor bgColor)
     {
         ImGui.Begin("Options", ref _open);
+        if (loader is null)
+        {
+            ImGui.End();
+            return;
+        }
 
         ImGui.SeparatorText("Config");
 
@@ -47,6 +54,9 @@ public sealed class PickerWindow
 
         ImGui.SeparatorText("Color scheme");
         ColorSchemeSection(loader, info);
+
+        ImGui.SeparatorText("Custom colors");
+        _customColors.Show();
 
         ImGui.End();
     }
