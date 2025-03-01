@@ -11,6 +11,8 @@ public sealed class ColorScheme : IColorSchemeType
 {
     public string Name { get; }
     public string? DisplayNameKey { get; }
+    public uint OrderId { get; } = 0;
+    public uint TeamColor { get; } = 0;
     private readonly Dictionary<ColorSchemeSwapEnum, uint> _swaps = [];
 
     public ColorScheme(string name, IReadOnlyDictionary<ColorSchemeSwapEnum, uint> swaps)
@@ -23,6 +25,8 @@ public sealed class ColorScheme : IColorSchemeType
     {
         Name = element.Attribute("ColorSchemeName")?.Value ?? throw new ArgumentException("ColorSchemeName missing");
         DisplayNameKey = element.Element("DisplayNameKey")?.Value;
+        OrderId = uint.TryParse(element.Element("OrderID")?.Value, out uint orderId) ? orderId : 0;
+        TeamColor = uint.TryParse(element.Element("TeamColor")?.Value, out uint teamColor) ? teamColor : 0;
         foreach (XElement child in element.Elements())
         {
             string name = child.Name.LocalName;
@@ -69,7 +73,7 @@ public sealed class ColorScheme : IColorSchemeType
         [ColorSchemeSwapEnum.SpecialVD] = 0x004000,
         [ColorSchemeSwapEnum.SpecialAcc] = 0x00FFC0,
 
-        // No ingame color scheme defines hand swaps
+        // No in-game color scheme defines hand swaps
         /*
         [ColorSchemeSwapEnum.HandsLt] = 0x00FFFF,
         [ColorSchemeSwapEnum.HandsDk] = 0x008080,

@@ -69,17 +69,32 @@ public sealed class PickerWindow
                 string costumeName = costumeType;
                 if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
                 {
-                    heroTypes.TryGetBioName(info.OwnerHero, out string? bioName);
-                    if (info.CostumeIndex == 0 && !string.IsNullOrEmpty(bioName))
+                    // First check if we have a hero and it's the default skin (highest priority case)
+                    if (heroTypes.TryGetHero(info.OwnerHero, out HeroType? hero) && info.CostumeIndex == 0)
                     {
-                        costumeName = $"{bioName} ({costumeType})";
+                        // Default skin always uses hero name
+                        // e.g. `Bödvar (Viking)`
+                        costumeName = $"{hero.BioName} ({costumeType})";
                     }
+                    // Otherwise try to get the display name
                     else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
                     {
-                        costumeName = !string.IsNullOrEmpty(bioName)
-                            ? $"{realCostumeName} ({bioName}: {costumeType})"
-                            : $"{realCostumeName} ({costumeType})";
+                        // We have the display name, now see if we also have hero info
+                        if (hero is not null && !string.IsNullOrEmpty(hero.BioName))
+                        {
+                            // Normal skin with both display name and hero info
+                            // e.g. `Bear'dvar (Bödvar: Bear)`
+                            costumeName = $"{realCostumeName} ({hero.BioName}: {costumeType})";
+                        }
+                        else
+                        {
+                            // Just display name
+                            // e.g. `DEFAULT_CHARACTER (Default)`
+                            costumeName = $"{realCostumeName} ({costumeType})";
+                        }
                     }
+                    // If we reach here, we keep the default costumeName = costumeType
+                    // e.g. `Mech`
                 }
 
                 if (!costumeName.Contains(_costumeTypeFilter, StringComparison.CurrentCultureIgnoreCase))
