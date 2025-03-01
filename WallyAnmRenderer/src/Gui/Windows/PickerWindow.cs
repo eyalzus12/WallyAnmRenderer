@@ -69,15 +69,15 @@ public sealed class PickerWindow
                 string costumeName = costumeType;
                 if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
                 {
-                    heroTypes.TryGetBioName(info.OwnerHero, out string? bioName);
-                    if (info.CostumeIndex == 0 && !string.IsNullOrEmpty(bioName))
+                    heroTypes.TryGetHero(info.OwnerHero, out HeroType? hero);
+                    if (hero != null && info.CostumeIndex == 0)
                     {
-                        costumeName = $"{bioName} ({costumeType})";
+                        costumeName = $"{hero.BioName} ({costumeType})";
                     }
                     else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
                     {
-                        costumeName = !string.IsNullOrEmpty(bioName)
-                            ? $"{realCostumeName} ({bioName}: {costumeType})"
+                        costumeName = hero != null && !string.IsNullOrEmpty(hero.BioName)
+                            ? $"{realCostumeName} ({hero.BioName}: {costumeType})"
                             : $"{realCostumeName} ({costumeType})";
                     }
                 }

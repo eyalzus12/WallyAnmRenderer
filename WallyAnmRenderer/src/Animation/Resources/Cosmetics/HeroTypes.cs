@@ -23,16 +23,5 @@ public sealed class HeroTypes
         return _heroes.TryGetValue(heroName, out hero);
     }
 
-    public bool TryGetBioName(string heroName, [MaybeNullWhen(false)] out string bioName)
-    {
-        if (_heroes.TryGetValue(heroName, out HeroType? hero))
-        {
-            bioName = hero.BioName;
-            return true;
-        }
-        bioName = null;
-        return false;
-    }
-
     public IEnumerable<string> Heroes => _heroes.Keys;
 }
