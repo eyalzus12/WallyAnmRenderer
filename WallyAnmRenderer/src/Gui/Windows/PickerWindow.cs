@@ -69,16 +69,22 @@ public sealed class PickerWindow
                 string costumeName = costumeType;
                 if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
                 {
-                    heroTypes.TryGetHero(info.OwnerHero, out HeroType? hero);
-                    if (hero != null && info.CostumeIndex == 0)
+                    if (heroTypes.TryGetHero(info.OwnerHero, out HeroType? hero))
                     {
-                        costumeName = $"{hero.BioName} ({costumeType})";
+                        if (info.CostumeIndex == 0) // Default skin for legend.
+                        {
+                            costumeName = $"{hero.BioName} ({costumeType})";
+                        }
+                        else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
+                        {
+                            costumeName = !string.IsNullOrEmpty(hero.BioName)
+                                ? $"{realCostumeName} ({hero.BioName}: {costumeType})"
+                                : $"{realCostumeName} ({costumeType})";
+                        }
                     }
                     else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
                     {
-                        costumeName = hero != null && !string.IsNullOrEmpty(hero.BioName)
-                            ? $"{realCostumeName} ({hero.BioName}: {costumeType})"
-                            : $"{realCostumeName} ({costumeType})";
+                        costumeName = $"{realCostumeName} ({costumeType})";
                     }
                 }
 
