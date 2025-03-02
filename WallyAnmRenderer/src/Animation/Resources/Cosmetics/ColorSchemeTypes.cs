@@ -29,5 +29,5 @@ public sealed class ColorSchemeTypes
         return _colorSchemes.TryGetValue(name, out colorScheme);
     }
 
-    public IEnumerable<string> ColorSchemes => _colorSchemes.Keys;
+    public IEnumerable<ColorScheme> ColorSchemes => _colorSchemes.Values;
 }

@@ -15,6 +15,16 @@ public sealed class PickerWindow
 
     private readonly CustomColorList _customColors = new();
 
+    public event EventHandler<ColorScheme>? ColorSchemeSelected;
+
+    public PickerWindow()
+    {
+        _customColors.ColorSchemeSelected += (@this, color) =>
+        {
+            ColorSchemeSelected?.Invoke(@this, color);
+        };
+    }
+
     public void Show(Loader? loader, GfxInfo info, ref RlColor bgColor)
     {
         ImGui.Begin("Options", ref _open);
@@ -159,30 +169,25 @@ public sealed class PickerWindow
         ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
         if (ImGui.BeginListBox("###colorselect"))
         {
-            foreach (string colorScheme in colorSchemeTypes.ColorSchemes)
+            foreach (ColorScheme colorScheme in colorSchemeTypes.ColorSchemes)
             {
-                string colorSchemeName = colorScheme;
-                if (colorSchemeTypes.TryGetColorScheme(colorScheme, out ColorScheme? scheme))
-                {
-                    string? displayNameKey = scheme.DisplayNameKey;
-                    if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
-                        colorSchemeName = $"{realSchemeName} ({colorScheme})";
-                }
+                string colorSchemeName = colorScheme.Name;
+                string? displayNameKey = colorScheme.DisplayNameKey;
+                if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
+                    colorSchemeName = $"{realSchemeName} ({colorSchemeName})";
 
                 if (!colorSchemeName.Contains(_colorSchemeFilter, StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
                 if (ImGui.Selectable(colorSchemeName, colorScheme == info.ColorScheme))
                 {
-                    info.ColorScheme = colorScheme;
-                    OnSelect(loader);
+                    ColorSchemeSelected?.Invoke(this, colorScheme);
                 }
             }
 
-            if (ImGui.Selectable("DEBUG (not a real color scheme)", info.ColorScheme == "DEBUG"))
+            if (ImGui.Selectable("DEBUG (not a real color scheme)", info.ColorScheme == ColorScheme.DEBUG))
             {
-                info.ColorScheme = "DEBUG";
-                OnSelect(loader);
+                ColorSchemeSelected?.Invoke(this, ColorScheme.DEBUG);
             }
 
             ImGui.EndListBox();

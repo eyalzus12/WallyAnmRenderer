@@ -68,6 +68,15 @@ public sealed class Editor
             }
         };
 
+        PickerWindow.ColorSchemeSelected += (_, color) =>
+        {
+            if (Animator is not null)
+            {
+                GfxInfo.ColorScheme = color;
+                Animator.Loader.AssetLoader.ClearSwfShapeCache();
+            }
+        };
+
         TimeWindow.Paused += (_, paused) =>
         {
             _paused = paused;

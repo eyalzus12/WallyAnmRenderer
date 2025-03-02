@@ -31,6 +31,8 @@ public sealed class CustomColorList
     private ColorScheme? _editedColor = null;
     private readonly CustomColorEditPopup _editModal = new();
 
+    public event EventHandler<ColorScheme>? ColorSchemeSelected;
+
     public CustomColorList()
     {
         _loadingTask = RefreshColorList();
@@ -127,6 +129,11 @@ public sealed class CustomColorList
                 continue;
 
             ImGui.Text($"{color.Name}");
+            ImGui.SameLine();
+            if (ImGui.Button($"Select##{color.GetHashCode()}"))
+            {
+                ColorSchemeSelected?.Invoke(this, color);
+            }
             ImGui.SameLine();
             if (ImGuiEx.DisabledButton($"Edit##{color.GetHashCode()}", loadingColors))
             {
