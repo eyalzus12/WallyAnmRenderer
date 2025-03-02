@@ -70,7 +70,7 @@ public sealed class CustomColorEditPopup
         ImGui.EndPopup();
     }
 
-    public async Task Save(ColorScheme color, string originalName)
+    public async Task SaveAsync(ColorScheme color, string originalName)
     {
         _saving = true;
         string folderPath = CustomColorList.FolderPath;

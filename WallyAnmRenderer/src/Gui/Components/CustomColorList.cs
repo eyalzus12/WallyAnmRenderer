@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using BrawlhallaAnimLib.Gfx;
 using ImGuiNET;
+using NativeFileDialogSharp;
 
 namespace WallyAnmRenderer;
 
@@ -39,7 +40,7 @@ public sealed class CustomColorList
             if (_editedColor is null || _originalColor is null)
                 return;
 
-            await _editModal.Save(_editedColor, _originalColor.Name);
+            await _editModal.SaveAsync(_editedColor, _originalColor.Name);
             // replace color with new one
             int index = _colors.FindIndex((c) => c == _originalColor);
             if (index != -1)
@@ -64,6 +65,28 @@ public sealed class CustomColorList
             {
                 _loadingTask = null;
             }
+        }
+
+        if (ImGuiEx.DisabledButton("Load from file", loadingColors))
+        {
+            Task.Run(() => Dialog.FileOpen(FILE_EXTENSION[1..])).ContinueWith(async (task) =>
+            {
+                DialogResult result = task.Result;
+
+                if (result.IsOk)
+                {
+                    string path = result.Path;
+                    string name = Path.GetFileNameWithoutExtension(path);
+                    ColorScheme newColor;
+                    using (FileStream file = File.OpenRead(path))
+                        newColor = await ParseColorSchemeAsync(name, file);
+                    _colors.Add(newColor);
+                }
+                else if (result.IsError)
+                {
+                    _errors.Add(result.ErrorMessage);
+                }
+            });
         }
 
         if (ImGuiEx.DisabledButton("Refresh list", loadingColors))
@@ -192,7 +215,8 @@ public sealed class CustomColorList
                 throw new FormatException($"Invalid swap type {typeString}");
 
             string colorString = parts[1];
-            if (!uint.TryParse(colorString, NumberStyles.HexNumber, null, out uint color))
+            // get rid of # at the start
+            if (!uint.TryParse(colorString[1..], NumberStyles.HexNumber, null, out uint color))
                 throw new FormatException($"Invalid color ${colorString}");
 
             result[type] = color;
@@ -208,7 +232,7 @@ public sealed class CustomColorList
         {
             uint color = scheme[swap];
             if (color == 0) continue;
-            await writer.WriteLineAsync($"{swap}={color:X6}");
+            await writer.WriteLineAsync($"{swap}=#{color:X6}");
         }
     }
 }
