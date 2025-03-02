@@ -69,7 +69,11 @@ public sealed class CustomColorList
         if (ImGuiEx.DisabledButton("Refresh list", loadingColors))
             _loadingTask = RefreshColorList();
         if (loadingColors)
+        {
+            ImGui.SameLine();
             ImGui.Text("Loading...");
+        }
+
         if (ImGuiEx.DisabledButton("Create new", loadingColors))
         {
             string? name = null;
@@ -86,19 +90,16 @@ public sealed class CustomColorList
                 throw new Exception("Organize your fucking colors");
 
             string filePath = Path.Combine(FolderPath, $"{name}{FILE_EXTENSION}");
-            lock (_colors) _colors.Add(new(name));
+            _colors.Add(new(name));
         }
 
         ImGui.InputText("Filter colors", ref _colorFilter, 256);
 
-        // copy to not have race condition
-        List<ColorScheme> colors;
-        lock (_colors) colors = [.. _colors];
         ImGuiEx.BeginStyledChild("Custom colors");
         HashSet<ColorScheme>? deleted = null;
-        for (int i = 0; i < colors.Count; ++i)
+        for (int i = 0; i < _colors.Count; ++i)
         {
-            ColorScheme color = colors[i];
+            ColorScheme color = _colors[i];
             if (!color.Name.Contains(_colorFilter, StringComparison.CurrentCultureIgnoreCase))
                 continue;
 
@@ -115,19 +116,20 @@ public sealed class CustomColorList
             {
                 deleted ??= [];
                 deleted.Add(color);
-                File.Delete(Path.Combine(FolderPath, $"{color.Name}{FILE_EXTENSION}"));
+
+                string deletedPath = Path.Combine(FolderPath, $"{color.Name}{FILE_EXTENSION}");
+                if (File.Exists(deletedPath))
+                    File.Delete(deletedPath);
             }
         }
 
         if (deleted is not null)
-        {
-            lock (_colors) _colors = [.. _colors.Where((c) => !deleted.Contains(c))];
-        }
+            _colors = [.. _colors.Where((c) => !deleted.Contains(c))];
         ImGuiEx.EndStyledChild();
 
         if (_editedColor is not null && _originalColor is not null)
         {
-            _editModal.Update(_editedColor, _originalColor, colors);
+            _editModal.Update(_editedColor, _originalColor, _colors);
         }
 
         if (_errors.Count > 0)
