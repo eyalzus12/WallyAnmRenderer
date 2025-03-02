@@ -18,7 +18,7 @@ public sealed class GfxInfo
 
     public string? CostumeType { get; set; }
     public string? WeaponSkinType { get; set; }
-    public string? ColorScheme { get; set; }
+    public ColorScheme? ColorScheme { get; set; }
 
     [MemberNotNullWhen(true, nameof(AnimClass))]
     [MemberNotNullWhen(true, nameof(AnimFile))]
@@ -39,25 +39,13 @@ public sealed class GfxInfo
             AnimScale = AnimScale,
         };
 
-        ColorSchemeTypes colorSchemeTypes = gameFiles.ColorSchemeTypes;
-        ColorScheme? scheme = null;
-        if (ColorScheme is not null)
-        {
-            if (ColorScheme == "DEBUG")
-                scheme = WallyAnmRenderer.ColorScheme.DEBUG;
-            else if (!colorSchemeTypes.TryGetColorScheme(ColorScheme, out scheme))
-            {
-                throw new ArgumentException($"Invalid color scheme {ColorScheme}");
-            }
-        }
-
         CostumeTypes costumeTypes = gameFiles.CostumeTypes;
         CostumeTypesGfx? costumeGfx = null;
         if (CostumeType is not null)
         {
             if (costumeTypes.TryGetGfx(CostumeType, out costumeGfx))
             {
-                gfx = costumeGfx.ToGfxType(gfx, scheme, colorExceptionTypes);
+                gfx = costumeGfx.ToGfxType(gfx, ColorScheme, colorExceptionTypes);
             }
             else
             {
@@ -70,7 +58,7 @@ public sealed class GfxInfo
         {
             if (weaponSkinTypes.TryGetGfx(WeaponSkinType, out WeaponSkinTypesGfx? weaponSkinGfx))
             {
-                gfx = weaponSkinGfx.ToGfxType(gfx, scheme, colorExceptionTypes, costumeGfx);
+                gfx = weaponSkinGfx.ToGfxType(gfx, ColorScheme, colorExceptionTypes, costumeGfx);
             }
             else
             {
