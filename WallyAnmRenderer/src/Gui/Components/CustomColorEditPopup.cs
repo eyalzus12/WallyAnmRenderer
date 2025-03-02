@@ -54,15 +54,18 @@ public sealed class CustomColorEditPopup
         ImGui.SameLine(0, 0);
         ImGui.Text(") means \"don't swap\"");
         ImGui.PopTextWrapPos();
-        CustomColorComponent.MainTable(color.Name, color);
+        CustomColorComponent.MainTable(PopupName, color);
         ImGui.TextWrapped("Note that no color scheme in the game uses these.");
-        CustomColorComponent.HandsTable(color.Name, color);
+        CustomColorComponent.HandsTable(PopupName, color);
 
         ImGui.SeparatorText("Save");
         if (ImGuiEx.DisabledButton("Save", _saving || !valid))
             SaveRequested?.Invoke(this, EventArgs.Empty);
         if (_saving)
+        {
+            ImGui.SameLine();
             ImGui.Text("Saving...");
+        }
 
         ImGui.EndPopup();
     }
@@ -75,7 +78,11 @@ public sealed class CustomColorEditPopup
         Directory.CreateDirectory(folderPath);
 
         if (color.Name != originalName)
-            File.Delete(Path.Combine(folderPath, originalName));
+        {
+            string deletedPath = Path.Combine(folderPath, originalName);
+            if (File.Exists(deletedPath))
+                File.Delete(deletedPath);
+        }
 
         using (FileStream file = File.OpenWrite(fileName))
             await CustomColorList.WriteColorSchemeAsync(color, file);
