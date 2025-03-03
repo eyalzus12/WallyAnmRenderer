@@ -7,10 +7,10 @@ using ImGuiNET;
 
 namespace WallyAnmRenderer;
 
-public sealed class CustomColorEditPopup
+public sealed class CustomColorEditPopup(string? id = null)
 {
     public const string NAME = "Edit color";
-    private string PopupName => $"{NAME}##{GetHashCode()}";
+    private string PopupName => $"{NAME}{(id is null ? "" : $"##{id}")}";
 
     private bool _shouldOpen;
     private bool _open = false;
@@ -30,7 +30,7 @@ public sealed class CustomColorEditPopup
             _saving = false;
         }
 
-        if (!ImGui.BeginPopupModal(PopupName, ref _open, ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!ImGui.BeginPopupModal(PopupName, ref _open)) return;
 
         string name = color.Name;
         ImGui.BeginDisabled(_saving);
