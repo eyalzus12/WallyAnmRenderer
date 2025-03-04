@@ -51,11 +51,6 @@ public sealed class ColorScheme : IColorSchemeType
         }
     }
 
-    public uint GetSwap(ColorSchemeSwapEnum swapType)
-    {
-        return _swaps.GetValueOrDefault(swapType, 0u);
-    }
-
     public uint this[ColorSchemeSwapEnum swapType]
     {
         get => _swaps.GetValueOrDefault(swapType, 0u);
@@ -71,6 +66,8 @@ public sealed class ColorScheme : IColorSchemeType
             }
         }
     }
+
+    uint IColorSchemeType.GetSwap(ColorSchemeSwapEnum swapType) => this[swapType];
 
     public static ColorScheme DEBUG { get; } = new("DEBUG", new Dictionary<ColorSchemeSwapEnum, uint>()
     {

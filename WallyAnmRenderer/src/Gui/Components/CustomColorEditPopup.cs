@@ -76,7 +76,7 @@ public sealed class CustomColorEditPopup(string? id = null)
                 _errors.Clear();
             foreach (string error in _errors)
             {
-                ImGui.Text($"[Error]: {error}");
+                ImGui.TextWrapped($"[Error]: {error}");
             }
         }
 

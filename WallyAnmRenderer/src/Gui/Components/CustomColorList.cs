@@ -194,7 +194,7 @@ public sealed class CustomColorList
                 _errors.Clear();
             foreach (string error in _errors)
             {
-                ImGui.Text($"[Error]: {error}");
+                ImGui.TextWrapped($"[Error]: {error}");
             }
         }
     }
