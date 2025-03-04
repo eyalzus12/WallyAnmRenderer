@@ -66,7 +66,7 @@ public sealed class PickerWindow
         ColorSchemeSection(loader, info);
 
         ImGui.SeparatorText("Custom colors");
-        _customColors.Show();
+        _customColors.Show(info.ColorScheme);
 
         ImGui.End();
     }

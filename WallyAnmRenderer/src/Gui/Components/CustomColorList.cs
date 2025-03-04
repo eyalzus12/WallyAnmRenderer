@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Numerics;
 using BrawlhallaAnimLib.Gfx;
 using ImGuiNET;
 using NativeFileDialogSharp;
@@ -53,7 +54,7 @@ public sealed class CustomColorList
         };
     }
 
-    public void Show()
+    public void Show(ColorScheme? selected)
     {
         if (_loadingTask is not null)
         {
@@ -135,7 +136,10 @@ public sealed class CustomColorList
             if (!color.Name.Contains(_colorFilter, StringComparison.CurrentCultureIgnoreCase))
                 continue;
 
+            if (selected == color) ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1, 0.5f, 0, 1));
             ImGui.Text($"{color.Name}");
+            if (selected == color) ImGui.PopStyleColor();
+
             ImGui.SameLine();
             if (ImGui.Button($"Select##{color.GetHashCode()}"))
             {
