@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Numerics;
+using System.Diagnostics;
 using BrawlhallaAnimLib.Gfx;
 using ImGuiNET;
 using NativeFileDialogSharp;
@@ -99,6 +100,20 @@ public sealed class CustomColorList
             });
         }
 
+        string folderPath = FolderPath;
+        if (ImGui.Button("Open folder"))
+        {
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+
+            Process.Start(new ProcessStartInfo()
+            {
+                FileName = StringUtils.EnsurePathSeparatorEnd(folderPath),
+                UseShellExecute = true,
+                Verb = "open"
+            });
+        }
+
         if (ImGuiEx.DisabledButton("Refresh list", loadingColors))
             _loadingTask = RefreshColorList();
         if (loadingColors)
@@ -122,7 +137,7 @@ public sealed class CustomColorList
             if (name is null)
                 throw new Exception("Organize your fucking colors");
 
-            string filePath = Path.Combine(FolderPath, $"{name}{FILE_EXTENSION}");
+            string filePath = Path.Combine(folderPath, $"{name}{FILE_EXTENSION}");
             _colors.Add(new(name));
         }
 
@@ -158,7 +173,7 @@ public sealed class CustomColorList
                 deleted ??= [];
                 deleted.Add(color);
 
-                string deletedPath = Path.Combine(FolderPath, $"{color.Name}{FILE_EXTENSION}");
+                string deletedPath = Path.Combine(folderPath, $"{color.Name}{FILE_EXTENSION}");
                 if (File.Exists(deletedPath))
                     File.Delete(deletedPath);
             }
