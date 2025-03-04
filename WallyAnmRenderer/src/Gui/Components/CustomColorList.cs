@@ -80,9 +80,16 @@ public sealed class CustomColorList
                     string path = result.Path;
                     string name = Path.GetFileNameWithoutExtension(path);
                     ColorScheme newColor;
-                    using (FileStream file = File.OpenRead(path))
-                        newColor = await ParseColorSchemeAsync(name, file);
-                    _colors.Add(newColor);
+                    try
+                    {
+                        using (FileStream file = File.OpenRead(path))
+                            newColor = await ParseColorSchemeAsync(name, file);
+                        _colors.Add(newColor);
+                    }
+                    catch (Exception e)
+                    {
+                        _errors.Add($"Exception while loading {name}: {e.Message}");
+                    }
                 }
                 else if (result.IsError)
                 {

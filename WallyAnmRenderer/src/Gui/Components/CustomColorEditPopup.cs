@@ -19,6 +19,7 @@ public sealed class CustomColorEditPopup(string? id = null)
     public event EventHandler? SaveRequested;
 
     private bool _saving = false;
+    private readonly List<string> _errors = [];
 
     public void Update(ColorScheme color, ColorScheme originalColor, IEnumerable<ColorScheme> otherColors)
     {
@@ -28,6 +29,7 @@ public sealed class CustomColorEditPopup(string? id = null)
             _shouldOpen = false;
             _open = true;
             _saving = false;
+            _errors.Clear();
         }
 
         if (!ImGui.BeginPopupModal(PopupName, ref _open)) return;
@@ -67,6 +69,17 @@ public sealed class CustomColorEditPopup(string? id = null)
             ImGui.Text("Saving...");
         }
 
+        if (_errors.Count > 0)
+        {
+            ImGui.SeparatorText("Errors");
+            if (ImGui.Button("Clear"))
+                _errors.Clear();
+            foreach (string error in _errors)
+            {
+                ImGui.Text($"[Error]: {error}");
+            }
+        }
+
         ImGui.EndPopup();
     }
 
@@ -84,8 +97,16 @@ public sealed class CustomColorEditPopup(string? id = null)
                 File.Delete(deletedPath);
         }
 
-        using (FileStream file = File.OpenWrite(fileName))
+        try
+        {
+            using FileStream file = File.OpenWrite(fileName);
             await CustomColorList.WriteColorSchemeAsync(color, file);
+        }
+        catch (Exception e)
+        {
+            _errors.Add($"Exception while saving {color.Name}: {e.Message}");
+        }
+
         _saving = false;
     }
 }
