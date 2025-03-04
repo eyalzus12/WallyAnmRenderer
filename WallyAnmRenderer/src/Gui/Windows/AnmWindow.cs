@@ -57,16 +57,21 @@ public sealed class AnmWindow
             }
             else if (assetLoader.TryGetAnm(relativePath, out AnmFile? anm))
             {
-                ImGui.Text(fileName);
-                ImGui.SameLine();
-                if (ImGui.Button($"Unload##{fileName}"))
+                void unloadButton()
                 {
-                    AnmUnloadRequested?.Invoke(this, relativePath);
-                    assetLoader.AnmFileCache.RemoveCached(absolutePath);
+                    ImGui.SameLine();
+                    if (ImGui.Button($"Unload##{fileName}"))
+                    {
+                        AnmUnloadRequested?.Invoke(this, relativePath);
+                        assetLoader.AnmFileCache.RemoveCached(absolutePath);
+                    }
                 }
 
-                if (ImGui.TreeNode($"Animations##{anm.GetHashCode()}"))
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.TreeNode(fileName))
                 {
+                    unloadButton();
+
                     foreach ((string anmClassName, AnmClass anmClass) in anm.Classes)
                     {
                         string[] parts = anmClassName.Split('/', 2);
@@ -111,6 +116,10 @@ public sealed class AnmWindow
                     }
 
                     ImGui.TreePop();
+                }
+                else
+                {
+                    unloadButton();
                 }
             }
             else

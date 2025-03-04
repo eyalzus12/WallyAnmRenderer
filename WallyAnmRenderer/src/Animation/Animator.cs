@@ -30,7 +30,7 @@ public sealed class Animator(string brawlPath, uint key)
 
         if (!_h.Contains((sprite.SpriteName, sprite.SwfFilePath)))
         {
-            Console.WriteLine($"Loading {sprite.SpriteName} from {sprite.SwfFilePath}");
+            Rl.TraceLog(Raylib_cs.TraceLogLevel.Debug, $"Loading {sprite.SpriteName} from {sprite.SwfFilePath}");
             _h.Add((sprite.SpriteName, sprite.SwfFilePath));
         }
 
