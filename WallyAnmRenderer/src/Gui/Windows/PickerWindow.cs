@@ -6,6 +6,8 @@ namespace WallyAnmRenderer;
 
 public sealed class PickerWindow
 {
+    private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
+
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
 
@@ -13,9 +15,26 @@ public sealed class PickerWindow
     private string _weaponSkinTypeFilter = "";
     private string _colorSchemeFilter = "";
 
-    public void Show(Loader loader, GfxInfo info, ref RlColor bgColor)
+    private readonly CustomColorList _customColors = new();
+
+    public event EventHandler<ColorScheme>? ColorSchemeSelected;
+
+    public PickerWindow()
+    {
+        _customColors.ColorSchemeSelected += (@this, color) =>
+        {
+            ColorSchemeSelected?.Invoke(@this, color);
+        };
+    }
+
+    public void Show(Loader? loader, GfxInfo info, ref RlColor bgColor)
     {
         ImGui.Begin("Options", ref _open);
+        if (loader is null)
+        {
+            ImGui.End();
+            return;
+        }
 
         ImGui.SeparatorText("Config");
 
@@ -48,6 +67,9 @@ public sealed class PickerWindow
         ImGui.SeparatorText("Color scheme");
         ColorSchemeSection(loader, info);
 
+        ImGui.SeparatorText("Custom colors");
+        _customColors.Show(info.ColorScheme);
+
         ImGui.End();
     }
 
@@ -58,11 +80,14 @@ public sealed class PickerWindow
         ImGui.InputText("Filter costumes", ref _costumeTypeFilter, 256);
         if (ImGui.BeginListBox("###costumeselect"))
         {
-            if (ImGui.Selectable("None##none", gfxInfo.CostumeType is null))
+            bool selected = gfxInfo.CostumeType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
             {
                 gfxInfo.CostumeType = null;
                 OnSelect(loader);
             }
+            if (selected) ImGui.PopStyleColor();
 
             foreach (string costumeType in costumeTypes.Costumes)
             {
@@ -100,11 +125,14 @@ public sealed class PickerWindow
                 if (!costumeName.Contains(_costumeTypeFilter, StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
-                if (ImGui.Selectable(costumeName, costumeType == gfxInfo.CostumeType))
+                bool selected2 = costumeType == gfxInfo.CostumeType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(costumeName, selected2))
                 {
                     gfxInfo.CostumeType = costumeType;
                     OnSelect(loader);
                 }
+                if (selected2) ImGui.PopStyleColor();
             }
 
             ImGui.EndListBox();
@@ -117,10 +145,13 @@ public sealed class PickerWindow
         ImGui.InputText("Filter weapon skins", ref _weaponSkinTypeFilter, 256);
         if (ImGui.BeginListBox("###weaponselect"))
         {
-            if (ImGui.Selectable("None##none", gfxInfo.WeaponSkinType is null))
+            bool selected = gfxInfo.WeaponSkinType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
             {
                 gfxInfo.WeaponSkinType = null;
             }
+            if (selected) ImGui.PopStyleColor();
 
             foreach (string weaponSkinType in weaponSkinTypes.WeaponSkins)
             {
@@ -135,8 +166,13 @@ public sealed class PickerWindow
                 if (!weaponSkinName.Contains(_weaponSkinTypeFilter, StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
-                if (ImGui.Selectable(weaponSkinName, weaponSkinType == gfxInfo.WeaponSkinType))
+                bool selected2 = weaponSkinType == gfxInfo.WeaponSkinType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(weaponSkinName, selected2))
+                {
                     gfxInfo.WeaponSkinType = weaponSkinType;
+                }
+                if (selected2) ImGui.PopStyleColor();
             }
 
             ImGui.EndListBox();
@@ -149,31 +185,32 @@ public sealed class PickerWindow
         ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
         if (ImGui.BeginListBox("###colorselect"))
         {
-            foreach (string colorScheme in colorSchemeTypes.ColorSchemes)
+            foreach (ColorScheme colorScheme in colorSchemeTypes.ColorSchemes)
             {
-                string colorSchemeName = colorScheme;
-                if (colorSchemeTypes.TryGetColorScheme(colorScheme, out ColorScheme? scheme))
-                {
-                    string? displayNameKey = scheme.DisplayNameKey;
-                    if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
-                        colorSchemeName = $"{realSchemeName} ({colorScheme})";
-                }
+                string colorSchemeName = colorScheme.Name;
+                string? displayNameKey = colorScheme.DisplayNameKey;
+                if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
+                    colorSchemeName = $"{realSchemeName} ({colorSchemeName})";
 
                 if (!colorSchemeName.Contains(_colorSchemeFilter, StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
-                if (ImGui.Selectable(colorSchemeName, colorScheme == info.ColorScheme))
+                bool selected = colorScheme == info.ColorScheme;
+                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(colorSchemeName, selected))
                 {
-                    info.ColorScheme = colorScheme;
-                    OnSelect(loader);
+                    ColorSchemeSelected?.Invoke(this, colorScheme);
                 }
+                if (selected) ImGui.PopStyleColor();
             }
 
-            if (ImGui.Selectable("DEBUG (not a real color scheme)", info.ColorScheme == "DEBUG"))
+            bool selected2 = info.ColorScheme == ColorScheme.DEBUG;
+            if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("DEBUG (not a real color scheme)", selected2))
             {
-                info.ColorScheme = "DEBUG";
-                OnSelect(loader);
+                ColorSchemeSelected?.Invoke(this, ColorScheme.DEBUG);
             }
+            if (selected2) ImGui.PopStyleColor();
 
             ImGui.EndListBox();
         }

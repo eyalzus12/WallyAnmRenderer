@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml.Linq;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading;
@@ -9,16 +8,27 @@ namespace WallyAnmRenderer;
 
 public sealed class ColorScheme : IColorSchemeType
 {
-    public string Name { get; }
+    public string Name { get; set; }
     public string? DisplayNameKey { get; }
     public uint OrderId { get; } = 0;
     public uint TeamColor { get; } = 0;
     private readonly Dictionary<ColorSchemeSwapEnum, uint> _swaps = [];
 
-    public ColorScheme(string name, IReadOnlyDictionary<ColorSchemeSwapEnum, uint> swaps)
+    public ColorScheme(string name)
     {
         Name = name;
-        _swaps = swaps.ToDictionary();
+    }
+
+    public ColorScheme(string name, IReadOnlyDictionary<ColorSchemeSwapEnum, uint> swaps) : this(name)
+    {
+        _swaps = new(swaps);
+    }
+
+    public ColorScheme(ColorScheme other)
+    {
+        Name = other.Name;
+        DisplayNameKey = other.DisplayNameKey;
+        _swaps = new(other._swaps);
     }
 
     public ColorScheme(XElement element)
@@ -41,10 +51,23 @@ public sealed class ColorScheme : IColorSchemeType
         }
     }
 
-    public uint GetSwap(ColorSchemeSwapEnum swapType)
+    public uint this[ColorSchemeSwapEnum swapType]
     {
-        return _swaps.GetValueOrDefault(swapType, 0u);
+        get => _swaps.GetValueOrDefault(swapType, 0u);
+        set
+        {
+            if (value == 0)
+            {
+                _swaps.Remove(swapType);
+            }
+            else
+            {
+                _swaps[swapType] = value;
+            }
+        }
     }
+
+    uint IColorSchemeType.GetSwap(ColorSchemeSwapEnum swapType) => this[swapType];
 
     public static ColorScheme DEBUG { get; } = new("DEBUG", new Dictionary<ColorSchemeSwapEnum, uint>()
     {

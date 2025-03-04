@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using ImGuiNET;
 using WallyAnmSpinzor;
 
@@ -8,6 +9,8 @@ namespace WallyAnmRenderer;
 
 public sealed class AnmWindow
 {
+    private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
+
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
 
@@ -16,13 +19,19 @@ public sealed class AnmWindow
     private string _fileFilter = "";
     private readonly Dictionary<string, string> _animationFilterState = [];
 
-    public void Show(string? brawlPath, AssetLoader assetLoader, GfxInfo info)
+    public void Show(string? brawlPath, AssetLoader? assetLoader, GfxInfo info)
     {
         ImGui.Begin("Animations", ref _open);
 
         if (brawlPath is null)
         {
             ImGui.Text("You must select your brawlhalla path to choose an animation");
+            ImGui.End();
+            return;
+        }
+
+        if (assetLoader is null)
+        {
             ImGui.End();
             return;
         }
@@ -84,6 +93,7 @@ public sealed class AnmWindow
                                         animClass == info.AnimClass &&
                                         animation == info.Animation;
 
+                                    if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
                                     if (ImGui.Selectable(animation, selected))
                                     {
                                         info.SourceFilePath = relativePath;
@@ -91,6 +101,7 @@ public sealed class AnmWindow
                                         info.AnimClass = animClass;
                                         info.Animation = animation;
                                     }
+                                    if (selected) ImGui.PopStyleColor();
                                 }
                                 ImGui.EndListBox();
                             }
