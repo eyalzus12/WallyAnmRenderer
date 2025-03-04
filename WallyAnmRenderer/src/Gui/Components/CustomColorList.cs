@@ -152,14 +152,13 @@ public sealed class CustomColorList
                 continue;
 
             if (selected == color) ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1, 0.5f, 0, 1));
-            ImGui.Text($"{color.Name}");
-            if (selected == color) ImGui.PopStyleColor();
-
-            ImGui.SameLine();
-            if (ImGui.Button($"Select##{color.GetHashCode()}"))
+            ImGui.SetNextItemAllowOverlap();
+            if (ImGui.Selectable($"{color.Name}##{color.GetHashCode()}"))
             {
                 ColorSchemeSelected?.Invoke(this, color);
             }
+            if (selected == color) ImGui.PopStyleColor();
+
             ImGui.SameLine();
             if (ImGuiEx.DisabledButton($"Edit##{color.GetHashCode()}", loadingColors))
             {
