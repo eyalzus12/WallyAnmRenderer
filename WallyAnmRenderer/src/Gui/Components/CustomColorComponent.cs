@@ -105,7 +105,7 @@ public static class CustomColorComponent
     public static bool HandsTable(string label, ColorScheme colorScheme)
     {
         bool changed = false;
-        ImGuiTableFlags flags = ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.SizingFixedSame;
+        ImGuiTableFlags flags = ImGuiTableFlags.SizingFixedSame;
         if (ImGui.BeginTable($"##{label}_hands", 3, flags))
         {
             ImGui.TableNextColumn();
