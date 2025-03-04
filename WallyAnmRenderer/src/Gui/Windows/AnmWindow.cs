@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using ImGuiNET;
 using WallyAnmSpinzor;
 
@@ -8,6 +9,8 @@ namespace WallyAnmRenderer;
 
 public sealed class AnmWindow
 {
+    private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
+
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
 
@@ -90,6 +93,7 @@ public sealed class AnmWindow
                                         animClass == info.AnimClass &&
                                         animation == info.Animation;
 
+                                    if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
                                     if (ImGui.Selectable(animation, selected))
                                     {
                                         info.SourceFilePath = relativePath;
@@ -97,6 +101,7 @@ public sealed class AnmWindow
                                         info.AnimClass = animClass;
                                         info.Animation = animation;
                                     }
+                                    if (selected) ImGui.PopStyleColor();
                                 }
                                 ImGui.EndListBox();
                             }

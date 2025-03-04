@@ -55,7 +55,7 @@ public sealed class CustomColorList
         };
     }
 
-    public void Show(ColorScheme? selected)
+    public void Show(ColorScheme? selectedColor)
     {
         if (_loadingTask is not null)
         {
@@ -151,13 +151,14 @@ public sealed class CustomColorList
             if (!color.Name.Contains(_colorFilter, StringComparison.CurrentCultureIgnoreCase))
                 continue;
 
-            if (selected == color) ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1, 0.5f, 0, 1));
+            bool selected = selectedColor == color;
             ImGui.SetNextItemAllowOverlap();
-            if (ImGui.Selectable($"{color.Name}##{color.GetHashCode()}"))
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1, 0.5f, 0, 1));
+            if (ImGui.Selectable($"{color.Name}##{color.GetHashCode()}", selected))
             {
                 ColorSchemeSelected?.Invoke(this, color);
             }
-            if (selected == color) ImGui.PopStyleColor();
+            if (selected) ImGui.PopStyleColor();
 
             ImGui.SameLine();
             if (ImGuiEx.DisabledButton($"Edit##{color.GetHashCode()}", loadingColors))
