@@ -75,6 +75,12 @@ public sealed class PickerWindow
 
     private void CostumeTypeSection(Loader loader, GfxInfo gfxInfo)
     {
+        if (loader.SwzFiles.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
         CostumeTypes costumeTypes = loader.SwzFiles.Game.CostumeTypes;
         HeroTypes heroTypes = loader.SwzFiles.Game.HeroTypes;
         ImGui.InputText("Filter costumes", ref _costumeTypeFilter, 256);
@@ -141,6 +147,12 @@ public sealed class PickerWindow
 
     private void WeaponSkinTypeSection(Loader loader, GfxInfo gfxInfo)
     {
+        if (loader.SwzFiles.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
         WeaponSkinTypes weaponSkinTypes = loader.SwzFiles.Game.WeaponSkinTypes;
         ImGui.InputText("Filter weapon skins", ref _weaponSkinTypeFilter, 256);
         if (ImGui.BeginListBox("###weaponselect"))
@@ -181,6 +193,12 @@ public sealed class PickerWindow
 
     private void ColorSchemeSection(Loader loader, GfxInfo info)
     {
+        if (loader.SwzFiles.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
         ColorSchemeTypes colorSchemeTypes = loader.SwzFiles.Game.ColorSchemeTypes;
         ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
         if (ImGui.BeginListBox("###colorselect"))

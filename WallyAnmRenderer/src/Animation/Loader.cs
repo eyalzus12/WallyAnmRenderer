@@ -64,6 +64,12 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
 
     public bool TryGetBoneName(short boneId, [MaybeNullWhen(false)] out string boneName)
     {
+        if (SwzFiles.Init is null)
+        {
+            boneName = null;
+            return false;
+        }
+
         BoneTypes boneTypes = SwzFiles.Init.BoneTypes;
         boneId--;
         if (boneId < 0 || boneId >= boneTypes.BoneCount)
@@ -77,6 +83,12 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
 
     public bool TryGetBoneFilePath(string boneName, [MaybeNullWhen(false)] out string bonePath)
     {
+        if (SwzFiles.Init is null)
+        {
+            bonePath = null;
+            return false;
+        }
+
         BoneSources boneSources = SwzFiles.Init.BoneSources;
         return boneSources.TryGetBoneFilePath(boneName, out bonePath);
     }

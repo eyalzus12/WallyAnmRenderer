@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace WallyAnmRenderer;
@@ -33,12 +34,20 @@ public sealed class SwzFiles
         LoadSwzFiles();
     }
 
-    public SwzInitFile Init { get; private set; } = null!;
-    public SwzGameFile Game { get; private set; } = null!;
+    public SwzInitFile? Init { get; private set; }
+    public SwzGameFile? Game { get; private set; }
 
     public void LoadSwzFiles()
     {
-        Init = new(Path.Combine(_brawlPath, "Init.swz"), _key);
-        Game = new(Path.Combine(_brawlPath, "Game.swz"), _key);
+        try
+        {
+            Init = new(Path.Combine(_brawlPath, "Init.swz"), _key);
+            Game = new(Path.Combine(_brawlPath, "Game.swz"), _key);
+        }
+        catch (Exception e)
+        {
+            Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
+            Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
+        }
     }
 }

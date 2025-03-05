@@ -67,12 +67,10 @@ public sealed class PathsWindow
             });
         }
 
-        if ((key is not null || brawlPath is not null) && ImGui.Button("Load files"))
+        if (key is not null && brawlPath is not null && ImGui.Button("Load files"))
         {
-            if (key is not null)
-                pathPrefs.DecryptionKey = key;
-            if (brawlPath is not null)
-                pathPrefs.BrawlhallaPath = brawlPath;
+            pathPrefs.DecryptionKey = key;
+            pathPrefs.BrawlhallaPath = brawlPath;
         }
 
         if (_loadingStatus is not null)

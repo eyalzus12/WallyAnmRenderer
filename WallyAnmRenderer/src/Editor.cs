@@ -119,7 +119,7 @@ public sealed class Editor
     {
         LogCallback.Init();
 
-        PathsWindow.Open = PathPrefs.DecryptionKey is null || PathPrefs.BrawlhallaPath is null;
+        PathsWindow.Open = true;
 
         Rl.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.MaximizedWindow | ConfigFlags.VSyncHint);
         Rl.InitWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "WallyAnmRenderer");
@@ -150,7 +150,7 @@ public sealed class Editor
         bool finishedLoading = true;
         BoneSpriteWithName[]? sprites = null;
         BoneSpriteWithName? highlightedSprite = null;
-        if (Animator is not null && GfxInfo.AnimationPicked)
+        if (Animator?.Loader.SwzFiles.Game is not null && GfxInfo.AnimationPicked)
         {
             var info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
             if (info is null)
