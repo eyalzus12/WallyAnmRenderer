@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
@@ -10,12 +11,14 @@ namespace WallyAnmRenderer;
 // V - GPU bound value created from I
 public abstract class UploadCache<K, I, V> where K : notnull
 {
+    private readonly record struct QueueElement(K Key, I Intermediate, ulong Version);
+
     protected abstract IEqualityComparer<K>? KeyEqualityComparer { get; }
 
     protected ulong CacheVersion { get; private set; } = 0;
     private readonly Dictionary<K, V> _cache;
-    private readonly Queue<V> _deleteQueue = [];
-    private readonly Queue<(K, I, ulong)> _queue = [];
+    private readonly ConcurrentQueue<V> _deleteQueue = [];
+    private readonly ConcurrentQueue<QueueElement> _queue = [];
     private readonly HashSet<K> _queueSet;
 
     public UploadCache()
@@ -64,7 +67,7 @@ public abstract class UploadCache<K, I, V> where K : notnull
                     return;
                 }
 
-                lock (_queue) _queue.Enqueue((k, i, currentVersion));
+                _queue.Enqueue(new(k, i, currentVersion));
             }
             catch (Exception e)
             {
@@ -84,12 +87,10 @@ public abstract class UploadCache<K, I, V> where K : notnull
 
         for (int j = 0; j < amount; j++)
         {
-            K k; I i; ulong version;
-            lock (_queue)
-            {
-                if (_queue.Count == 0) break;
-                (k, i, version) = _queue.Dequeue();
-            }
+            if (!_queue.TryDequeue(out QueueElement queued))
+                break;
+            (K k, I i, ulong version) = queued;
+
             _queueSet.Remove(k);
 
             if (version == CacheVersion && !_cache.ContainsKey(k))
@@ -108,35 +109,21 @@ public abstract class UploadCache<K, I, V> where K : notnull
 
     private void Unload()
     {
-        lock (_deleteQueue)
-        {
-            while (_deleteQueue.Count > 0)
-            {
-                V v = _deleteQueue.Dequeue();
-                UnloadValue(v);
-            }
-        }
+        while (_deleteQueue.TryDequeue(out V? v))
+            UnloadValue(v);
     }
 
     public void Clear()
     {
         CacheVersion++;
 
-        lock (_deleteQueue)
-        {
-            foreach ((_, V v) in _cache)
-                _deleteQueue.Enqueue(v);
-            _cache.Clear();
-        }
+        foreach ((_, V v) in _cache)
+            _deleteQueue.Enqueue(v);
+        _cache.Clear();
 
         _queueSet.Clear();
-        lock (_queue)
-        {
-            while (_queue.Count > 0)
-            {
-                (_, I i, _) = _queue.Dequeue();
-                UnloadIntermediate(i);
-            }
-        }
+
+        while (_queue.TryDequeue(out QueueElement queued))
+            UnloadIntermediate(queued.Intermediate);
     }
 }
