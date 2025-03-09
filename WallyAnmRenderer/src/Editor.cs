@@ -14,7 +14,7 @@ namespace WallyAnmRenderer;
 public sealed class Editor
 {
     public const float ZOOM_INCREMENT = 0.15f;
-    public const float MIN_ZOOM = 0.1f;
+    public const float MIN_ZOOM = 0f;
     public const float MAX_ZOOM = 20.0f;
     public const float LINE_WIDTH = 5; // width at Camera zoom = 1
     public const int INITIAL_SCREEN_WIDTH = 1280;
@@ -29,7 +29,7 @@ public sealed class Editor
 
     public Animator? Animator { get; private set; }
     public GfxInfo GfxInfo { get; private set; } = new();
-    private RlColor _bgColor = new RlColor(0, 0, 51, 255); // #000033
+    private RlColor _bgColor = new(0, 0, 51, 255); // #000033
 
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();
@@ -121,7 +121,7 @@ public sealed class Editor
 
         PathsWindow.Open = true;
 
-        Rl.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.MaximizedWindow | ConfigFlags.VSyncHint);
+        Rl.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.MaximizedWindow);
         Rl.InitWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "WallyAnmRenderer");
         Rl.MaximizeWindow(); // why is the config flag not working smh
 
