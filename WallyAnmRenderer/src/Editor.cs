@@ -37,6 +37,7 @@ public sealed class Editor
     public AnimationInfoWindow AnimationInfoWindow { get; } = new();
     public TimeWindow TimeWindow { get; } = new();
     public PickerWindow PickerWindow { get; } = new();
+    public ExportModal ExportModal { get; } = new();
 
     private bool _showMainMenuBar = true;
 
@@ -161,6 +162,9 @@ public sealed class Editor
             {
                 long frame = (long)Math.Floor(24 * Time.TotalSeconds);
                 (IGfxType gfxType, string animation, bool flip) = info.Value;
+
+                ExportModal.Update(Animator, gfxType, animation, frame, flip);
+
                 Transform2D center = GetCenteringTransform();
                 if (flip) center *= Transform2D.FLIP_X;
                 sprites = Animator.GetAnimationInfo(gfxType, animation, frame, center);
@@ -266,6 +270,12 @@ public sealed class Editor
         {
             if (ImGui.MenuItem("Clear swf shape cache")) Animator.Loader.AssetLoader.ClearSwfShapeCache();
             if (ImGui.MenuItem("Clear swf file cache")) Animator.Loader.AssetLoader.ClearSwfFileCache();
+            ImGui.EndMenu();
+        }
+
+        if (ImGui.BeginMenu("Export"))
+        {
+            if (ImGui.MenuItem("Test")) ExportModal.Open();
             ImGui.EndMenu();
         }
 

@@ -33,12 +33,12 @@ public abstract class ManagedCache<K, V> where K : notnull
 
     protected abstract V LoadInternal(K k);
 
-    public void Load(K k)
+    public V Load(K k)
     {
-        if (_cache.ContainsKey(k))
-            return;
-        V v = LoadInternal(k);
-        _cache[k] = v;
+        if (_cache.TryGetValue(k, out V? v))
+            return v;
+        v = LoadInternal(k);
+        return _cache[k] = v;
     }
 
     public void LoadInThread(K k)
