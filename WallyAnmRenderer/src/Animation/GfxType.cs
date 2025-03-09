@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Gfx;
 
 namespace WallyAnmRenderer;
@@ -34,4 +35,34 @@ public sealed class GfxType : IGfxType
 
     public Dictionary<string, string> BoneOverride { get; set; } = [];
     IReadOnlyDictionary<string, string> IGfxType.BoneOverride => BoneOverride;
+
+    public GfxType() { }
+
+    [SetsRequiredMembers]
+    public GfxType(IGfxType gfx)
+    {
+        AnimFile = gfx.AnimFile;
+        AnimClass = gfx.AnimClass;
+        AnimScale = gfx.AnimScale;
+        Tint = gfx.Tint;
+        AsymmetrySwapFlags = gfx.AsymmetrySwapFlags;
+        CustomArts = [.. gfx.CustomArts];
+        ColorSwaps = [.. gfx.ColorSwaps];
+        UseRightTorso = gfx.UseRightTorso;
+        UseRightJaw = gfx.UseRightJaw;
+        UseRightEyes = gfx.UseRightEyes;
+        UseRightMouth = gfx.UseRightMouth;
+        UseRightHair = gfx.UseRightHair;
+        UseRightForearm = gfx.UseRightForearm;
+        UseRightShoulder1 = gfx.UseRightShoulder1;
+        UseRightLeg1 = gfx.UseRightLeg1;
+        UseRightShin = gfx.UseRightShin;
+        UseTrueLeftRightHands = gfx.UseTrueLeftRightHands;
+        HidePaperDollRightPistol = gfx.HidePaperDollRightPistol;
+        UseRightGauntlet = gfx.UseRightGauntlet;
+        UseRightKatar = gfx.UseRightKatar;
+        HideRightPistol2D = gfx.HideRightPistol2D;
+        UseTrueLeftRightTorso = gfx.UseTrueLeftRightTorso;
+        BoneOverride = new(gfx.BoneOverride);
+    }
 }
