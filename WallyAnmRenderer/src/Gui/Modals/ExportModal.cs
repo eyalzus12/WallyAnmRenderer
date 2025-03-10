@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Xml.Linq;
 using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Bones;
@@ -52,6 +54,10 @@ public sealed class ExportModal(string? id = null)
             return;
         }
 
+        double minX = 0;
+        double minY = 0;
+        double maxX = 0;
+        double maxY = 0;
         List<(XDocument, Transform2D)> svgList = [];
         foreach (BoneSpriteWithName sprite in sprites)
         {
@@ -77,11 +83,24 @@ public sealed class ExportModal(string? id = null)
                 swfShape = SwfUtils.DeepCloneShape(swfShape);
                 ColorSwapUtils.ApplyColorSwaps(swfShape, sprite.ColorSwapDict);
                 SwfShape compiledShape = new(new(swfShape));
-                int shapeW = swfShape.ShapeBounds.XMax - swfShape.ShapeBounds.XMin;
-                int shapeH = swfShape.ShapeBounds.YMax - swfShape.ShapeBounds.YMin;
-                SvgShapeExporter svgExporter = new(new(shapeW, shapeH), new());
+                double shapeX = swfShape.ShapeBounds.XMin / 20.0;
+                double shapeY = swfShape.ShapeBounds.YMin / 20.0;
+                double shapeW = (swfShape.ShapeBounds.XMax - swfShape.ShapeBounds.XMin) / 20.0;
+                double shapeH = (swfShape.ShapeBounds.YMax - swfShape.ShapeBounds.YMin) / 20.0;
+                SvgShapeExporter svgExporter = new(new(shapeW, shapeH), new(1, 0, 0, 1, -shapeX, -shapeY));
                 compiledShape.Export(svgExporter);
-                svgList.Add((svgExporter.Document, shape.Transform));
+
+                (double, double)[] points = [(shapeX, shapeY), (shapeX + shapeW, shapeY), (shapeX, shapeY + shapeH), (shapeX + shapeW, shapeY + shapeH)];
+                foreach ((double x, double y) in points)
+                {
+                    (double nx, double ny) = shape.Transform * (x, y);
+                    if (nx < minX) minX = nx;
+                    if (nx > maxX) maxX = nx;
+                    if (ny < minY) minY = ny;
+                    if (ny > maxY) maxY = ny;
+                }
+
+                svgList.Add((svgExporter.Document, shape.Transform * Transform2D.CreateTranslate(shapeX, shapeY)));
             }
         }
 
@@ -90,12 +109,12 @@ public sealed class ExportModal(string? id = null)
         XNamespace xmlns = XNamespace.Get("http://www.w3.org/2000/svg");
 
         XElement svg = new(xmlns + "svg");
-        svg.SetAttributeValue("width", 0);
-        svg.SetAttributeValue("height", 0);
+        svg.SetAttributeValue("viewBox", $"{minX} {minY} {maxX - minX} {maxY - minY}");
+
         int index = 0;
         foreach ((XDocument document, Transform2D transform) in svgList)
         {
-            XElement main = document.Element("svg")!;
+            XElement main = document.Root!;
 
             // create symbol
             XElement symbol = new(main) { Name = xmlns + "symbol" };
@@ -106,6 +125,7 @@ public sealed class ExportModal(string? id = null)
             // create use
             XElement use = new(xmlns + "use");
             use.SetAttributeValue("href", $"#{symbolId}");
+
             string transformString = SvgUtils.SvgMatrixString(
                 transform.ScaleX, transform.SkewY, transform.SkewX, transform.ScaleY,
                 transform.TranslateX, transform.TranslateY
@@ -115,6 +135,10 @@ public sealed class ExportModal(string? id = null)
         }
 
         XDocument result = new(new XDeclaration("1.0", "UTF-8", "no"), svg);
+
+        using FileStream file = File.OpenWrite("test.svg");
+        result.Save(file);
+        Environment.Exit(0);
 
         ImGui.EndPopup();
     }
