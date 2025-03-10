@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using System.IO;
 using SwfLib.Tags;
 using SwfLib.Tags.ShapeTags;
@@ -31,128 +32,80 @@ public sealed class Loader(string brawlPath, uint key) : ILoader
     public SwzFiles SwzFiles { get; } = new(brawlPath, key);
     public LangFile LangFile { get; } = LangFile.Load(Path.Join(brawlPath, "languages", "language.1.bin"));
 
-    public bool LoadBoneTypes()
-    {
-        return true;
-    }
-
-    public bool LoadBoneSources()
-    {
-        return true;
-    }
-
     public bool SwfExists(string swfPath)
     {
         return File.Exists(Path.Join(_brawlPath, swfPath));
     }
 
-    public bool LoadSwf(string swfPath)
+    public Task<IAnmClass?> GetAnmClass(string classIdentifier)
     {
-        return AssetLoader.LoadSwf(swfPath) is not null;
+        AnmClassAdapter? impl()
+        {
+            if (AssetLoader.AnmFileCache.TryGetAnmClass(classIdentifier, out AnmClass? @class))
+                return new(@class);
+            return null;
+        }
+
+        return Task.FromResult<IAnmClass?>(impl());
     }
 
-    public bool TryGetAnmClass(string classIdentifier, [MaybeNullWhen(false)] out IAnmClass anmClass)
+    public Task<string?> GetBoneName(short boneId)
     {
-        if (AssetLoader.AnmFileCache.TryGetAnmClass(classIdentifier, out AnmClass? @class))
+        string? impl()
         {
-            anmClass = new AnmClassAdapter(@class);
-            return true;
+            if (SwzFiles.Init is null)
+                return null;
+
+            BoneTypes boneTypes = SwzFiles.Init.BoneTypes;
+            if (boneId <= 0 || boneId > boneTypes.BoneCount)
+                return null;
+
+            return boneTypes[boneId - 1];
         }
-        anmClass = null;
-        return false;
+
+        return Task.FromResult(impl());
     }
 
-    public bool TryGetBoneName(short boneId, [MaybeNullWhen(false)] out string boneName)
+    public Task<string?> GetBoneFilePath(string boneName)
     {
-        if (SwzFiles.Init is null)
+        string? impl()
         {
-            boneName = null;
-            return false;
+            if (SwzFiles.Init is null)
+                return null;
+
+            BoneSources boneSources = SwzFiles.Init.BoneSources;
+            if (boneSources.TryGetBoneFilePath(boneName, out string? bonePath))
+                return bonePath;
+            return null;
         }
 
-        BoneTypes boneTypes = SwzFiles.Init.BoneTypes;
-        boneId--;
-        if (boneId < 0 || boneId >= boneTypes.BoneCount)
-        {
-            boneName = null;
-            return false;
-        }
-        boneName = boneTypes[boneId];
-        return true;
+        return Task.FromResult(impl());
     }
 
-    public bool TryGetBoneFilePath(string boneName, [MaybeNullWhen(false)] out string bonePath)
+    public async Task<uint[]?> GetScriptAVar(string swfPath, string spriteName)
     {
-        if (SwzFiles.Init is null)
-        {
-            bonePath = null;
-            return false;
-        }
-
-        BoneSources boneSources = SwzFiles.Init.BoneSources;
-        return boneSources.TryGetBoneFilePath(boneName, out bonePath);
+        SwfFileData swf = await AssetLoader.LoadSwf(swfPath);
+        return swf.SpriteA.GetValueOrDefault(spriteName);
     }
 
-    public bool TryGetScriptAVar(string swfPath, string spriteName, [MaybeNullWhen(false)] out uint[] a)
+    public async Task<ushort?> GetSymbolId(string swfPath, string symbolName)
     {
-        SwfFileData? swf = AssetLoader.LoadSwf(swfPath);
-        if (swf is null)
-        {
-            a = null;
-            return false;
-        }
-
-        Dictionary<string, uint[]> dict = swf.SpriteA;
-        return dict.TryGetValue(spriteName, out a);
+        SwfFileData swf = await AssetLoader.LoadSwf(swfPath);
+        if (swf.SymbolClass.TryGetValue(symbolName, out ushort symbolId))
+            return symbolId;
+        return null;
     }
 
-    public bool TryGetSymbolId(string swfPath, string symbolName, out ushort symbolId)
+    public async Task<SwfTagBase?> GetTag(string swfPath, ushort tagId)
     {
-        SwfFileData? swf = AssetLoader.LoadSwf(swfPath);
-        if (swf is null)
-        {
-            symbolId = default;
-            return false;
-        }
-
-        if (swf.SymbolClass.TryGetValue(symbolName, out symbolId))
-        {
-            return true;
-        }
-
-        symbolId = default;
-        return false;
-    }
-
-    public bool TryGetTag(string swfPath, ushort tagId, [MaybeNullWhen(false)] out SwfTagBase tag)
-    {
-        SwfFileData? swf = AssetLoader.LoadSwf(swfPath);
-        if (swf is null)
-        {
-            tag = null;
-            return false;
-        }
-
+        SwfFileData swf = await AssetLoader.LoadSwf(swfPath);
         if (swf.SpriteTags.TryGetValue(tagId, out DefineSpriteTag? sprite))
-        {
-            tag = sprite;
-            return true;
-        }
-
+            return sprite;
         if (swf.ShapeTags.TryGetValue(tagId, out ShapeBaseTag? shape))
-        {
-            tag = shape;
-            return true;
-        }
-
+            return shape;
         if (swf.TextTags.TryGetValue(tagId, out DefineTextBaseTag? text))
-        {
-            tag = text;
-            return true;
-        }
-
-        tag = null;
-        return false;
+            return text;
+        return null;
     }
 
     public bool TryGetStringName(string stringKey, [MaybeNullWhen(false)] out string stringName)

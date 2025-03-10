@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Xml.Linq;
-using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Bones;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
@@ -23,36 +22,14 @@ public sealed class ExportModal(string? id = null)
     private bool _open = false;
     public void Open() => _shouldOpen = true;
 
-    public void Update(Animator? animator, IGfxType gfx, string animation, long frame, bool flip)
+    public async Task<XDocument> ExportAnimation(Animator animator, IGfxType gfx, string animation, long frame, bool flip)
     {
-        if (_shouldOpen)
-        {
-            ImGui.OpenPopup(PopupName);
-            _shouldOpen = false;
-            _open = true;
-        }
-
-        if (!ImGui.BeginPopupModal(PopupName, ref _open)) return;
-
-        if (animator is null)
-        {
-            ImGui.Text("Animation is not loaded");
-            ImGui.EndPopup();
-            return;
-        }
-
         GfxType gfxClone = new(gfx)
         {
             AnimScale = 1
         };
 
-        BoneSpriteWithName[]? sprites = AnimationBuilder.BuildAnim(animator.Loader, gfxClone, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
-        if (sprites is null)
-        {
-            ImGui.Text("Loading...");
-            ImGui.EndPopup();
-            return;
-        }
+        BoneSpriteWithName[] sprites = await animator.GetAnimationInfo(gfxClone, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
 
         double minX = 0;
         double minY = 0;
@@ -61,21 +38,8 @@ public sealed class ExportModal(string? id = null)
         List<(XDocument, Transform2D)> svgList = [];
         foreach (BoneSpriteWithName sprite in sprites)
         {
-            BoneShape[]? shapes = SpriteToShapeConverter.ConvertToShapes(animator.Loader, sprite);
-            if (shapes is null)
-            {
-                ImGui.Text("Loading...");
-                ImGui.EndPopup();
-                return;
-            }
-
-            SwfFileData? swf = animator.Loader.AssetLoader.LoadSwf(sprite.SwfFilePath);
-            if (swf is null)
-            {
-                ImGui.Text("Loading...");
-                ImGui.EndPopup();
-                return;
-            }
+            SwfFileData swf = await animator.Loader.AssetLoader.LoadSwf(sprite.SwfFilePath);
+            BoneShape[] shapes = await SpriteToShapeConverter.ConvertToShapes(animator.Loader, sprite);
 
             foreach (BoneShape shape in shapes)
             {
@@ -136,9 +100,39 @@ public sealed class ExportModal(string? id = null)
 
         XDocument result = new(new XDeclaration("1.0", "UTF-8", "no"), svg);
 
-        using FileStream file = File.OpenWrite("test.svg");
-        result.Save(file);
-        Environment.Exit(0);
+        return result;
+    }
+
+    public void Update(Animator? animator, IGfxType gfx, string animation, long frame, bool flip)
+    {
+        if (_shouldOpen)
+        {
+            ImGui.OpenPopup(PopupName);
+            _shouldOpen = false;
+            _open = true;
+        }
+
+        if (!ImGui.BeginPopupModal(PopupName, ref _open)) return;
+
+        if (animator is null)
+        {
+            ImGui.Text("Animation is not loaded");
+            ImGui.EndPopup();
+            return;
+        }
+
+        async Task export()
+        {
+            XDocument document = await ExportAnimation(animator, gfx, animation, frame, flip);
+
+            using FileStream file = new("test.svg", FileMode.Open, FileAccess.Write);
+            document.Save(file);
+        }
+
+        if (ImGui.Button("Export!"))
+        {
+            _ = export();
+        }
 
         ImGui.EndPopup();
     }

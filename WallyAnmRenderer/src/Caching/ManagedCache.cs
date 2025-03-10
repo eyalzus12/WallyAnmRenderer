@@ -8,19 +8,30 @@ namespace WallyAnmRenderer;
 
 public abstract class ManagedCache<K, V> where K : notnull
 {
-    private readonly ConcurrentDictionary<K, V> _cache = [];
-    private readonly HashSet<K> _loading = [];
+    private readonly ConcurrentDictionary<K, Task<V>> _cache = [];
 
     public bool TryGetCached(K k, [MaybeNullWhen(false)] out V v)
     {
-        return _cache.TryGetValue(k, out v);
+        if (_cache.TryGetValue(k, out Task<V>? task) && task.IsCompletedSuccessfully)
+        {
+            v = task.Result;
+            return true;
+        }
+        v = default;
+        return false;
     }
 
     public bool RemoveCached(K k)
     {
-        if (_cache.Remove(k, out V? v))
+        if (_cache.Remove(k, out Task<V>? task))
         {
-            OnRemoveCached(k, v);
+            task.ContinueWith((task) =>
+            {
+                if (task.IsCompletedSuccessfully)
+                {
+                    OnRemoveCached(k, task.Result);
+                }
+            });
             return true;
         }
         return false;
@@ -28,43 +39,35 @@ public abstract class ManagedCache<K, V> where K : notnull
 
     protected virtual void OnRemoveCached(K k, V v) { }
 
-
-    public bool IsLoading(K k) => _loading.Contains(k);
+    public bool IsLoading(K k)
+    {
+        if (_cache.TryGetValue(k, out Task<V>? task))
+        {
+            return !task.IsCompleted;
+        }
+        return false;
+    }
 
     protected abstract V LoadInternal(K k);
 
-    public V Load(K k)
+    public Task<V> LoadThreaded(K k)
     {
-        if (_cache.TryGetValue(k, out V? v))
-            return v;
-        v = LoadInternal(k);
-        return _cache[k] = v;
-    }
-
-    public void LoadInThread(K k)
-    {
-        if (_cache.ContainsKey(k))
-            return;
-        lock (_loading)
+        return _cache.GetOrAdd(k, (k) =>
         {
-            if (_loading.Contains(k))
-                return;
-            _loading.Add(k);
-        }
-
-        Task.Run(() =>
-        {
-            try
+            return Task.Run(() =>
             {
-                Load(k);
-                lock (_loading) _loading.Remove(k);
-            }
-            catch (Exception e)
-            {
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-                throw;
-            }
+                try
+                {
+                    V v = LoadInternal(k);
+                    return v;
+                }
+                catch (Exception e)
+                {
+                    Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
+                    Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
+                    throw;
+                }
+            });
         });
     }
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Threading.Tasks;
 using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
@@ -39,28 +40,24 @@ public sealed class AssetLoader(string brawlPath)
     public AnmFile? LoadAnm(string filePath)
     {
         string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
-        AnmFileCache.TryGetCached(finalPath, out AnmFile? anm);
-        if (anm is not null)
-            return anm;
-        AnmFileCache.LoadInThread(finalPath);
+        Task<AnmFile> task = AnmFileCache.LoadThreaded(finalPath);
+        if (task.IsCompletedSuccessfully)
+            return task.Result;
         return null;
     }
 
-    public SwfFileData? LoadSwf(string filePath)
+    public Task<SwfFileData> LoadSwf(string filePath)
     {
         string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
-        _swfFileCache.TryGetCached(finalPath, out SwfFileData? swf);
-        if (swf is not null)
-            return swf;
-        _swfFileCache.LoadInThread(finalPath);
-        return null;
+        return _swfFileCache.LoadThreaded(finalPath);
     }
 
     public Texture2DWrapper? LoadShapeFromSwf(string filePath, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict)
     {
-        SwfFileData? swf = LoadSwf(filePath);
-        if (swf is null)
+        Task<SwfFileData> task = LoadSwf(filePath);
+        if (!task.IsCompletedSuccessfully)
             return null;
+        SwfFileData swf = task.Result;
         _swfShapeCache.TryGetCached(spriteName, shapeId, animScale, out Texture2DWrapper? texture);
         if (texture is not null)
             return texture;
