@@ -150,6 +150,8 @@ public sealed class Editor
 
         Gui();
         bool finishedLoading = true;
+
+        bool flip = false;
         Task<BoneSpriteWithName[]>? spritesTask = null;
         BoneSpriteWithName? highlightedSprite = null;
         if (Animator?.Loader.SwzFiles.Game is not null && GfxInfo.AnimationPicked)
@@ -162,7 +164,7 @@ public sealed class Editor
             else
             {
                 long frame = (long)Math.Floor(24 * Time.TotalSeconds);
-                (IGfxType gfxType, string animation, bool flip) = info.Value;
+                (IGfxType gfxType, string animation, flip) = info.Value;
 
                 ExportModal.Update(Animator, gfxType, animation, frame, flip);
 
@@ -177,8 +179,7 @@ public sealed class Editor
         // done separate from other UI to have access to the animation information
         if (AnimationInfoWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
         {
-            Transform2D center = GetCenteringTransform();
-            AnimationInfoWindow.Show(center, sprites, ref highlightedSprite);
+            AnimationInfoWindow.Show(sprites, ref highlightedSprite);
         }
 
         Rl.BeginTextureMode(ViewportWindow.Framebuffer);
@@ -191,6 +192,9 @@ public sealed class Editor
             Animator.Loader.AssetLoader.Upload();
 
             Transform2D center = GetCenteringTransform();
+            Transform2D direction = flip ? Transform2D.FLIP_X : Transform2D.IDENTITY;
+            Transform2D mainTransform = center * direction;
+
             foreach (BoneSpriteWithName sprite in sprites)
             {
                 bool highlighted = sprite == highlightedSprite;
@@ -214,7 +218,7 @@ public sealed class Editor
                     RaylibUtils.DrawTextureWithTransform(
                         texture.Texture,
                         0, 0, texture.Width, texture.Height,
-                        center * shape.Transform * texture.Transform,
+                        mainTransform * shape.Transform * texture.Transform,
                         tintB: highlighted ? 0 : 1,
                         tintA: (float)sprite.Opacity
                     );
