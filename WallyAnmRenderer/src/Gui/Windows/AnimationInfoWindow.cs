@@ -10,10 +10,8 @@ public sealed class AnimationInfoWindow
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
 
-    public void Show(Transform2D parentTransform, BoneSpriteWithName[]? sprites, ref BoneSpriteWithName? highlight)
+    public void Show(BoneSpriteWithName[]? sprites, ref BoneSpriteWithName? highlight)
     {
-        Transform2D.Invert(parentTransform, out Transform2D inverseParentTransform);
-
         Dictionary<string, uint> spriteIdDict = [];
 
         ImGui.Begin("Bones", ref _open);
@@ -32,7 +30,7 @@ public sealed class AnimationInfoWindow
                     }
                     ImGui.Text($"File: {sprite.SwfFilePath}");
                     ImGui.Text($"Frame: {sprite.Frame}");
-                    Transform2D transform = inverseParentTransform * sprite.Transform;
+                    Transform2D transform = sprite.Transform;
                     ImGui.SeparatorText("Transform");
                     ImGui.Text($"X: {transform.TranslateX}");
                     ImGui.Text($"Y: {transform.TranslateY}");
