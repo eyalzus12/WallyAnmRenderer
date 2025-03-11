@@ -99,7 +99,7 @@ public sealed class CustomColorEditPopup(string? id = null)
 
         try
         {
-            using FileStream file = File.OpenWrite(fileName);
+            using FileStream file = new(fileName, FileMode.Open, FileAccess.Write);
             await CustomColorList.WriteColorSchemeAsync(color, file);
         }
         catch (Exception e)
