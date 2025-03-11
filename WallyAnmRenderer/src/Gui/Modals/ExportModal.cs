@@ -151,6 +151,8 @@ public sealed partial class ExportModal(string? id = null)
         // merge the svgs
 
         XElement svg = new(xmlns + "svg");
+        svg.SetAttributeValue("width", viewBox.Width);
+        svg.SetAttributeValue("height", viewBox.Height);
         svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
 
         int index = 0;
