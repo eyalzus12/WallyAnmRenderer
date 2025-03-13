@@ -28,6 +28,8 @@ public class PathPreferences
         }
     }
 
+    public string? ExportPath { get; set; }
+
     public static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         APPDATA_DIR_NAME,
@@ -67,9 +69,12 @@ public class PathPreferences
     {
         _brawlhallaPath = e.Element(nameof(BrawlhallaPath))?.Value; // don't trigger setter!
         BrawlhallaAirPath = e.Element(nameof(BrawlhallaAirPath))?.Value;
+
         string? decryptionKeyString = e.Element(nameof(DecryptionKey))?.Value;
         if (decryptionKeyString is not null && uint.TryParse(decryptionKeyString, out uint key))
             _decryptionKey = key;
+
+        ExportPath = e.Element(nameof(ExportPath))?.Value;
     }
 
     public void Serialize(XElement e)
@@ -80,6 +85,8 @@ public class PathPreferences
             e.Add(new XElement(nameof(BrawlhallaAirPath), BrawlhallaAirPath));
         if (DecryptionKey is not null)
             e.Add(new XElement(nameof(DecryptionKey), DecryptionKey));
+        if (ExportPath is not null)
+            e.Add(new XElement(nameof(ExportPath)), ExportPath);
     }
 
     public void SetBrawlhallaPath(string? path)
