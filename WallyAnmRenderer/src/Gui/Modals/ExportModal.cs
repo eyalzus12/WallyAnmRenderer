@@ -5,10 +5,13 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Bones;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
+using BrawlhallaAnimLib.Swf;
 using ImGuiNET;
+using NativeFileDialogSharp;
 using SwfLib.Tags.ShapeTags;
 using SwiffCheese.Exporting.Svg;
 using SwiffCheese.Shapes;
@@ -27,7 +30,6 @@ public sealed partial class ExportModal(string? id = null)
     public void Open() => _shouldOpen = true;
 
     private readonly List<string> _errors = [];
-    private string _path = "";
 
     private static void NamespaceDefsGradients(XElement defs, string ns)
     {
@@ -114,33 +116,33 @@ public sealed partial class ExportModal(string? id = null)
         return (svgExporter.Document, realTransform, viewBox);
     }
 
-    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpriteToDocuments(Animator animator, BoneSpriteWithName sprite, bool flip)
+    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpriteToDocuments(Loader loader, BoneSpriteWithName sprite, bool flip)
     {
-        SwfFileData swf = await animator.Loader.AssetLoader.LoadSwf(sprite.SwfFilePath);
-        BoneShape[] shapes = await animator.SpriteToShapes(sprite);
+        SwfFileData swf = await loader.AssetLoader.LoadSwf(sprite.SwfFilePath);
+        BoneShape[] shapes = await SpriteToShapeConverter.ConvertToShapes(loader, sprite);
         foreach (BoneShape shape in shapes)
             yield return ShapeToDocument(swf, sprite, shape, flip);
     }
 
-    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpritesToDocuments(Animator animator, BoneSpriteWithName[] sprites, bool flip)
+    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpritesToDocuments(Loader loader, IAsyncEnumerable<BoneSpriteWithName> sprites, bool flip)
     {
-        foreach (BoneSpriteWithName sprite in sprites)
-            await foreach (var result in SpriteToDocuments(animator, sprite, flip))
+        await foreach (BoneSpriteWithName sprite in sprites)
+            await foreach (var result in SpriteToDocuments(loader, sprite, flip))
                 yield return result;
     }
 
-    public static async Task<XDocument> ExportAnimation(Animator animator, IGfxType gfx, string animation, long frame, bool flip)
+    public static async Task<XDocument> ExportAnimation(Loader loader, IGfxType gfx, string animation, long frame, bool flip)
     {
         GfxType gfxClone = new(gfx)
         {
             AnimScale = 1
         };
 
-        BoneSpriteWithName[] sprites = await animator.GetAnimationInfo(gfxClone, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
+        IAsyncEnumerable<BoneSpriteWithName> sprites = AnimationBuilder.BuildAnim(loader, gfxClone, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
 
         ViewBox viewBox = new(0, 0, 0, 0);
         List<(XDocument, Transform2D)> svgList = [];
-        await foreach (var shape in SpritesToDocuments(animator, sprites, flip))
+        await foreach (var shape in SpritesToDocuments(loader, sprites, flip))
         {
             (XDocument document, Transform2D transform, ViewBox viewBox2) = shape;
             viewBox.ExtendWith(viewBox2);
@@ -184,7 +186,7 @@ public sealed partial class ExportModal(string? id = null)
         return result;
     }
 
-    public void Update(Animator? animator, IGfxType gfx, string animation, long frame, bool flip)
+    public void Update(PathPreferences prefs, Animator? animator, IGfxType gfx, string animation, long frame, bool flip)
     {
         if (_shouldOpen)
         {
@@ -207,7 +209,7 @@ public sealed partial class ExportModal(string? id = null)
         {
             try
             {
-                XDocument document = await ExportAnimation(animator, gfx, animation, frame, flip);
+                XDocument document = await ExportAnimation(animator.Loader, gfx, animation, frame, flip);
                 using FileStream file = new(path, FileMode.Create, FileAccess.Write);
                 await document.SaveAsync(file, SaveOptions.None, new());
             }
@@ -219,11 +221,24 @@ public sealed partial class ExportModal(string? id = null)
             }
         }
 
-        ImGui.InputText("Output path", ref _path, 256);
-
-        if (ImGuiEx.DisabledButton("Export!", _path.Trim() == ""))
+        if (ImGui.Button("Export"))
         {
-            _ = export(_path);
+            Task.Run(async () =>
+            {
+                DialogResult result = Dialog.FileSave("svg", prefs.ExportPath);
+                if (result.IsError) _errors.Add(result.ErrorMessage);
+                if (!result.IsOk) return;
+
+                string? newExportPath = Path.GetDirectoryName(result.Path);
+                if (newExportPath is not null)
+                    prefs.ExportPath = newExportPath;
+
+                string path = result.Path;
+                if (Path.GetExtension(path) != ".svg")
+                    path = Path.ChangeExtension(path, ".svg");
+
+                await export(path);
+            });
         }
 
         if (_errors.Count > 0)

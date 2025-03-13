@@ -166,9 +166,11 @@ public sealed class Editor
                 long frame = (long)Math.Floor(24 * Time.TotalSeconds);
                 (IGfxType gfxType, string animation, flip) = info.Value;
 
-                ExportModal.Update(Animator, gfxType, animation, frame, flip);
+                ExportModal.Update(PathPrefs, Animator, gfxType, animation, frame, flip);
 
                 spritesTask = Animator.GetAnimationInfo(gfxType, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
+                if (!spritesTask.IsCompletedSuccessfully)
+                    finishedLoading = false;
             }
         }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Bones;
@@ -14,9 +15,14 @@ public sealed class Animator(string brawlPath, uint key)
 
     public Loader Loader { get; } = new(brawlPath, key);
 
-    public Task<BoneSpriteWithName[]> GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
+    public async Task<BoneSpriteWithName[]> GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
     {
-        return AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform);
+        List<BoneSpriteWithName> result = [];
+        await foreach (BoneSpriteWithName sprite in AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform))
+        {
+            result.Add(sprite);
+        }
+        return [.. result];
     }
 
     public Task<BoneShape[]> SpriteToShapes(BoneSpriteWithName sprite)
