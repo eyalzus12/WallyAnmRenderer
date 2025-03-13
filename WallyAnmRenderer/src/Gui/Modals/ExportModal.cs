@@ -22,7 +22,7 @@ public sealed partial class ExportModal(string? id = null)
 {
     private static readonly XNamespace xmlns = XNamespace.Get("http://www.w3.org/2000/svg");
 
-    public const string NAME = "Edit color";
+    public const string NAME = "Export animation";
     private string PopupName => $"{NAME}{(id is null ? "" : $"##{id}")}";
 
     private bool _shouldOpen;
@@ -59,14 +59,6 @@ public sealed partial class ExportModal(string? id = null)
         }
     }
 
-    private static void NamespaceGradients(XElement element, string ns)
-    {
-        XElement? defs = element.Element(xmlns + "defs");
-        if (defs is not null) NamespaceDefsGradients(defs, ns);
-        XElement? g = element.Element(xmlns + "g");
-        if (g is not null) NamespacePathsGradients(g, ns);
-    }
-
     private record struct ViewBox(double MinX, double MinY, double MaxX, double MaxY)
     {
         public readonly double Width => MaxX - MinX;
@@ -101,7 +93,8 @@ public sealed partial class ExportModal(string? id = null)
         double shapeY = swfShape.ShapeBounds.YMin / 20.0;
         double shapeW = (swfShape.ShapeBounds.XMax - swfShape.ShapeBounds.XMin) / 20.0;
         double shapeH = (swfShape.ShapeBounds.YMax - swfShape.ShapeBounds.YMin) / 20.0;
-        SvgShapeExporter svgExporter = new(new(shapeW, shapeH), new(1, 0, 0, 1, -shapeX, -shapeY));
+
+        SvgShapeExporter svgExporter = new(new(shapeW, shapeH), new(1, 0, 0, 1, 0, 0));
         compiledShape.Export(svgExporter);
 
         ViewBox viewBox = new(0, 0, 0, 0);
@@ -112,8 +105,7 @@ public sealed partial class ExportModal(string? id = null)
             viewBox.ExtendWith(nx, ny);
         }
 
-        Transform2D realTransform = transform * Transform2D.CreateTranslate(shapeX, shapeY);
-        return (svgExporter.Document, realTransform, viewBox);
+        return (svgExporter.Document, transform, viewBox);
     }
 
     private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpriteToDocuments(Loader loader, BoneSpriteWithName sprite, bool flip)
@@ -157,29 +149,42 @@ public sealed partial class ExportModal(string? id = null)
         svg.SetAttributeValue("height", viewBox.Height);
         svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
 
+        XElement? mainDefs = null;
+
         int index = 0;
         foreach ((XDocument document, Transform2D transform) in svgList)
         {
             XElement main = document.Root!;
 
-            // create symbol
-            XElement symbol = new(main) { Name = xmlns + "symbol" };
-            string symbolId = $"shape{index++}";
-            symbol.SetAttributeValue("id", symbolId);
-            NamespaceGradients(symbol, symbolId);
-            svg.Add(symbol);
+            string shapeId = $"shape{index++}";
 
-            // create use
-            XElement use = new(xmlns + "use");
-            use.SetAttributeValue("href", $"#{symbolId}");
+            XElement? g = main.Element(xmlns + "g");
+            if (g is not null)
+            {
+                NamespacePathsGradients(g, shapeId);
 
-            string transformString = SvgUtils.SvgMatrixString(
-                transform.ScaleX, transform.SkewY, transform.SkewX, transform.ScaleY,
-                transform.TranslateX, transform.TranslateY
-            );
-            use.SetAttributeValue("transform", transformString);
-            svg.Add(use);
+                // the 'g' element will always have an identity matrix as its transform
+                // so we can just override the transform matrix with the true one
+                XElement newG = new(g);
+                string transformString = SvgUtils.SvgMatrixString(
+                    transform.ScaleX, transform.SkewY, transform.SkewX, transform.ScaleY,
+                    transform.TranslateX, transform.TranslateY
+                );
+                newG.SetAttributeValue("transform", transformString);
+
+                svg.Add(newG);
+            }
+
+            XElement? defs = main.Element(xmlns + "defs");
+            if (defs is not null)
+            {
+                NamespaceDefsGradients(defs, shapeId);
+                mainDefs ??= new(xmlns + "defs");
+                mainDefs.Add(defs.Nodes());
+            }
         }
+
+        if (mainDefs is not null) svg.Add(mainDefs);
 
         XDocument result = new(new XDeclaration("1.0", "UTF-8", "no"), svg);
 
