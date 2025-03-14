@@ -106,8 +106,8 @@ public sealed class Editor
                 float delta = Rl.GetFrameTime();
                 Time += TimeSpan.FromSeconds(delta);
             }
-            Draw();
             Update();
+            Draw();
         }
 
         PathPrefs.Save();
