@@ -260,6 +260,6 @@ public sealed partial class ExportModal(string? id = null)
         ImGui.EndPopup();
     }
 
-    [GeneratedRegex(@"url\(#(gradient\d+)\)")]
+    [GeneratedRegex(@"url\(#(gradient[0-9]+)\)")]
     private static partial Regex PathFillUrlRegex();
 }
