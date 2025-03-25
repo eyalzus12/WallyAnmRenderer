@@ -2,17 +2,19 @@
 
 **Currently under development.**
 
-#### Present features:
+#### Existing features:
 * Load any .anm files and pick an animation.
 * Select a legend skin, a weapon skin, and a color.
 * A full implementation of the game's animation system.
 * Pause, frame step, and seeing exact animation timeline.
 * Listing the sprites and their data.
 * Translating internal names.
+* Creating custom colors.
+* Exporting as svg.
 
 #### Upcoming features:
-* Exporting as svg/png.
-* Rendering of sidekicks, companions, and podiums.
+* Bulk exporting of many animations.
+* Rendering specific sidekicks and companions.
 * Support for animation loop points.
 * Correct timing for attack animations.
 
