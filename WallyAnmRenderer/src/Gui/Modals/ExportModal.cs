@@ -228,9 +228,9 @@ public sealed partial class ExportModal(string? id = null)
 
         if (ImGui.Button("Export"))
         {
-            Task.Run(async () =>
+            Task.Run(() => Dialog.FileSave("svg", prefs.ExportPath)).ContinueWith(async (task) =>
             {
-                DialogResult result = Dialog.FileSave("svg", prefs.ExportPath);
+                DialogResult result = task.Result;
                 if (result.IsError) _errors.Add(result.ErrorMessage);
                 if (!result.IsOk) return;
 
