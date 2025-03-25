@@ -81,9 +81,9 @@ public sealed partial class ExportModal(string? id = null)
         }
     }
 
-    private static (XDocument, Transform2D, ViewBox) ShapeToDocument(SwfFileData swf, BoneSpriteWithName sprite, BoneShape shape, bool flip)
+    private static (XDocument, Transform2D, ViewBox) ShapeToDocument(SwfFileData swf, BoneSpriteWithName sprite, BoneShape shape)
     {
-        Transform2D transform = (flip ? Transform2D.FLIP_X : Transform2D.IDENTITY) * shape.Transform;
+        Transform2D transform = shape.Transform;
 
         ShapeBaseTag swfShape = swf.ShapeTags[shape.ShapeId];
         swfShape = SwfUtils.DeepCloneShape(swfShape);
@@ -108,18 +108,18 @@ public sealed partial class ExportModal(string? id = null)
         return (svgExporter.Document, transform, viewBox);
     }
 
-    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpriteToDocuments(Loader loader, BoneSpriteWithName sprite, bool flip)
+    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpriteToDocuments(Loader loader, BoneSpriteWithName sprite)
     {
         SwfFileData swf = await loader.AssetLoader.LoadSwf(sprite.SwfFilePath);
         BoneShape[] shapes = await SpriteToShapeConverter.ConvertToShapes(loader, sprite);
         foreach (BoneShape shape in shapes)
-            yield return ShapeToDocument(swf, sprite, shape, flip);
+            yield return ShapeToDocument(swf, sprite, shape);
     }
 
-    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpritesToDocuments(Loader loader, IAsyncEnumerable<BoneSpriteWithName> sprites, bool flip)
+    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpritesToDocuments(Loader loader, IAsyncEnumerable<BoneSpriteWithName> sprites)
     {
         await foreach (BoneSpriteWithName sprite in sprites)
-            await foreach (var result in SpriteToDocuments(loader, sprite, flip))
+            await foreach (var result in SpriteToDocuments(loader, sprite))
                 yield return result;
     }
 
@@ -134,7 +134,7 @@ public sealed partial class ExportModal(string? id = null)
 
         ViewBox viewBox = new(0, 0, 0, 0);
         List<(XDocument, Transform2D)> svgList = [];
-        await foreach (var shape in SpritesToDocuments(loader, sprites, flip))
+        await foreach (var shape in SpritesToDocuments(loader, sprites))
         {
             (XDocument document, Transform2D transform, ViewBox viewBox2) = shape;
             viewBox.ExtendWith(viewBox2);

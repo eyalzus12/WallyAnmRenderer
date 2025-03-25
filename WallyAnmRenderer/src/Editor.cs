@@ -194,8 +194,6 @@ public sealed class Editor
             Animator.Loader.AssetLoader.Upload();
 
             Transform2D center = GetCenteringTransform();
-            Transform2D direction = flip ? Transform2D.FLIP_X : Transform2D.IDENTITY;
-            Transform2D mainTransform = center * direction;
 
             foreach (BoneSpriteWithName sprite in sprites)
             {
@@ -220,7 +218,7 @@ public sealed class Editor
                     RaylibUtils.DrawTextureWithTransform(
                         texture.Texture,
                         0, 0, texture.Width, texture.Height,
-                        mainTransform * shape.Transform * texture.Transform,
+                        center * shape.Transform * texture.Transform,
                         tintB: highlighted ? 0 : 1,
                         tintA: (float)sprite.Opacity
                     );
