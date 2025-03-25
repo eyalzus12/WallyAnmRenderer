@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Threading.Tasks;
 
 using Raylib_cs;
 using rlImGui_cs;
@@ -37,6 +38,7 @@ public sealed class Editor
     public AnimationInfoWindow AnimationInfoWindow { get; } = new();
     public TimeWindow TimeWindow { get; } = new();
     public PickerWindow PickerWindow { get; } = new();
+    public ExportModal ExportModal { get; } = new();
 
     private bool _showMainMenuBar = true;
 
@@ -148,7 +150,9 @@ public sealed class Editor
 
         Gui();
         bool finishedLoading = true;
-        BoneSpriteWithName[]? sprites = null;
+
+        bool flip = false;
+        Task<BoneSpriteWithName[]>? spritesTask = null;
         BoneSpriteWithName? highlightedSprite = null;
         if (Animator?.Loader.SwzFiles.Game is not null && GfxInfo.AnimationPicked)
         {
@@ -160,18 +164,24 @@ public sealed class Editor
             else
             {
                 long frame = (long)Math.Floor(24 * Time.TotalSeconds);
-                (IGfxType gfxType, string animation, bool flip) = info.Value;
-                Transform2D center = GetCenteringTransform();
-                if (flip) center *= Transform2D.FLIP_X;
-                sprites = Animator.GetAnimationInfo(gfxType, animation, frame, center);
+                (IGfxType gfxType, string animation, flip) = info.Value;
+
+                ExportModal.Update(PathPrefs, Animator, gfxType, animation, frame, flip);
+
+                spritesTask = Animator.GetAnimationInfo(gfxType, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
+                if (!spritesTask.IsCompletedSuccessfully)
+                    finishedLoading = false;
             }
         }
+
+        BoneSpriteWithName[]? sprites = null;
+        if (spritesTask is not null && spritesTask.IsCompletedSuccessfully)
+            sprites = spritesTask.Result;
 
         // done separate from other UI to have access to the animation information
         if (AnimationInfoWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
         {
-            Transform2D center = GetCenteringTransform();
-            AnimationInfoWindow.Show(center, sprites, ref highlightedSprite);
+            AnimationInfoWindow.Show(sprites, ref highlightedSprite);
         }
 
         Rl.BeginTextureMode(ViewportWindow.Framebuffer);
@@ -183,23 +193,32 @@ public sealed class Editor
         {
             Animator.Loader.AssetLoader.Upload();
 
+            Transform2D center = GetCenteringTransform();
+
             foreach (BoneSpriteWithName sprite in sprites)
             {
                 bool highlighted = sprite == highlightedSprite;
 
-                Texture2DWrapper[]? textures = Animator.SpriteToTextures(sprite);
-                if (textures is null)
+                Task<BoneShape[]> shapes = Animator.SpriteToShapes(sprite);
+                if (!shapes.IsCompletedSuccessfully)
                 {
                     finishedLoading = false;
                     continue;
                 }
 
-                foreach (Texture2DWrapper texture in textures)
+                foreach (BoneShape shape in shapes.Result)
                 {
+                    Texture2DWrapper? texture = Animator.ShapeToTexture(sprite, shape);
+                    if (texture is null)
+                    {
+                        finishedLoading = false;
+                        continue;
+                    }
+
                     RaylibUtils.DrawTextureWithTransform(
                         texture.Texture,
                         0, 0, texture.Width, texture.Height,
-                        texture.Transform,
+                        center * shape.Transform * texture.Transform,
                         tintB: highlighted ? 0 : 1,
                         tintA: (float)sprite.Opacity
                     );
@@ -237,10 +256,11 @@ public sealed class Editor
             AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator?.Loader.AssetLoader, GfxInfo);
         if (TimeWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
         {
-            long? frameCount = Animator.GetFrameCount(GfxInfo);
-            if (frameCount is not null)
+            Task<long?> frameCountTask = Animator.GetFrameCount(GfxInfo);
+            if (frameCountTask.IsCompletedSuccessfully && frameCountTask.Result is not null)
             {
-                TimeWindow.Show(frameCount.Value, Time, _paused);
+                long frameCount = frameCountTask.Result.Value;
+                TimeWindow.Show(frameCount, Time, _paused);
             }
         }
         if (PickerWindow.Open)
@@ -266,6 +286,12 @@ public sealed class Editor
         {
             if (ImGui.MenuItem("Clear swf shape cache")) Animator.Loader.AssetLoader.ClearSwfShapeCache();
             if (ImGui.MenuItem("Clear swf file cache")) Animator.Loader.AssetLoader.ClearSwfFileCache();
+            ImGui.EndMenu();
+        }
+
+        if (ImGui.BeginMenu("Export"))
+        {
+            if (ImGui.MenuItem("Test")) ExportModal.Open();
             ImGui.EndMenu();
         }
 

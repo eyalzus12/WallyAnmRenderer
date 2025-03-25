@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Bones;
 using BrawlhallaAnimLib.Gfx;
@@ -15,54 +15,36 @@ public sealed class Animator(string brawlPath, uint key)
 
     public Loader Loader { get; } = new(brawlPath, key);
 
-    private readonly HashSet<(string, string)> _h = [];
-
-    public BoneSpriteWithName[]? GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
+    public async Task<BoneSpriteWithName[]> GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
     {
-        return AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform);
+        List<BoneSpriteWithName> result = [];
+        await foreach (BoneSpriteWithName sprite in AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform))
+        {
+            result.Add(sprite);
+        }
+        return [.. result];
     }
 
-    public Texture2DWrapper[]? SpriteToTextures(BoneSpriteWithName sprite)
+    public Task<BoneShape[]> SpriteToShapes(BoneSpriteWithName sprite)
     {
-        BoneShape[]? shapes = SpriteToShapeConverter.ConvertToShapes(Loader, sprite);
-        if (shapes is null)
-            return null;
-
-        if (!_h.Contains((sprite.SpriteName, sprite.SwfFilePath)))
-        {
-            Rl.TraceLog(Raylib_cs.TraceLogLevel.Debug, $"Loading {sprite.SpriteName} from {sprite.SwfFilePath}");
-            _h.Add((sprite.SpriteName, sprite.SwfFilePath));
-        }
-
-        bool result = true;
-        List<Texture2DWrapper> textures = [];
-        foreach (BoneShape boneShape in shapes)
-        {
-            Texture2DWrapper? texture = Loader.AssetLoader.LoadShapeFromSwf(
-                sprite.SwfFilePath,
-                sprite.SpriteName,
-                boneShape.ShapeId,
-                sprite.AnimScale,
-                sprite.ColorSwapDict
-            );
-
-            if (texture is null)
-            {
-                result = false;
-                continue;
-            }
-
-            textures.Add(new(texture.Texture, boneShape.Transform * texture.Transform, false));
-        }
-
-        if (result) return [.. textures];
-        return null;
+        return SpriteToShapeConverter.ConvertToShapes(Loader, sprite);
     }
 
-    public long? GetFrameCount(GfxInfo info)
+    public Texture2DWrapper? ShapeToTexture(BoneSpriteWithName sprite, BoneShape shape)
+    {
+        return Loader.AssetLoader.LoadShapeFromSwf(
+            sprite.SwfFilePath,
+            sprite.SpriteName,
+            shape.ShapeId,
+            sprite.AnimScale,
+            sprite.ColorSwapDict
+        );
+    }
+
+    public async Task<long?> GetFrameCount(GfxInfo info)
     {
         if (!info.AnimationPicked)
             return null;
-        return AnimationBuilder.GetAnimFrameCount(Loader, info.AnimFile, info.AnimClass, info.Animation);
+        return await AnimationBuilder.GetAnimFrameCount(Loader, info.AnimFile, info.AnimClass, info.Animation);
     }
 }

@@ -20,11 +20,8 @@ public sealed class AnmFileCache : ManagedCache<string, AnmFile>
         using FileStream file = File.OpenRead(path);
         AnmFile anm = AnmFile.CreateFrom(file);
 
-        lock (@_classes)
-        {
-            foreach ((string name, AnmClass @class) in anm.Classes)
-                _classes[name] = @class;
-        }
+        foreach ((string name, AnmClass @class) in anm.Classes)
+            _classes[name] = @class;
 
         return anm;
     }
@@ -32,16 +29,13 @@ public sealed class AnmFileCache : ManagedCache<string, AnmFile>
     protected override void OnCacheClear()
     {
         base.OnCacheClear();
-        lock (@_classes) { _classes.Clear(); }
+        _classes.Clear();
     }
 
     protected override void OnRemoveCached(string filePath, AnmFile anm)
     {
         base.OnRemoveCached(filePath, anm);
-        lock (@_classes)
-        {
-            foreach (string name in anm.Classes.Keys)
-                _classes.Remove(name, out _);
-        }
+        foreach (string name in anm.Classes.Keys)
+            _classes.Remove(name, out _);
     }
 }
