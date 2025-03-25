@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using BrawlhallaAnimLib.Anm;
@@ -21,13 +22,12 @@ public readonly struct AnmClassAdapter(AnmClass anmClass) : IAnmClass
 
 public readonly struct AnmAnimationAdapter(AnmAnimation anmAnimation) : IAnmAnimation
 {
-    public uint BaseStart => anmAnimation.BaseStart;
     public IAnmFrame[] Frames { get; } = [.. anmAnimation.Frames.Select((frame) => new AnmFrameAdapter(frame))];
 }
 
 public readonly struct AnmFrameAdapter(AnmFrame frame) : IAnmFrame
 {
-    public IAnmBone[] Bones { get; } = [.. frame.Bones.Select((bone) => new AnmBoneAdapter(bone))];
+    public IEnumerable<IAnmBone> Bones => frame.Bones.Select((bone) => (IAnmBone)new AnmBoneAdapter(bone));
 }
 
 public readonly struct AnmBoneAdapter(AnmBone bone) : IAnmBone
