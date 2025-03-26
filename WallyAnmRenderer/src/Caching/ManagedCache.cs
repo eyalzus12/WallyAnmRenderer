@@ -2,19 +2,21 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace WallyAnmRenderer;
 
 public abstract class ManagedCache<K, V> where K : notnull
 {
-    private readonly ConcurrentDictionary<K, Task<V>> _cache = [];
+    private readonly record struct QueueItem(Task<V> Task, CancellationTokenSource Source);
+    private readonly ConcurrentDictionary<K, QueueItem> _cache = [];
 
     public bool TryGetCached(K k, [MaybeNullWhen(false)] out V v)
     {
-        if (_cache.TryGetValue(k, out Task<V>? task) && task.IsCompletedSuccessfully)
+        if (_cache.TryGetValue(k, out QueueItem item) && item.Task.IsCompletedSuccessfully)
         {
-            v = task.Result;
+            v = item.Task.Result;
             return true;
         }
         v = default;
@@ -23,56 +25,59 @@ public abstract class ManagedCache<K, V> where K : notnull
 
     public bool RemoveCached(K k)
     {
-        if (_cache.Remove(k, out Task<V>? task))
+        if (_cache.Remove(k, out QueueItem item))
         {
-            task.ContinueWith((task) =>
-            {
-                if (task.IsCompletedSuccessfully)
-                {
-                    OnRemoveCached(k, task.Result);
-                }
-            });
+            item.Source.Cancel();
+            OnRemoveCached(k);
             return true;
         }
         return false;
     }
 
-    protected virtual void OnRemoveCached(K k, V v) { }
+    protected virtual void OnRemoveCached(K k) { }
 
     public bool IsLoading(K k)
     {
-        if (_cache.TryGetValue(k, out Task<V>? task))
+        if (_cache.TryGetValue(k, out QueueItem item))
         {
-            return !task.IsCompleted;
+            return !item.Task.IsCompleted;
         }
         return false;
     }
 
-    protected abstract V LoadInternal(K k);
+    protected abstract Task<V> LoadInternal(K k, CancellationToken ctoken);
 
     public Task<V> LoadThreaded(K k)
     {
-        return _cache.GetOrAdd(k, (k) =>
+        async Task<V> impl(K k, CancellationToken ctoken = default)
         {
-            return Task.Run(() =>
+            try
             {
-                try
-                {
-                    V v = LoadInternal(k);
-                    return v;
-                }
-                catch (Exception e)
+                V v = await LoadInternal(k, ctoken);
+                return v;
+            }
+            catch (Exception e)
+            {
+                if (e is not TaskCanceledException)
                 {
                     Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
                     Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-                    throw;
                 }
-            });
-        });
+                throw;
+            }
+        }
+
+        return _cache.GetOrAdd(k, (k) =>
+        {
+            CancellationTokenSource source = new();
+            return new QueueItem(impl(k, source.Token), source);
+        }).Task;
     }
 
     public void Clear()
     {
+        foreach ((_, QueueItem item) in _cache)
+            item.Source.Cancel();
         _cache.Clear();
         OnCacheClear();
     }

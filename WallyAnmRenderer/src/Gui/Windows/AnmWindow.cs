@@ -53,6 +53,11 @@ public sealed class AnmWindow
             {
                 ImGui.Text(fileName);
                 ImGui.SameLine();
+                if (ImGui.Button($"Cancel##{fileName}"))
+                {
+                    assetLoader.AnmFileCache.RemoveCached(absolutePath);
+                }
+                ImGui.SameLine();
                 ImGui.TextDisabled(" Loading...");
             }
             else if (assetLoader.TryGetAnm(relativePath, out AnmFile? anm))

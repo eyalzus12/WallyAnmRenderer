@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using AbcDisassembler;
 using SwfLib;
 using SwfLib.Data;
@@ -24,11 +25,13 @@ public sealed class SwfFileData
 
     private SwfFileData() { }
 
-    public static SwfFileData CreateFrom(Stream stream)
+    public static SwfFileData CreateFrom(SwfFile file, CancellationToken ctoken = default)
     {
-        SwfFileData swf = new() { Swf = SwfFile.ReadFrom(stream) };
-        stream.Dispose();
-        PopulateSpriteADict(swf);
+        ctoken.ThrowIfCancellationRequested();
+
+        SwfFileData swf = new() { Swf = file };
+        PopulateSpriteADict(swf, ctoken);
+        ctoken.ThrowIfCancellationRequested();
 
         SymbolClassTag? symbolClass = null;
 
@@ -41,7 +44,6 @@ public sealed class SwfFileData
                 break;
             }
         }
-
         if (symbolClass is null)
         {
             throw new Exception("No symbol class in swf");
@@ -51,6 +53,8 @@ public sealed class SwfFileData
         {
             swf.SymbolClass[reference.SymbolName] = reference.SymbolID;
         }
+
+        ctoken.ThrowIfCancellationRequested();
 
         foreach (SwfTagBase tag in swf.Swf.Tags)
         {
@@ -71,14 +75,16 @@ public sealed class SwfFileData
         return swf;
     }
 
-    private static void PopulateSpriteADict(SwfFileData swf)
+    private static void PopulateSpriteADict(SwfFileData swf, CancellationToken ctoken = default)
     {
         DoABCTag? tag = swf.Swf.Tags.OfType<DoABCTag>().FirstOrDefault();
         if (tag is null) return;
 
+        ctoken.ThrowIfCancellationRequested();
         AbcFile abc;
         using (MemoryStream ms = new(tag.ABCData))
             abc = AbcFile.Read(ms);
+        ctoken.ThrowIfCancellationRequested();
 
         Dictionary<uint, MethodBodyInfo> bodyDict = [];
         foreach (MethodBodyInfo methodBody in abc.MethodBodies)
