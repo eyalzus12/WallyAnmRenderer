@@ -289,11 +289,7 @@ public sealed class Editor
             ImGui.EndMenu();
         }
 
-        if (ImGui.BeginMenu("Export"))
-        {
-            if (ImGui.MenuItem("Test")) ExportModal.Open();
-            ImGui.EndMenu();
-        }
+        if (ImGui.MenuItem("Export")) ExportModal.Open();
 
         ImGui.EndMainMenuBar();
     }
