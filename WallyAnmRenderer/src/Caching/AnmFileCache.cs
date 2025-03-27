@@ -21,7 +21,7 @@ public sealed class AnmFileCache : ManagedCache<string, AnmFile>
     protected override async Task<AnmFile> LoadInternal(string path, CancellationToken ctoken = default)
     {
         AnmFile anm;
-        using (FileStream file = File.OpenRead(path))
+        using (FileStream file = new(path, FileMode.Open, FileAccess.Read, FileShare.None, 0, true))
             anm = await AnmFile.CreateFromAsync(file, false, ctoken);
 
         foreach ((string name, AnmClass @class) in anm.Classes)
