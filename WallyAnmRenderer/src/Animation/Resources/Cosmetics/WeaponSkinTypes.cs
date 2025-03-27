@@ -8,7 +8,7 @@ namespace WallyAnmRenderer;
 
 public readonly record struct WeaponSkinTypeInfo(string WeaponSkinName, string DisplayNameKey);
 
-public readonly struct WeaponSkinTypes : ICsvReader
+public sealed class WeaponSkinTypes : ICsvReader
 {
     private readonly Dictionary<string, SepRowAdapter> _rows = [];
     private readonly Dictionary<string, WeaponSkinTypeInfo> _infos = [];
@@ -42,9 +42,9 @@ public readonly struct WeaponSkinTypes : ICsvReader
         return false;
     }
 
-    public bool TryGetGfx(string name, [MaybeNullWhen(false)] out WeaponSkinTypesGfx costume)
+    public bool TryGetGfx(string name, [MaybeNullWhen(false)] out WeaponSkinTypesGfx weaponSkin)
     {
-        return _gfx.TryGetValue(name, out costume);
+        return _gfx.TryGetValue(name, out weaponSkin);
     }
 
     public bool TryGetInfo(string name, [MaybeNullWhen(false)] out WeaponSkinTypeInfo info)

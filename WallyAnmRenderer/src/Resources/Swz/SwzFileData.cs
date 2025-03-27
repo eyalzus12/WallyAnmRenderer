@@ -59,13 +59,14 @@ public sealed class SwzGameFile
 
     public CostumeTypes CostumeTypes { get; }
     public WeaponSkinTypes WeaponSkinTypes { get; }
+    public SpawnBotTypes SpawnBotTypes { get; }
     public ColorSchemeTypes ColorSchemeTypes { get; }
     public ColorExceptionTypes ColorExceptionTypes { get; }
     public HeroTypes HeroTypes { get; }
 
     public SwzGameFile(string filePath, uint key)
     {
-        _data = new(filePath, key, ["costumeTypes.csv", "weaponSkinTypes.csv", "ColorSchemeTypes.xml", "colorExceptionTypes.csv", "HeroTypes.xml"]);
+        _data = new(filePath, key, ["costumeTypes.csv", "weaponSkinTypes.csv", "SpawnBotTypes.xml", "ColorSchemeTypes.xml", "colorExceptionTypes.csv", "HeroTypes.xml"]);
 
         static SepReader readerFromText(string text)
         {
@@ -93,6 +94,10 @@ public sealed class SwzGameFile
         string weaponSkinTypesContent = _data["weaponSkinTypes.csv"];
         using (SepReader reader = readerFromText(weaponSkinTypesContent))
             WeaponSkinTypes = new(reader, CostumeTypes);
+
+        string spawnBotTypesContent = _data["SpawnBotTypes.xml"];
+        XElement spawnBotTypesElement = XElement.Parse(spawnBotTypesContent);
+        SpawnBotTypes = new(spawnBotTypesElement);
 
         string colorSchemeTypesContent = _data["ColorSchemeTypes.xml"];
         XElement colorSchemeElement = XElement.Parse(colorSchemeTypesContent);

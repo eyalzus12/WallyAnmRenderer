@@ -13,6 +13,7 @@ public sealed class PickerWindow
 
     private string _costumeTypeFilter = "";
     private string _weaponSkinTypeFilter = "";
+    private string _spawnBotTypeFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -63,6 +64,9 @@ public sealed class PickerWindow
 
         ImGui.SeparatorText("Weapon skin Types");
         WeaponSkinTypeSection(loader, info);
+
+        ImGui.SeparatorText("Sidekicks");
+        SpawnBotTypesSection(loader, info);
 
         ImGui.SeparatorText("Color scheme");
         ColorSchemeSection(loader, info);
@@ -183,6 +187,52 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(weaponSkinName, selected2))
                 {
                     gfxInfo.WeaponSkinType = weaponSkinType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void SpawnBotTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        SpawnBotTypes spawnBotTypes = loader.SwzFiles.Game.SpawnBotTypes;
+        ImGui.InputText("Filter sidekicks", ref _spawnBotTypeFilter, 256);
+        if (ImGui.BeginListBox("###spawnbotselect"))
+        {
+            bool selected = gfxInfo.SpawnBotType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.SpawnBotType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string spawnBotType in spawnBotTypes.SpawnBots)
+            {
+                string spawnBotName = spawnBotType;
+                if (spawnBotTypes.TryGetInfo(spawnBotType, out SpawnBotType? info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realSpawnBotName))
+                        spawnBotName = $"{realSpawnBotName} ({spawnBotType})";
+                }
+
+                if (!spawnBotName.Contains(_spawnBotTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = spawnBotType == gfxInfo.SpawnBotType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(spawnBotName, selected2))
+                {
+                    gfxInfo.SpawnBotType = spawnBotType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }

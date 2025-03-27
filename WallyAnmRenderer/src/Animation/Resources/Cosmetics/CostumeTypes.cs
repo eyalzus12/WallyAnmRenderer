@@ -9,7 +9,7 @@ namespace WallyAnmRenderer;
 
 public readonly record struct CostumeTypeInfo(string CostumeName, string DisplayNameKey, string OwnerHero, uint CostumeIndex);
 
-public readonly struct CostumeTypes : ICsvReader
+public sealed class CostumeTypes : ICsvReader
 {
     private readonly Dictionary<string, SepRowAdapter> _rows = [];
     private readonly Dictionary<string, CostumeTypeInfo> _infos = [];
