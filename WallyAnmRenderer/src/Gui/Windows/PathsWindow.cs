@@ -17,6 +17,9 @@ public sealed class PathsWindow
     private string? _loadingError;
     private string? _loadingStatus;
 
+    public delegate void LoadingRequestedEventHandler(object? sender, uint key, string brawlPath);
+    public event LoadingRequestedEventHandler? LoadingRequested;
+
     public void Show(PathPreferences pathPrefs)
     {
         string? brawlPath = _brawlPath ?? pathPrefs.BrawlhallaPath;
@@ -69,8 +72,7 @@ public sealed class PathsWindow
 
         if (key is not null && brawlPath is not null && ImGui.Button("Load files"))
         {
-            pathPrefs.DecryptionKey = key;
-            pathPrefs.BrawlhallaPath = brawlPath;
+            LoadingRequested?.Invoke(this, key.Value, brawlPath);
         }
 
         if (_loadingStatus is not null)
@@ -88,5 +90,23 @@ public sealed class PathsWindow
         }
 
         ImGui.End();
+    }
+
+    public void OnLoadingStarted()
+    {
+        _loadingError = null;
+        _loadingStatus = "Loading...";
+    }
+
+    public void OnLoadingError(Exception e)
+    {
+        _loadingError = e.Message;
+        _loadingStatus = null;
+    }
+
+    public void OnLoadingFinished()
+    {
+        _loadingError = null;
+        _loadingStatus = null;
     }
 }

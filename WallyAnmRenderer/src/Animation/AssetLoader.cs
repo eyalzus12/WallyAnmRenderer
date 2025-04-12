@@ -14,6 +14,8 @@ public sealed class AssetLoader(string brawlPath)
         get => _brawlPath;
         set
         {
+            if (_brawlPath == value) return;
+
             _brawlPath = value;
             ClearSwfFileCache();
             ClearAnmCache();

@@ -59,6 +59,13 @@ public sealed class Editor
             if (Animator is not null) Animator.Key = key;
         };
 
+        PathsWindow.LoadingRequested += async (_, key, path) =>
+        {
+            pathPrefs.BrawlhallaPath = path;
+            pathPrefs.DecryptionKey = key;
+            await LoadFiles();
+        };
+
         AnmWindow.AnmUnloadRequested += (_, file) =>
         {
             if (GfxInfo.SourceFilePath == file)
@@ -151,10 +158,9 @@ public sealed class Editor
         Gui();
         bool finishedLoading = true;
 
-        bool flip = false;
         Task<BoneSpriteWithName[]>? spritesTask = null;
         BoneSpriteWithName? highlightedSprite = null;
-        if (Animator?.Loader.SwzFiles.Game is not null && GfxInfo.AnimationPicked)
+        if (Animator?.Loader.SwzFiles?.Game is not null && GfxInfo.AnimationPicked)
         {
             var info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
             if (info is null)
@@ -164,7 +170,7 @@ public sealed class Editor
             else
             {
                 long frame = (long)Math.Floor(24 * Time.TotalSeconds);
-                (IGfxType gfxType, string animation, flip) = info.Value;
+                (IGfxType gfxType, string animation, bool flip) = info.Value;
 
                 ExportModal.Update(PathPrefs, Animator, gfxType, animation, frame, flip);
 
@@ -301,7 +307,11 @@ public sealed class Editor
 
         if (PathPrefs.BrawlhallaPath is not null && PathPrefs.DecryptionKey is not null)
         {
-            Animator ??= new(PathPrefs.BrawlhallaPath, PathPrefs.DecryptionKey.Value);
+            if (Animator is null)
+            {
+                Animator = new(PathPrefs.BrawlhallaPath, PathPrefs.DecryptionKey.Value);
+                _ = LoadFiles();
+            }
         }
 
         if (ViewportWindow.Hovered)
@@ -363,6 +373,23 @@ public sealed class Editor
         _cam.Offset = new(0, 160); // ~legend height
         _cam.Target = new(0, 0);
         _cam.Zoom = scale;
+    }
+
+    private async Task LoadFiles()
+    {
+        if (Animator is null) return;
+
+        PathsWindow.OnLoadingStarted();
+        try
+        {
+            await Animator.Loader.LoadFilesAsync();
+            PathsWindow.OnLoadingFinished();
+        }
+        catch (Exception e)
+        {
+            if (e is OperationCanceledException) return;
+            PathsWindow.OnLoadingError(e);
+        }
     }
 
     ~Editor()

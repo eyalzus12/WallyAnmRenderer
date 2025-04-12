@@ -79,7 +79,7 @@ public sealed class PickerWindow
 
     private void CostumeTypeSection(Loader loader, GfxInfo gfxInfo)
     {
-        if (loader.SwzFiles.Game is null)
+        if (loader.SwzFiles?.Game is null)
         {
             ImGui.Text("Swz files were not loaded");
             return;
@@ -151,7 +151,7 @@ public sealed class PickerWindow
 
     private void WeaponSkinTypeSection(Loader loader, GfxInfo gfxInfo)
     {
-        if (loader.SwzFiles.Game is null)
+        if (loader.SwzFiles?.Game is null)
         {
             ImGui.Text("Swz files were not loaded");
             return;
@@ -197,7 +197,7 @@ public sealed class PickerWindow
 
     private void SpawnBotTypesSection(Loader loader, GfxInfo gfxInfo)
     {
-        if (loader.SwzFiles.Game is null)
+        if (loader.SwzFiles?.Game is null)
         {
             ImGui.Text("Swz files were not loaded");
             return;
@@ -243,7 +243,7 @@ public sealed class PickerWindow
 
     private void ColorSchemeSection(Loader loader, GfxInfo info)
     {
-        if (loader.SwzFiles.Game is null)
+        if (loader.SwzFiles?.Game is null)
         {
             ImGui.Text("Swz files were not loaded");
             return;

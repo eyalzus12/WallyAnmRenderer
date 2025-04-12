@@ -216,7 +216,7 @@ public sealed partial class ExportModal(string? id = null)
             {
                 XDocument document = await ExportAnimation(animator.Loader, gfx, animation, frame, flip);
                 using FileStream file = FileUtils.CreateWriteAsync(path);
-                await document.SaveAsync(file, SaveOptions.None, new());
+                await document.SaveAsync(file, SaveOptions.None, default);
             }
             catch (Exception e)
             {

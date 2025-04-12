@@ -37,7 +37,7 @@ public sealed class AnmWindow
         }
 
         string brawlAnimPath = Path.Join(brawlPath, "anims");
-        string[] files = Directory.GetFiles(brawlAnimPath);
+        string[] files = Directory.Exists(brawlAnimPath) ? Directory.GetFiles(brawlAnimPath) : [];
 
         ImGui.InputText("Filter files", ref _fileFilter, 256);
         foreach (string absolutePath in files)
