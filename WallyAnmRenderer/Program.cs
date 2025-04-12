@@ -3,6 +3,6 @@ global using RlColor = Raylib_cs.Color;
 global using RlImage = Raylib_cs.Image;
 using WallyAnmRenderer;
 
-PathPreferences prefs = PathPreferences.Load();
+PathPreferences prefs = await PathPreferences.Load();
 Editor editor = new(prefs);
 editor.Run();

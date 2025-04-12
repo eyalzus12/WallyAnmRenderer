@@ -21,13 +21,13 @@ public sealed class AnmFileCache : ManagedCache<string, AnmFile>
     protected override async Task<AnmFile> LoadInternal(string path, CancellationToken ctoken = default)
     {
         AnmFile anm;
-        using (FileStream file = new(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096, true))
+        using (FileStream file = FileUtils.OpenReadAsyncSeq(path))
             anm = await AnmFile.CreateFromAsync(file, false, ctoken);
 
+        ConcurrentBag<string> bag = _classOwnership.GetOrAdd(path, []);
         foreach ((string name, AnmClass @class) in anm.Classes)
         {
             ctoken.ThrowIfCancellationRequested();
-            ConcurrentBag<string> bag = _classOwnership.GetOrAdd(path, []);
             bag.Add(name);
             _classes[name] = @class;
         }

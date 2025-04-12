@@ -58,7 +58,7 @@ public abstract class ManagedCache<K, V> where K : notnull
             }
             catch (Exception e)
             {
-                if (e is not TaskCanceledException)
+                if (e is not OperationCanceledException)
                 {
                     Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
                     Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);

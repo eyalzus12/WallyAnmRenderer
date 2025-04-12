@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace WallyAnmRenderer;
@@ -36,24 +37,19 @@ public class PathPreferences
         FILE_NAME
     );
 
-    public static PathPreferences Load()
+    public static async Task<PathPreferences> Load()
     {
         string? dir = Path.GetDirectoryName(FilePath);
-        if (dir is not null)
-        {
-            Directory.CreateDirectory(dir);
-            if (File.Exists(FilePath))
-            {
-                XElement element;
-                using (FileStream file = File.OpenRead(FilePath))
-                    element = XElement.Load(file);
-                PathPreferences p = new();
-                p.Deserialize(element);
-                return p;
-            }
-        }
+        if (dir is null) return new();
+        Directory.CreateDirectory(dir);
+        if (!File.Exists(FilePath)) return new();
 
-        return new();
+        XElement element;
+        using (FileStream file = FileUtils.OpenReadAsyncSeq(FilePath))
+            element = await XElement.LoadAsync(file, LoadOptions.None, default);
+        PathPreferences p = new();
+        p.Deserialize(element);
+        return p;
     }
 
     public void Save()

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Numerics;
 using System.Diagnostics;
+using System.Text;
 using BrawlhallaAnimLib.Gfx;
 using ImGuiNET;
 using NativeFileDialogSharp;
@@ -84,7 +85,7 @@ public sealed class CustomColorList
                     ColorScheme newColor;
                     try
                     {
-                        using (FileStream file = File.OpenRead(path))
+                        using (FileStream file = FileUtils.OpenReadAsyncSeq(path))
                             newColor = await ParseColorSchemeAsync(name, file);
                         _colors.Add(newColor);
                     }
@@ -213,7 +214,7 @@ public sealed class CustomColorList
 
             try
             {
-                using FileStream stream = File.OpenRead(path);
+                using FileStream stream = FileUtils.OpenReadAsyncSeq(path);
                 ColorScheme colorScheme = await ParseColorSchemeAsync(name, stream);
                 return colorScheme;
             }
@@ -242,7 +243,7 @@ public sealed class CustomColorList
         ColorScheme result = new(name);
 
         int lineNum = 0;
-        using StreamReader reader = new(stream);
+        using StreamReader reader = new(stream, new UTF8Encoding(false));
         while ((await reader.ReadLineAsync()) is string line)
         {
             string[] parts = line.Split('=');
