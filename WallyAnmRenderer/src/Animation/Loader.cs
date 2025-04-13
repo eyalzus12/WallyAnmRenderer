@@ -16,6 +16,7 @@ namespace WallyAnmRenderer;
 public sealed class Loader : ILoader
 {
     private CancellationTokenSource? _loadSwzToken = null;
+    private CancellationTokenSource? _loadLangToken = null;
 
     private string _brawlPath;
     public string BrawlPath
@@ -45,7 +46,7 @@ public sealed class Loader : ILoader
     public async Task LoadFilesAsync(CancellationToken cancellationToken = default)
     {
         await LoadSwzAsync(cancellationToken);
-        LoadLang();
+        await LoadLangAsync(cancellationToken);
     }
 
     public async Task LoadSwzAsync(CancellationToken cancellationToken = default)
@@ -56,9 +57,12 @@ public sealed class Loader : ILoader
         SwzFiles = await SwzFiles.NewAsync(_brawlPath, Key, source.Token);
     }
 
-    public void LoadLang()
+    public async Task LoadLangAsync(CancellationToken cancellationToken = default)
     {
-        LangFile = LangFile.Load(Path.Join(_brawlPath, "languages", "language.1.bin"));
+        CancelLoadLang();
+        CancellationTokenSource source = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _loadLangToken = source;
+        LangFile = await LangFile.LoadAsync(Path.Join(_brawlPath, "languages", "language.1.bin"), source.Token);
     }
 
     private void CancelLoadSwz()
@@ -66,6 +70,13 @@ public sealed class Loader : ILoader
         if (_loadSwzToken is null) return;
         _loadSwzToken.Cancel();
         _loadSwzToken = null;
+    }
+
+    private void CancelLoadLang()
+    {
+        if (_loadLangToken is null) return;
+        _loadLangToken.Cancel();
+        _loadLangToken = null;
     }
 
     public bool SwfExists(string swfPath)

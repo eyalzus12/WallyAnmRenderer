@@ -100,11 +100,13 @@ public static class Style
 
     private static void LoadDefaultImGuiIni(string resourceName)
     {
-        using Stream? stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
-        if (stream is null) return;
-
-        using StreamReader reader = new(stream);
-        string iniFile = reader.ReadToEnd();
+        string iniFile;
+        using (Stream? stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+        {
+            if (stream is null) return;
+            using StreamReader reader = new(stream);
+            iniFile = reader.ReadToEnd();
+        }
 
         ImGui.LoadIniSettingsFromMemory(iniFile);
     }

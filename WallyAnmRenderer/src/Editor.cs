@@ -388,6 +388,8 @@ public sealed class Editor
         catch (Exception e)
         {
             if (e is OperationCanceledException) return;
+            Rl.TraceLog(TraceLogLevel.Error, e.Message);
+            Rl.TraceLog(TraceLogLevel.Trace, e.StackTrace);
             PathsWindow.OnLoadingError(e);
         }
     }

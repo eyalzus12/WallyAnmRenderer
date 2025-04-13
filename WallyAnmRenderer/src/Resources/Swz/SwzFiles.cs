@@ -57,43 +57,22 @@ public sealed class SwzFiles
 
     public void LoadSwzFiles()
     {
-        try
-        {
-            Init = SwzInitFile.New(Path.Combine(_brawlPath, INIT_SWZ), _key);
-            Game = SwzGameFile.New(Path.Combine(_brawlPath, GAME_SWZ), _key);
-        }
-        catch (Exception e)
-        {
-            Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
-            Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-        }
+        Init = SwzInitFile.New(Path.Combine(_brawlPath, INIT_SWZ), _key);
+        Game = SwzGameFile.New(Path.Combine(_brawlPath, GAME_SWZ), _key);
     }
 
     public async Task LoadSwzFilesAsync(CancellationToken cancellationToken = default)
     {
-        try
+        async Task LoadInit(CancellationToken cancellationToken = default)
         {
-            async Task LoadInit(CancellationToken cancellationToken = default)
-            {
-                Init = await SwzInitFile.NewAsync(Path.Combine(_brawlPath, INIT_SWZ), _key, cancellationToken);
-            }
-
-            async Task LoadGame(CancellationToken cancellationToken = default)
-            {
-                Game = await SwzGameFile.NewAsync(Path.Combine(_brawlPath, GAME_SWZ), _key, cancellationToken);
-            }
-
-            await Task.WhenAll(LoadInit(cancellationToken), LoadGame(cancellationToken));
+            Init = await SwzInitFile.NewAsync(Path.Combine(_brawlPath, INIT_SWZ), _key, cancellationToken);
         }
-        catch (Exception e)
+
+        async Task LoadGame(CancellationToken cancellationToken = default)
         {
-            if (e is not OperationCanceledException)
-            {
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-            }
-
-            throw;
+            Game = await SwzGameFile.NewAsync(Path.Combine(_brawlPath, GAME_SWZ), _key, cancellationToken);
         }
+
+        await Task.WhenAll(LoadInit(cancellationToken), LoadGame(cancellationToken));
     }
 }
