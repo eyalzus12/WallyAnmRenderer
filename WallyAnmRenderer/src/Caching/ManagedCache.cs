@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,14 +10,13 @@ namespace WallyAnmRenderer;
 
 public abstract class ManagedCache<K, V> where K : notnull
 {
-    private readonly record struct QueueItem(Task<V> Task, CancellationTokenSource Source);
-    private readonly ConcurrentDictionary<K, QueueItem> _cache = [];
+    private readonly ConcurrentDictionary<K, LazyTask<V>> _cache = [];
 
     public bool TryGetCached(K k, [MaybeNullWhen(false)] out V v)
     {
-        if (_cache.TryGetValue(k, out QueueItem item) && item.Task.IsCompletedSuccessfully)
+        if (_cache.TryGetValue(k, out LazyTask<V>? task) && task.Value.IsCompletedSuccessfully)
         {
-            v = item.Task.Result;
+            v = task.Value.Result;
             return true;
         }
         v = default;
@@ -25,9 +25,9 @@ public abstract class ManagedCache<K, V> where K : notnull
 
     public bool RemoveCached(K k)
     {
-        if (_cache.Remove(k, out QueueItem item))
+        if (_cache.Remove(k, out LazyTask<V>? task))
         {
-            item.Source.Cancel();
+            task.Value.Cancel();
             OnRemoveCached(k);
             return true;
         }
@@ -38,16 +38,16 @@ public abstract class ManagedCache<K, V> where K : notnull
 
     public bool IsLoading(K k)
     {
-        if (_cache.TryGetValue(k, out QueueItem item))
+        if (_cache.TryGetValue(k, out LazyTask<V>? item))
         {
-            return !item.Task.IsCompleted;
+            return !item.Value.IsCompleted;
         }
         return false;
     }
 
     protected abstract Task<V> LoadInternal(K k, CancellationToken ctoken);
 
-    public Task<V> LoadThreaded(K k)
+    public async Task<V> LoadThreaded(K k)
     {
         async Task<V> impl(K k, CancellationToken ctoken = default)
         {
@@ -56,31 +56,47 @@ public abstract class ManagedCache<K, V> where K : notnull
                 V v = await LoadInternal(k, ctoken);
                 return v;
             }
-            catch (Exception e)
+            catch (Exception e) when (e is not OperationCanceledException)
             {
-                if (e is not OperationCanceledException)
-                {
-                    Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
-                    Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-                }
+                Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
+                Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
                 throw;
             }
         }
 
-        return _cache.GetOrAdd(k, (k) =>
+        return await _cache.GetOrAdd(k, (k) =>
         {
-            CancellationTokenSource source = new();
-            return new QueueItem(impl(k, source.Token), source);
-        }).Task;
+            return new LazyTask<V>(() =>
+            {
+                CancellationTokenSource source = new();
+                return new CancellableTask<V>(impl(k, source.Token), source);
+            });
+        }).Value;
     }
 
     public void Clear()
     {
-        foreach ((_, QueueItem item) in _cache)
-            item.Source.Cancel();
+        foreach ((_, LazyTask<V> task) in _cache)
+            task.Value.Cancel();
         _cache.Clear();
         OnCacheClear();
     }
 
     protected virtual void OnCacheClear() { }
+
+    private sealed class LazyTask<T>(Func<CancellableTask<T>> valueFactory) : Lazy<CancellableTask<T>>(valueFactory);
+
+    private sealed class CancellableTask<T>(Task<T> task, CancellationTokenSource tokenSource)
+    {
+        public Task<T> Task => task;
+
+        public bool IsCompleted => task.IsCompleted;
+        public bool IsCanceled => task.IsCanceled;
+        public bool IsCompletedSuccessfully => task.IsCompletedSuccessfully;
+        public T Result => task.Result;
+        public TaskAwaiter<T> GetAwaiter() => task.GetAwaiter();
+
+        public void Cancel() => tokenSource.Cancel();
+        public bool IsCancellationRequested => tokenSource.IsCancellationRequested;
+    }
 }
