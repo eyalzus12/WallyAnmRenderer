@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using BrawlhallaAnimLib.Gfx;
 using ImGuiNET;
 
 namespace WallyAnmRenderer;
@@ -73,6 +74,9 @@ public sealed class PickerWindow
 
         ImGui.SeparatorText("Custom colors");
         _customColors.Show(info.ColorScheme);
+
+        ImGui.SeparatorText("Overrides");
+        OverridesSection(info);
 
         ImGui.End();
     }
@@ -280,6 +284,47 @@ public sealed class PickerWindow
             }
             if (selected2) ImGui.PopStyleColor();
 
+            ImGui.EndListBox();
+        }
+    }
+
+    private void OverridesSection(GfxInfo info)
+    {
+        ImGui.Text("Mouth override");
+        if (ImGui.BeginListBox("###mouthoverride"))
+        {
+            foreach (GfxMouthOverride mouthOverride in Enum.GetValues<GfxMouthOverride>())
+            {
+                GfxMouthOverride? real = mouthOverride == GfxMouthOverride.NoChange ? null : mouthOverride;
+
+                string overrideText = EnumStringDicts.GetMouthOverridesString(mouthOverride);
+                bool selected = real == info.MouthOverride;
+                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(overrideText, selected))
+                {
+                    info.MouthOverride = real;
+                }
+                if (selected) ImGui.PopStyleColor();
+            }
+            ImGui.EndListBox();
+        }
+
+        ImGui.Text("Eyes override");
+        if (ImGui.BeginListBox("###eyesoverride"))
+        {
+            foreach (GfxEyesOverride eyesOverride in Enum.GetValues<GfxEyesOverride>())
+            {
+                GfxEyesOverride? real = eyesOverride == GfxEyesOverride.NoChange ? null : eyesOverride;
+
+                string overrideText = EnumStringDicts.GetEyesOverridesString(eyesOverride);
+                bool selected = real == info.EyesOverride;
+                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(overrideText, selected))
+                {
+                    info.EyesOverride = real;
+                }
+                if (selected) ImGui.PopStyleColor();
+            }
             ImGui.EndListBox();
         }
     }

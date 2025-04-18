@@ -102,4 +102,11 @@ public static class Maybe
         if (value is null) return Maybe<T>.None;
         return value;
     }
+
+    public static Maybe<T> Unwrap<T>(this Maybe<Maybe<T>> maybe)
+    {
+        if (maybe.TryGetValue(out Maybe<T> inside))
+            return inside;
+        return Maybe<T>.None;
+    }
 }

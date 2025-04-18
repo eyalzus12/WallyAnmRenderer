@@ -22,6 +22,9 @@ public sealed class GfxInfo : IGfxInfo
     public string? SpawnBotType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
+    public GfxMouthOverride? MouthOverride { get; set; }
+    public GfxEyesOverride? EyesOverride { get; set; }
+
     [MemberNotNullWhen(true, nameof(AnimClass))]
     [MemberNotNullWhen(true, nameof(AnimFile))]
     [MemberNotNullWhen(true, nameof(Animation))]
@@ -79,6 +82,16 @@ public sealed class GfxInfo : IGfxInfo
             {
                 throw new ArgumentException($"Invalid spawn bot type {WeaponSkinType}");
             }
+        }
+
+        if (MouthOverride is not null)
+        {
+            gfx = gfx.WithMouthOverride(MouthOverride.Value);
+        }
+
+        if (EyesOverride is not null)
+        {
+            gfx = gfx.WithEyesOverride(EyesOverride.Value);
         }
 
         return (gfx, Animation, Flip);
