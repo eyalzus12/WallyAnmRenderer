@@ -84,7 +84,7 @@ public sealed class Loader : ILoader
         return File.Exists(Path.Join(_brawlPath, swfPath));
     }
 
-    public Task<IAnmClass?> GetAnmClass(string classIdentifier)
+    public ValueTask<IAnmClass?> GetAnmClass(string classIdentifier)
     {
         AnmClassAdapter? impl()
         {
@@ -93,10 +93,10 @@ public sealed class Loader : ILoader
             return null;
         }
 
-        return Task.FromResult<IAnmClass?>(impl());
+        return ValueTask.FromResult<IAnmClass?>(impl());
     }
 
-    public Task<string?> GetBoneName(short boneId)
+    public ValueTask<string?> GetBoneName(short boneId)
     {
         string? impl()
         {
@@ -110,10 +110,10 @@ public sealed class Loader : ILoader
             return boneTypes[boneId - 1];
         }
 
-        return Task.FromResult(impl());
+        return ValueTask.FromResult(impl());
     }
 
-    public Task<string?> GetBoneFilePath(string boneName)
+    public ValueTask<string?> GetBoneFilePath(string boneName)
     {
         string? impl()
         {
@@ -126,16 +126,16 @@ public sealed class Loader : ILoader
             return null;
         }
 
-        return Task.FromResult(impl());
+        return ValueTask.FromResult(impl());
     }
 
-    public async Task<uint[]?> GetScriptAVar(string swfPath, string spriteName)
+    public async ValueTask<uint[]?> GetScriptAVar(string swfPath, string spriteName)
     {
         SwfFileData swf = await AssetLoader.LoadSwf(swfPath);
         return swf.SpriteA.GetValueOrDefault(spriteName);
     }
 
-    public async Task<ushort?> GetSymbolId(string swfPath, string symbolName)
+    public async ValueTask<ushort?> GetSymbolId(string swfPath, string symbolName)
     {
         SwfFileData swf = await AssetLoader.LoadSwf(swfPath);
         if (swf.SymbolClass.TryGetValue(symbolName, out ushort symbolId))
@@ -143,7 +143,7 @@ public sealed class Loader : ILoader
         return null;
     }
 
-    public async Task<SwfTagBase?> GetTag(string swfPath, ushort tagId)
+    public async ValueTask<SwfTagBase?> GetTag(string swfPath, ushort tagId)
     {
         SwfFileData swf = await AssetLoader.LoadSwf(swfPath);
         if (swf.SpriteTags.TryGetValue(tagId, out DefineSpriteTag? sprite))

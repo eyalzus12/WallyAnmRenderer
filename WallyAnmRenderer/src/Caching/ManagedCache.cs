@@ -47,7 +47,7 @@ public abstract class ManagedCache<K, V> where K : notnull
 
     protected abstract Task<V> LoadInternal(K k, CancellationToken ctoken);
 
-    public async Task<V> LoadThreaded(K k)
+    public async ValueTask<V> LoadThreaded(K k)
     {
         async Task<V> impl(K k, CancellationToken ctoken = default)
         {

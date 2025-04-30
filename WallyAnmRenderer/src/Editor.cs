@@ -205,14 +205,15 @@ public sealed class Editor
             {
                 bool highlighted = sprite == highlightedSprite;
 
-                Task<BoneShape[]> shapes = Animator.SpriteToShapes(sprite);
-                if (!shapes.IsCompletedSuccessfully)
+                ValueTask<BoneShape[]> shapesTask = Animator.SpriteToShapes(sprite);
+                if (!shapesTask.IsCompletedSuccessfully)
                 {
                     finishedLoading = false;
                     continue;
                 }
 
-                foreach (BoneShape shape in shapes.Result)
+                BoneShape[] shapes = shapesTask.Result;
+                foreach (BoneShape shape in shapes)
                 {
                     Texture2DWrapper? texture = Animator.ShapeToTexture(sprite, shape);
                     if (texture is null)
@@ -262,10 +263,10 @@ public sealed class Editor
             AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator?.Loader.AssetLoader, GfxInfo);
         if (TimeWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
         {
-            Task<long?> frameCountTask = Animator.GetFrameCount(GfxInfo);
-            if (frameCountTask.IsCompletedSuccessfully && frameCountTask.Result is not null)
+            ValueTask<long> frameCountTask = Animator.GetFrameCount(GfxInfo);
+            if (frameCountTask.IsCompletedSuccessfully)
             {
-                long frameCount = frameCountTask.Result.Value;
+                long frameCount = frameCountTask.Result;
                 TimeWindow.Show(frameCount, Time, _paused);
             }
         }

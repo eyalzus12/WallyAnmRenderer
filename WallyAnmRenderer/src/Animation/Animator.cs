@@ -18,14 +18,14 @@ public sealed class Animator(string brawlPath, uint key)
     public async Task<BoneSpriteWithName[]> GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
     {
         List<BoneSpriteWithName> result = [];
-        await foreach (BoneSpriteWithName sprite in AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform))
+        await foreach (BoneSpriteWithName sprite in AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform, AnimationBuilderOptions.BigHeadMode))
         {
             result.Add(sprite);
         }
         return [.. result];
     }
 
-    public Task<BoneShape[]> SpriteToShapes(BoneSpriteWithName sprite)
+    public ValueTask<BoneShape[]> SpriteToShapes(BoneSpriteWithName sprite)
     {
         return SpriteToShapeConverter.ConvertToShapes(Loader, sprite);
     }
@@ -41,10 +41,10 @@ public sealed class Animator(string brawlPath, uint key)
         );
     }
 
-    public async Task<long?> GetFrameCount(GfxInfo info)
+    public async ValueTask<long> GetFrameCount(GfxInfo info)
     {
         if (!info.AnimationPicked)
-            return null;
+            throw new System.Exception();
         return await AnimationBuilder.GetAnimFrameCount(Loader, info.AnimFile, info.AnimClass, info.Animation);
     }
 }

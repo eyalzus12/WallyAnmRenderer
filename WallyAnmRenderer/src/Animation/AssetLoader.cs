@@ -42,13 +42,13 @@ public sealed class AssetLoader(string brawlPath)
     public AnmFile? LoadAnm(string filePath)
     {
         string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
-        Task<AnmFile> task = AnmFileCache.LoadThreaded(finalPath);
+        ValueTask<AnmFile> task = AnmFileCache.LoadThreaded(finalPath);
         if (task.IsCompletedSuccessfully)
             return task.Result;
         return null;
     }
 
-    public Task<SwfFileData> LoadSwf(string filePath)
+    public ValueTask<SwfFileData> LoadSwf(string filePath)
     {
         string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
         return _swfFileCache.LoadThreaded(finalPath);
@@ -56,7 +56,7 @@ public sealed class AssetLoader(string brawlPath)
 
     public Texture2DWrapper? LoadShapeFromSwf(string filePath, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict)
     {
-        Task<SwfFileData> task = LoadSwf(filePath);
+        ValueTask<SwfFileData> task = LoadSwf(filePath);
         if (!task.IsCompletedSuccessfully)
             return null;
         SwfFileData swf = task.Result;

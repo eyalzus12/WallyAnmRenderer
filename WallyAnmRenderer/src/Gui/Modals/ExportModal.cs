@@ -123,7 +123,7 @@ public sealed partial class ExportModal(string? id = null)
                 yield return result;
     }
 
-    public static async Task<XDocument> ExportAnimation(Loader loader, IGfxType gfx, string animation, long frame, bool flip)
+    public static async ValueTask<XDocument> ExportAnimation(Loader loader, IGfxType gfx, string animation, long frame, bool flip)
     {
         GfxType gfxClone = new(gfx)
         {
