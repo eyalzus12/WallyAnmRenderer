@@ -18,7 +18,7 @@ public sealed class Animator(string brawlPath, uint key)
     public async Task<BoneSpriteWithName[]> GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
     {
         List<BoneSpriteWithName> result = [];
-        await foreach (BoneSpriteWithName sprite in AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform, AnimationBuilderOptions.BigHeadMode))
+        await foreach (BoneSpriteWithName sprite in AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform))
         {
             result.Add(sprite);
         }
