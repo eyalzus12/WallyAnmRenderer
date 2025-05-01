@@ -32,9 +32,9 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Sep" Version="0.9.0" />
-    <PackageReference Include="Svg.Skia" Version="2.0.0.4" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.9" />
+    <PackageReference Include="Sep" Version="0.10.0" />
+    <PackageReference Include="Svg.Skia" Version="3.0.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.0" />
     <PackageReference Include="rlImgui-cs" Version="3.1.0" />
     <PackageReference Include="Raylib-cs" Version="7.0.1" />
     <PackageReference Include="NativeFileDialogSharp" Version="0.5.0" />

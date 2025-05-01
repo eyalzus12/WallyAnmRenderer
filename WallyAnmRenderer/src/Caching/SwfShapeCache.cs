@@ -14,6 +14,8 @@ namespace WallyAnmRenderer;
 
 public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfShapeCache.ShapeData, Texture2DWrapper>
 {
+    private readonly static SKSamplingOptions SAMPLING_OPTIONS = new(SKFilterMode.Linear, SKMipmapMode.Linear);
+
     // this is how the game checks the cache.
     // AnimScale only matters for digits.
     // (deviation from the game: we check the shapeId. this is to handle animations correctly.)
@@ -99,8 +101,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
 
         if (currentVersion != CacheVersion) return default;
 
-        // Medium and High work the same for downscaling
-        using SKBitmap bitmap2 = bitmap1.Resize(new SKSizeI(imageW, imageH), SKFilterQuality.Medium);
+        using SKBitmap bitmap2 = bitmap1.Resize(new SKSizeI(imageW, imageH), SAMPLING_OPTIONS);
         bitmap1.Dispose();
 
         if (currentVersion != CacheVersion) return default;

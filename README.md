@@ -64,7 +64,7 @@ run the project (inside the WallyAnmRenderer folder created by git clone):
 
 This list includes the dependencies from submodules.
 
-- Svg.Skia (2.0.0.4) - Library based on SkiaSharp (2.88.8) for Svg rendering.
+- Svg.Skia (3.0.0) - Library based on SkiaSharp (3.116.1) for Svg rendering.
 
 - NativeFileDialogSharp (0.5.0) - C# bindings for nativefiledialog, a C library for opening the platform's default file explorer dialog.
 
@@ -78,4 +78,4 @@ This list includes the dependencies from submodules.
 
 - OneOf (3.0.271) - C# tagged union library.
 
-- Sep (0.9.0) - C# csv parsing library.
+- Sep (0.10.0) - C# csv parsing library.
