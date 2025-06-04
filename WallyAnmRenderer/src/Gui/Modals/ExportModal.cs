@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Bones;
@@ -12,6 +13,8 @@ using BrawlhallaAnimLib.Math;
 using BrawlhallaAnimLib.Swf;
 using ImGuiNET;
 using NativeFileDialogSharp;
+using SkiaSharp;
+using Svg.Skia;
 using SwfLib.Tags.ShapeTags;
 using SwiffCheese.Exporting.Svg;
 using SwiffCheese.Shapes;
@@ -24,6 +27,14 @@ public sealed partial class ExportModal(string? id = null)
 
     public const string NAME = "Export animation";
     private string PopupName => $"{NAME}{(id is null ? "" : $"##{id}")}";
+
+    private enum ExportAsEnum
+    {
+        Svg = 0,
+        Png = 1,
+    }
+    private static readonly string[] EXPORT_AS = [".svg", ".png"];
+    private ExportAsEnum _exportAs = ExportAsEnum.Svg;
 
     private bool _shouldOpen;
     private bool _open = false;
@@ -201,7 +212,7 @@ public sealed partial class ExportModal(string? id = null)
             _errors.Clear();
         }
 
-        if (!ImGui.BeginPopupModal(PopupName, ref _open)) return;
+        if (!ImGui.BeginPopupModal(PopupName, ref _open, ImGuiWindowFlags.AlwaysAutoResize)) return;
 
         if (animator is null)
         {
@@ -215,8 +226,17 @@ public sealed partial class ExportModal(string? id = null)
             try
             {
                 XDocument document = await ExportAnimation(animator.Loader, gfx, animation, frame, flip);
-                using FileStream file = FileUtils.CreateWriteAsync(path);
-                await document.SaveAsync(file, SaveOptions.None, default);
+                switch (_exportAs)
+                {
+                    case ExportAsEnum.Svg:
+                        await SaveToPathSvg(document, path);
+                        break;
+                    case ExportAsEnum.Png:
+                        SaveToPathPng(document, path);
+                        break;
+                    default:
+                        break;
+                }
             }
             catch (Exception e)
             {
@@ -226,9 +246,20 @@ public sealed partial class ExportModal(string? id = null)
             }
         }
 
+        int currentItem = (int)_exportAs;
+        ImGui.Combo("Export as", ref currentItem, EXPORT_AS, EXPORT_AS.Length);
+        _exportAs = (ExportAsEnum)currentItem;
+
         if (ImGui.Button("Export"))
         {
-            Task.Run(() => Dialog.FileSave("svg", prefs.ExportPath)).ContinueWith(async (task) =>
+            string extension = _exportAs switch
+            {
+                ExportAsEnum.Svg => "svg",
+                ExportAsEnum.Png => "png",
+                _ => "*",
+            };
+
+            Task.Run(() => Dialog.FileSave(extension, prefs.ExportPath)).ContinueWith(async (task) =>
             {
                 DialogResult result = task.Result;
                 if (result.IsError) _errors.Add(result.ErrorMessage);
@@ -239,8 +270,8 @@ public sealed partial class ExportModal(string? id = null)
                     prefs.ExportPath = newExportPath;
 
                 string path = result.Path;
-                if (Path.GetExtension(path) != ".svg")
-                    path = Path.ChangeExtension(path, ".svg");
+                if (Path.GetExtension(path) != extension)
+                    path = Path.ChangeExtension(path, extension);
 
                 await export(path);
             });
@@ -262,4 +293,21 @@ public sealed partial class ExportModal(string? id = null)
 
     [GeneratedRegex(@"url\(#(gradient[0-9]+)\)")]
     private static partial Regex PathFillUrlRegex();
+
+    private static async Task SaveToPathSvg(XDocument document, string path)
+    {
+        using FileStream file = FileUtils.CreateWriteAsync(path);
+        await document.SaveAsync(file, SaveOptions.None, default);
+    }
+
+    private static void SaveToPathPng(XDocument document, string path)
+    {
+        using XmlReader reader = document.CreateReader();
+        using SKSvg svg = SKSvg.CreateFromXmlReader(reader);
+        reader.Dispose();
+        if (svg.Picture is null)
+            throw new Exception("Loading svg failed");
+        using FileStream file = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        svg.Picture.ToImage(file, SKColor.Empty, SKEncodedImageFormat.Png, int.MaxValue, 4, 4, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb());
+    }
 }
