@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using BrawlhallaAnimLib.Gfx;
 using ImGuiNET;
@@ -103,7 +105,33 @@ public sealed class PickerWindow
             }
             if (selected) ImGui.PopStyleColor();
 
-            foreach (string costumeType in costumeTypes.Costumes)
+            double calcDistance(string costumeType)
+            {
+                List<double> distances = [];
+                distances.Add(0.5 * MathUtils.LevenshteinDistance(_costumeTypeFilter, costumeType));
+                if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
+                {
+                    if (heroTypes.TryGetHero(info.OwnerHero, out HeroType? hero) && info.CostumeIndex == 0)
+                    {
+                        distances.Add(1.5 * MathUtils.LevenshteinDistance(_costumeTypeFilter, hero.BioName));
+                    }
+                    else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
+                    {
+                        if (hero is not null && !string.IsNullOrEmpty(hero.BioName))
+                        {
+                            distances.Add(0.5 * MathUtils.LevenshteinDistance(_costumeTypeFilter, hero.BioName));
+                        }
+                        distances.Add(MathUtils.LevenshteinDistance(_costumeTypeFilter, realCostumeName));
+                    }
+                    else
+                    {
+                        distances.Add(30);
+                    }
+                }
+                return distances.Sum();
+            }
+
+            string getCostumeName(string costumeType)
             {
                 string costumeName = costumeType;
                 if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
@@ -135,9 +163,23 @@ public sealed class PickerWindow
                     // If we reach here, we keep the default costumeName = costumeType
                     // e.g. `Mech`
                 }
+                return costumeName;
+            }
 
-                if (!costumeName.Contains(_costumeTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
+            /*IEnumerable<(string, int)> searchedCostumeTypes = MathUtils.FuzzySearch(
+                _costumeTypeFilter,
+                costumeTypes.Costumes,
+                getCostumeName,
+                int.MaxValue
+            );*/
+
+            IEnumerable<(string, double)> searchedCostumeTypes = costumeTypes.Costumes
+                .Select((c) => (obj: c, dist: calcDistance(c)))
+                .OrderBy((o) => o.dist);
+
+            foreach ((string costumeType, double distance) in searchedCostumeTypes)
+            {
+                string costumeName = getCostumeName(costumeType) + $" ({distance})";
 
                 bool selected2 = costumeType == gfxInfo.CostumeType;
                 if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
@@ -257,15 +299,26 @@ public sealed class PickerWindow
         ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
         if (ImGui.BeginListBox("###colorselect"))
         {
-            foreach (ColorScheme colorScheme in colorSchemeTypes.ColorSchemes)
+            IEnumerable<(ColorScheme, double)> customColorSchemes = MathUtils.FuzzySearch(
+                _colorSchemeFilter,
+                colorSchemeTypes.ColorSchemes,
+                colorScheme =>
+                {
+                    string colorSchemeName = colorScheme.Name;
+                    string? displayNameKey = colorScheme.DisplayNameKey;
+                    if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
+                        colorSchemeName = $"{realSchemeName} ({colorSchemeName})";
+                    return colorSchemeName;
+                },
+                10
+            );
+            foreach ((ColorScheme colorScheme, double distance) in customColorSchemes)
             {
                 string colorSchemeName = colorScheme.Name;
                 string? displayNameKey = colorScheme.DisplayNameKey;
                 if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
                     colorSchemeName = $"{realSchemeName} ({colorSchemeName})";
-
-                if (!colorSchemeName.Contains(_colorSchemeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
+                colorSchemeName += $" ({distance})";
 
                 bool selected = colorScheme == info.ColorScheme;
                 if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
@@ -288,7 +341,7 @@ public sealed class PickerWindow
         }
     }
 
-    private void OverridesSection(GfxInfo info)
+    private static void OverridesSection(GfxInfo info)
     {
         ImGui.Text("Mouth override");
         if (ImGui.BeginListBox("###mouthoverride"))
