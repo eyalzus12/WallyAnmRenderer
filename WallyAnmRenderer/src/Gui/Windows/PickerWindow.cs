@@ -62,26 +62,47 @@ public sealed class PickerWindow
             loader.AssetLoader.ClearSwfShapeCache();
         }
 
-        ImGui.SeparatorText("Costume Types");
-        CostumeTypeSection(loader, info);
+        if (ImGui.TreeNode("Legend skins"))
+        {
+            CostumeTypeSection(loader, info);
+            ImGui.TreePop();
+        }
 
-        ImGui.SeparatorText("Weapon skin Types");
-        WeaponSkinTypeSection(loader, info);
+        if (ImGui.TreeNode("Weapon skins"))
+        {
+            WeaponSkinTypeSection(loader, info);
+            ImGui.TreePop();
+        }
 
-        ImGui.SeparatorText("Held item");
-        HeldItemSection(loader, info);
+        if (ImGui.TreeNode("Held items"))
+        {
+            HeldItemSection(loader, info);
+            ImGui.TreePop();
+        }
 
-        ImGui.SeparatorText("Sidekicks");
-        SpawnBotTypesSection(loader, info);
+        if (ImGui.TreeNode("Sidekicks"))
+        {
+            SpawnBotTypesSection(loader, info);
+            ImGui.TreePop();
+        }
 
-        ImGui.SeparatorText("Color scheme");
-        ColorSchemeSection(loader, info);
+        if (ImGui.TreeNode("Color schemes"))
+        {
+            ColorSchemeSection(loader, info);
+            ImGui.TreePop();
+        }
 
-        ImGui.SeparatorText("Custom colors");
-        _customColors.Show(info.ColorScheme);
+        if (ImGui.TreeNode("Custom colors"))
+        {
+            _customColors.Show(info.ColorScheme);
+            ImGui.TreePop();
+        }
 
-        ImGui.SeparatorText("Overrides");
-        OverridesSection(info);
+        if (ImGui.TreeNode("Overrides"))
+        {
+            OverridesSection(info);
+            ImGui.TreePop();
+        }
 
         ImGui.End();
     }
