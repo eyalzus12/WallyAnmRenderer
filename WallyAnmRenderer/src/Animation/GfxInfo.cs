@@ -1,8 +1,9 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Gfx;
-using BrawlhallaAnimLib.Reading;
 using BrawlhallaAnimLib.Reading.CostumeTypes;
+using BrawlhallaAnimLib.Reading.ItemTypes;
+using BrawlhallaAnimLib.Reading.SpawnBotTypes;
 using BrawlhallaAnimLib.Reading.WeaponSkinTypes;
 
 namespace WallyAnmRenderer;
@@ -11,6 +12,7 @@ public sealed class GfxInfo : IGfxInfo
 {
     public string? SourceFilePath { get; set; }
 
+    public int Team { get; set; } = 0;
     public string? AnimClass { get; set; }
     public string? AnimFile { get; set; }
     public string? Animation { get; set; }
@@ -19,6 +21,7 @@ public sealed class GfxInfo : IGfxInfo
 
     public string? CostumeType { get; set; }
     public string? WeaponSkinType { get; set; }
+    public string? ItemType { get; set; }
     public string? SpawnBotType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
@@ -68,6 +71,19 @@ public sealed class GfxInfo : IGfxInfo
             else
             {
                 throw new ArgumentException($"Invalid weapon skin type {WeaponSkinType}");
+            }
+        }
+
+        ItemTypes itemTypes = gameFiles.ItemTypes;
+        if (ItemType is not null)
+        {
+            if (itemTypes.TryGetGfx(ItemType, out ItemTypesGfx? itemGfx))
+            {
+                gfx = itemGfx.ToHeldGfx(gfx, Team);
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid item type {ItemType}");
             }
         }
 

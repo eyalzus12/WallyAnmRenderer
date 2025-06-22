@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Xml.Linq;
-using BrawlhallaAnimLib.Reading;
+using BrawlhallaAnimLib.Reading.SpawnBotTypes;
 
 namespace WallyAnmRenderer;
 

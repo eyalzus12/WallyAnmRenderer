@@ -87,6 +87,7 @@ public sealed class SwzGameFile
 {
     private const string COSTUME_TYPES = "costumeTypes.csv";
     private const string WEAPON_SKIN_TYPES = "weaponSkinTypes.csv";
+    private const string ITEM_TYPES = "itemTypes.csv";
     private const string SPAWN_BOT_TYPES = "SpawnBotTypes.xml";
     private const string COLOR_SCHEME_TYPES = "ColorSchemeTypes.xml";
     private const string COLOR_EXCEPTION_TYPES = "colorExceptionTypes.csv";
@@ -94,6 +95,7 @@ public sealed class SwzGameFile
     private static readonly HashSet<string> TO_READ = [
         COSTUME_TYPES,
         WEAPON_SKIN_TYPES,
+        ITEM_TYPES,
         SPAWN_BOT_TYPES,
         COLOR_SCHEME_TYPES,
         COLOR_EXCEPTION_TYPES,
@@ -102,6 +104,7 @@ public sealed class SwzGameFile
 
     public CostumeTypes CostumeTypes { get; }
     public WeaponSkinTypes WeaponSkinTypes { get; }
+    public ItemTypes ItemTypes { get; }
     public SpawnBotTypes SpawnBotTypes { get; }
     public ColorSchemeTypes ColorSchemeTypes { get; }
     public ColorExceptionTypes ColorExceptionTypes { get; }
@@ -135,6 +138,10 @@ public sealed class SwzGameFile
         string weaponSkinTypesContent = data[WEAPON_SKIN_TYPES];
         using (SepReader reader = readerFromText(weaponSkinTypesContent))
             WeaponSkinTypes = new(reader, CostumeTypes);
+
+        string itemTypesContent = data[ITEM_TYPES];
+        using (SepReader reader = readerFromText(itemTypesContent))
+            ItemTypes = new(reader);
 
         string spawnBotTypesContent = data[SPAWN_BOT_TYPES];
         XElement spawnBotTypesElement = XElement.Parse(spawnBotTypesContent);

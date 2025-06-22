@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using BrawlhallaAnimLib.Gfx;
+using BrawlhallaAnimLib.Reading.ItemTypes;
 using ImGuiNET;
 
 namespace WallyAnmRenderer;
@@ -14,6 +15,7 @@ public sealed class PickerWindow
 
     private string _costumeTypeFilter = "";
     private string _weaponSkinTypeFilter = "";
+    private string _itemTypeFilter = "";
     private string _spawnBotTypeFilter = "";
     private string _colorSchemeFilter = "";
 
@@ -65,6 +67,9 @@ public sealed class PickerWindow
 
         ImGui.SeparatorText("Weapon skin Types");
         WeaponSkinTypeSection(loader, info);
+
+        ImGui.SeparatorText("Held item");
+        HeldItemSection(loader, info);
 
         ImGui.SeparatorText("Sidekicks");
         SpawnBotTypesSection(loader, info);
@@ -199,6 +204,61 @@ public sealed class PickerWindow
         }
     }
 
+    private static readonly string[] TEAM_OPTIONS = ["None", "Red", "Blue"];
+    private void HeldItemSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        int team = gfxInfo.Team;
+        ImGui.Combo("Team", ref team, TEAM_OPTIONS, TEAM_OPTIONS.Length);
+        gfxInfo.Team = team;
+
+        ItemTypes itemTypes = loader.SwzFiles.Game.ItemTypes;
+        ImGui.InputText("Filter items", ref _itemTypeFilter, 256);
+        if (ImGui.BeginListBox("###itemselect"))
+        {
+            bool selected = gfxInfo.ItemType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.ItemType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string itemType in itemTypes.Items)
+            {
+                string itemName = itemType;
+
+                // filter out items without a held gfx
+                if (!itemTypes.TryGetGfx(itemType, out ItemTypesGfx? itemGfx) || !itemGfx.HasHeldCustomArt)
+                    continue;
+
+                if (itemTypes.TryGetInfo(itemType, out ItemTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realItemName))
+                        itemName = $"{realItemName} ({itemType})";
+                }
+                if (!itemName.Contains(_itemTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = itemType == gfxInfo.ItemType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(itemName, selected2))
+                {
+                    gfxInfo.ItemType = itemType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
     private void SpawnBotTypesSection(Loader loader, GfxInfo gfxInfo)
     {
         if (loader.SwzFiles?.Game is null)
@@ -288,7 +348,7 @@ public sealed class PickerWindow
         }
     }
 
-    private void OverridesSection(GfxInfo info)
+    private static void OverridesSection(GfxInfo info)
     {
         ImGui.Text("Mouth override");
         if (ImGui.BeginListBox("###mouthoverride"))
