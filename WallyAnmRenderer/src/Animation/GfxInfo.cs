@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Gfx;
+using BrawlhallaAnimLib.Reading.CompanionTypes;
 using BrawlhallaAnimLib.Reading.CostumeTypes;
 using BrawlhallaAnimLib.Reading.ItemTypes;
 using BrawlhallaAnimLib.Reading.SpawnBotTypes;
@@ -23,6 +24,7 @@ public sealed class GfxInfo : IGfxInfo
     public string? WeaponSkinType { get; set; }
     public string? ItemType { get; set; }
     public string? SpawnBotType { get; set; }
+    public string? CompanionType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
     public GfxMouthOverride? MouthOverride { get; set; }
@@ -47,10 +49,10 @@ public sealed class GfxInfo : IGfxInfo
             AnimScale = AnimScale,
         };
 
-        CostumeTypes costumeTypes = gameFiles.CostumeTypes;
         CostumeTypesGfx? costumeGfx = null;
         if (CostumeType is not null)
         {
+            CostumeTypes costumeTypes = gameFiles.CostumeTypes;
             if (costumeTypes.TryGetGfx(CostumeType, out costumeGfx))
             {
                 gfx = costumeGfx.ToGfxType(gfx, ColorScheme, colorExceptionTypes);
@@ -61,9 +63,9 @@ public sealed class GfxInfo : IGfxInfo
             }
         }
 
-        WeaponSkinTypes weaponSkinTypes = gameFiles.WeaponSkinTypes;
         if (WeaponSkinType is not null)
         {
+            WeaponSkinTypes weaponSkinTypes = gameFiles.WeaponSkinTypes;
             if (weaponSkinTypes.TryGetGfx(WeaponSkinType, out WeaponSkinTypesGfx? weaponSkinGfx))
             {
                 gfx = weaponSkinGfx.ToGfxType(gfx, ColorScheme, colorExceptionTypes, costumeGfx);
@@ -74,9 +76,9 @@ public sealed class GfxInfo : IGfxInfo
             }
         }
 
-        ItemTypes itemTypes = gameFiles.ItemTypes;
         if (ItemType is not null)
         {
+            ItemTypes itemTypes = gameFiles.ItemTypes;
             if (itemTypes.TryGetGfx(ItemType, out ItemTypesGfx? itemGfx))
             {
                 gfx = itemGfx.ToHeldGfx(gfx, Team);
@@ -87,16 +89,35 @@ public sealed class GfxInfo : IGfxInfo
             }
         }
 
-        SpawnBotTypes spawnBotTypes = gameFiles.SpawnBotTypes;
         if (SpawnBotType is not null)
         {
+            SpawnBotTypes spawnBotTypes = gameFiles.SpawnBotTypes;
             if (spawnBotTypes.TryGetGfx(SpawnBotType, out SpawnBotTypesGfx? spawnBot))
             {
                 gfx = spawnBot.ToGfxType(gfx);
             }
             else
             {
-                throw new ArgumentException($"Invalid spawn bot type {WeaponSkinType}");
+                throw new ArgumentException($"Invalid spawn bot type {SpawnBotType}");
+            }
+        }
+
+        if (CompanionType is not null)
+        {
+            CompanionTypes spawnBotTypes = gameFiles.CompanionTypes;
+            if (spawnBotTypes.TryGetGfx(CompanionType, out CompanionTypesGfx? companion))
+            {
+                IGfxType companionGfx = companion.ToGfxType();
+                // we do a bit of cheating. companion is meant to be a standalone gfx, so we merge it manually
+                // this should be safe because the art type is unique.
+                GfxType newGfx = new(gfx);
+                newGfx.CustomArts.AddRange(companionGfx.CustomArts);
+                newGfx.ColorSwaps.AddRange(companionGfx.ColorSwaps);
+                gfx = newGfx;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid companion type {CompanionType}");
             }
         }
 

@@ -17,6 +17,7 @@ public sealed class PickerWindow
     private string _weaponSkinTypeFilter = "";
     private string _itemTypeFilter = "";
     private string _spawnBotTypeFilter = "";
+    private string _companionTypeFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -83,6 +84,12 @@ public sealed class PickerWindow
         if (ImGui.TreeNode("Sidekicks"))
         {
             SpawnBotTypesSection(loader, info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Companions"))
+        {
+            CompanionTypesSection(loader, info);
             ImGui.TreePop();
         }
 
@@ -303,7 +310,7 @@ public sealed class PickerWindow
             foreach (string spawnBotType in spawnBotTypes.SpawnBots)
             {
                 string spawnBotName = spawnBotType;
-                if (spawnBotTypes.TryGetInfo(spawnBotType, out SpawnBotType? info))
+                if (spawnBotTypes.TryGetInfo(spawnBotType, out SpawnBotTypeInfo info))
                 {
                     string displayNameKey = info.DisplayNameKey;
                     if (loader.TryGetStringName(displayNameKey, out string? realSpawnBotName))
@@ -318,6 +325,52 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(spawnBotName, selected2))
                 {
                     gfxInfo.SpawnBotType = spawnBotType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void CompanionTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        CompanionTypes companionTypes = loader.SwzFiles.Game.CompanionTypes;
+        ImGui.InputText("Filter companions", ref _companionTypeFilter, 256);
+        if (ImGui.BeginListBox("###companionselect"))
+        {
+            bool selected = gfxInfo.CompanionType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.CompanionType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string companionType in companionTypes.Companions)
+            {
+                string companionName = companionType;
+                if (companionTypes.TryGetInfo(companionType, out CompnaionTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realCompanionName))
+                        companionName = $"{realCompanionName} ({companionType})";
+                }
+
+                if (!companionName.Contains(_companionTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = companionType == gfxInfo.CompanionType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(companionName, selected2))
+                {
+                    gfxInfo.CompanionType = companionType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }
