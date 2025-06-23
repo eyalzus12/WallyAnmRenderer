@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Raylib_cs;
 
 namespace WallyAnmRenderer;
 
@@ -39,24 +40,42 @@ public class PathPreferences
 
     public static async Task<PathPreferences> Load()
     {
-        string? dir = Path.GetDirectoryName(FilePath);
-        if (dir is null) return new();
-        Directory.CreateDirectory(dir);
         if (!File.Exists(FilePath)) return new();
 
-        XElement element;
-        using (FileStream file = FileUtils.OpenReadAsyncSeq(FilePath))
-            element = await XElement.LoadAsync(file, LoadOptions.None, default);
-        PathPreferences p = new();
-        p.Deserialize(element);
-        return p;
+        try
+        {
+            XElement element;
+            using (FileStream file = FileUtils.OpenReadAsyncSeq(FilePath))
+                element = await XElement.LoadAsync(file, LoadOptions.None, default);
+            PathPreferences p = new();
+            p.Deserialize(element);
+            return p;
+        }
+        catch (Exception e)
+        {
+            Rl.TraceLog(TraceLogLevel.Error, e.Message);
+            Rl.TraceLog(TraceLogLevel.Trace, e.StackTrace);
+            return new();
+        }
     }
 
     public void Save()
     {
-        XElement e = new(nameof(PathPreferences));
-        Serialize(e);
-        e.Save(FilePath);
+        // create dir
+        string? dir = Path.GetDirectoryName(FilePath);
+        if (dir is not null) Directory.CreateDirectory(dir);
+
+        try
+        {
+            XElement e = new(nameof(PathPreferences));
+            Serialize(e);
+            e.Save(FilePath);
+        }
+        catch (Exception e)
+        {
+            Rl.TraceLog(TraceLogLevel.Error, e.Message);
+            Rl.TraceLog(TraceLogLevel.Trace, e.StackTrace);
+        }
     }
 
     public PathPreferences() { }
