@@ -57,13 +57,17 @@ public sealed class AssetLoader(string brawlPath)
     public Texture2DWrapper? LoadShapeFromSwf(string filePath, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict)
     {
         ValueTask<SwfFileData> task = LoadSwf(filePath);
-        if (!task.IsCompletedSuccessfully)
+        if (!task.IsCompleted)
             return null;
+        else if (!task.IsCompletedSuccessfully)
+            return new();
         SwfFileData swf = task.Result;
         _swfShapeCache.TryGetCached(spriteName, shapeId, animScale, out Texture2DWrapper? texture);
         if (texture is not null)
             return texture;
         _swfShapeCache.LoadInThread(swf, spriteName, shapeId, animScale, colorSwapDict);
+        if (_swfShapeCache.DidError(swf, spriteName, shapeId, animScale, colorSwapDict))
+            return new();
         return null;
     }
 

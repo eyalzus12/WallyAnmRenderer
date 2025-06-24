@@ -17,6 +17,7 @@ public abstract class UploadCache<K, I, V> where K : notnull
 
     protected ulong CacheVersion { get; private set; } = 0;
     private readonly Dictionary<K, V> _cache;
+    private readonly HashSet<K> _errored;
     private readonly ConcurrentQueue<V> _deleteQueue = [];
     private readonly ConcurrentQueue<QueueElement> _queue = [];
     private readonly HashSet<K> _queueSet;
@@ -24,6 +25,7 @@ public abstract class UploadCache<K, I, V> where K : notnull
     public UploadCache()
     {
         _cache = new(KeyEqualityComparer);
+        _errored = new(KeyEqualityComparer);
         _queueSet = new(KeyEqualityComparer);
     }
 
@@ -37,6 +39,8 @@ public abstract class UploadCache<K, I, V> where K : notnull
     {
         return _cache.TryGetValue(k, out v);
     }
+
+    public bool DidError(K k) => _errored.Contains(k);
 
     public void Load(K k)
     {
@@ -71,6 +75,8 @@ public abstract class UploadCache<K, I, V> where K : notnull
             }
             catch (Exception e)
             {
+                lock (_errored) _errored.Add(k);
+
                 Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
                 Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
                 throw;
@@ -91,6 +97,7 @@ public abstract class UploadCache<K, I, V> where K : notnull
                 break;
             (K k, I i, ulong version) = queued;
 
+            _errored.Remove(k);
             _queueSet.Remove(k);
 
             if (version == CacheVersion && !_cache.ContainsKey(k))
@@ -120,6 +127,7 @@ public abstract class UploadCache<K, I, V> where K : notnull
         foreach ((_, V v) in _cache)
             _deleteQueue.Enqueue(v);
         _cache.Clear();
+        _errored.Clear();
 
         _queueSet.Clear();
 

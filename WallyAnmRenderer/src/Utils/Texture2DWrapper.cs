@@ -15,6 +15,13 @@ public sealed class Texture2DWrapper : IDisposable
     public int Width => Texture.Width;
     public int Height => Texture.Height;
 
+    public Texture2DWrapper()
+    {
+        Texture = new();
+        Transform = Transform2D.ZERO;
+        OwnTexture = false;
+    }
+
     public Texture2DWrapper(Texture2D texture, Transform2D transform, bool ownTexture = true)
     {
         Texture = texture;

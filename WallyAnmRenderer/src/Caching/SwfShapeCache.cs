@@ -148,6 +148,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
 
     public void Load(SwfFileData swf, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) => Load(new(swf, spriteName, shapeId, animScale, colorSwapDict));
     public void LoadInThread(SwfFileData swf, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) => LoadInThread(new(swf, spriteName, shapeId, animScale, colorSwapDict));
+    public bool DidError(SwfFileData swf, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict) => DidError(new(swf, spriteName, shapeId, animScale, colorSwapDict));
 
     public bool TryGetCached(string spriteName, ushort shapeId, double animScale, [MaybeNullWhen(false)] out Texture2DWrapper? texture)
     {
