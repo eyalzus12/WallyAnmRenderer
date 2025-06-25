@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Reading;
-using BrawlhallaAnimLib.Reading.WeaponSkinTypes;
 using nietras.SeparatedValues;
 
 namespace WallyAnmRenderer;

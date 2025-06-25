@@ -1,8 +1,7 @@
 using System;
 using System.Numerics;
 using BrawlhallaAnimLib.Gfx;
-using BrawlhallaAnimLib.Reading.ItemTypes;
-using BrawlhallaAnimLib.Reading.PodiumTypes;
+using BrawlhallaAnimLib.Reading;
 using ImGuiNET;
 
 namespace WallyAnmRenderer;
@@ -21,6 +20,7 @@ public sealed class PickerWindow
     private string _spawnBotTypeFilter = "";
     private string _companionTypeFilter = "";
     private string _podiumTypeFilter = "";
+    private string _seasonBorderTypeFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -99,6 +99,12 @@ public sealed class PickerWindow
         if (ImGui.TreeNode("Podiums"))
         {
             PodiumTypesSection(loader, info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Borders"))
+        {
+            SeasonBorderTypesSection(loader, info);
             ImGui.TreePop();
         }
 
@@ -430,6 +436,52 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(podiumName, selected2))
                 {
                     gfxInfo.PodiumType = podiumType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void SeasonBorderTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        SeasonBorderTypes seasonBorderTypes = loader.SwzFiles.Game.SeasonBorderTypes;
+        ImGui.InputText("Filter borders", ref _seasonBorderTypeFilter, 256);
+        if (ImGui.BeginListBox("###borderselect"))
+        {
+            bool selected = gfxInfo.SeasonBorderType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.SeasonBorderType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string seasonBorderType in seasonBorderTypes.Borders)
+            {
+                string seasonBorderName = seasonBorderType;
+                if (seasonBorderTypes.TryGetInfo(seasonBorderType, out SeasonBorderTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realSeasonBorderName))
+                        seasonBorderName = $"{realSeasonBorderName} ({seasonBorderType})";
+                }
+
+                if (!seasonBorderName.Contains(_seasonBorderTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = seasonBorderType == gfxInfo.SeasonBorderType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(seasonBorderName, selected2))
+                {
+                    gfxInfo.SeasonBorderType = seasonBorderType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }

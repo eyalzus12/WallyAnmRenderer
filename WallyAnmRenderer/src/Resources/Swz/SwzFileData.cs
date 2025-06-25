@@ -91,6 +91,7 @@ public sealed class SwzGameFile
     private const string SPAWN_BOT_TYPES = "SpawnBotTypes.xml";
     private const string COMPANION_TYPES = "CompanionTypes.xml";
     private const string PODIUM_TYPES = "PodiumTypes.xml";
+    private const string SEASON_BORDER_TYPES = "SeasonBorderTypes.xml";
     private const string COLOR_SCHEME_TYPES = "ColorSchemeTypes.xml";
     private const string COLOR_EXCEPTION_TYPES = "colorExceptionTypes.csv";
     private const string HERO_TYPES = "HeroTypes.xml";
@@ -101,6 +102,7 @@ public sealed class SwzGameFile
         SPAWN_BOT_TYPES,
         COMPANION_TYPES,
         PODIUM_TYPES,
+        SEASON_BORDER_TYPES,
         COLOR_SCHEME_TYPES,
         COLOR_EXCEPTION_TYPES,
         HERO_TYPES
@@ -112,6 +114,7 @@ public sealed class SwzGameFile
     public SpawnBotTypes SpawnBotTypes { get; }
     public CompanionTypes CompanionTypes { get; }
     public PodiumTypes PodiumTypes { get; }
+    public SeasonBorderTypes SeasonBorderTypes { get; }
     public ColorSchemeTypes ColorSchemeTypes { get; }
     public ColorExceptionTypes ColorExceptionTypes { get; }
     public HeroTypes HeroTypes { get; }
@@ -160,6 +163,10 @@ public sealed class SwzGameFile
         string podiumTypesContent = data[PODIUM_TYPES];
         XElement podiumTypesElement = XElement.Parse(podiumTypesContent);
         PodiumTypes = new(podiumTypesElement);
+
+        string seasonBorderTypesContent = data[SEASON_BORDER_TYPES];
+        XElement seasonBorderTypesElement = XElement.Parse(seasonBorderTypesContent);
+        SeasonBorderTypes = new(seasonBorderTypesElement);
 
         string colorSchemeTypesContent = data[COLOR_SCHEME_TYPES];
         XElement colorSchemeElement = XElement.Parse(colorSchemeTypesContent);

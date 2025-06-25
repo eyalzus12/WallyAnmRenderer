@@ -1,12 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Gfx;
-using BrawlhallaAnimLib.Reading.CompanionTypes;
-using BrawlhallaAnimLib.Reading.CostumeTypes;
-using BrawlhallaAnimLib.Reading.ItemTypes;
-using BrawlhallaAnimLib.Reading.PodiumTypes;
-using BrawlhallaAnimLib.Reading.SpawnBotTypes;
-using BrawlhallaAnimLib.Reading.WeaponSkinTypes;
+using BrawlhallaAnimLib.Reading;
 
 namespace WallyAnmRenderer;
 
@@ -28,6 +23,7 @@ public sealed class GfxInfo : IGfxInfo
     public string? CompanionType { get; set; }
     public PodiumTeamEnum PodiumTypeTeam = PodiumTeamEnum.None;
     public string? PodiumType { get; set; }
+    public string? SeasonBorderType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
     public GfxMouthOverride? MouthOverride { get; set; }
@@ -134,6 +130,24 @@ public sealed class GfxInfo : IGfxInfo
                 // this may cause conflicts with other custom arts, but hopefully not.
                 GfxType newGfx = new(gfx);
                 newGfx.CustomArts.AddRange(podiumGfx.CustomArts);
+                gfx = newGfx;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid podium type {PodiumType}");
+            }
+        }
+
+        if (SeasonBorderType is not null)
+        {
+            SeasonBorderTypes seasonBorderTypes = gameFiles.SeasonBorderTypes;
+            if (seasonBorderTypes.TryGetGfx(SeasonBorderType, out SeasonBorderTypesGfx? border))
+            {
+                IGfxType borderGfx = border.ToGfxType();
+                // we do a bit of cheating. season border is meant to be a standalone gfx, so we merge it manually.
+                // this may cause conflicts with other custom arts, but hopefully not.
+                GfxType newGfx = new(gfx);
+                newGfx.CustomArts.AddRange(borderGfx.CustomArts);
                 gfx = newGfx;
             }
             else

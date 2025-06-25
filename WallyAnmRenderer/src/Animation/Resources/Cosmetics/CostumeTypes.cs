@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using BrawlhallaAnimLib.Reading;
-using BrawlhallaAnimLib.Reading.CostumeTypes;
 using nietras.SeparatedValues;
 
 namespace WallyAnmRenderer;

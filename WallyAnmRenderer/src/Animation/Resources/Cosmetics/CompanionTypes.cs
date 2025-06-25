@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Xml.Linq;
-using BrawlhallaAnimLib.Reading.CompanionTypes;
+using BrawlhallaAnimLib.Reading;
 
 namespace WallyAnmRenderer;
 
