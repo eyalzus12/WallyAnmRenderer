@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -8,6 +9,7 @@ using SwfLib;
 using SwfLib.Data;
 using SwfLib.Tags;
 using SwfLib.Tags.ActionsTags;
+using SwfLib.Tags.BitmapTags;
 using SwfLib.Tags.ControlTags;
 using SwfLib.Tags.ShapeTags;
 using SwfLib.Tags.TextTags;
@@ -17,11 +19,12 @@ namespace WallyAnmRenderer;
 public sealed class SwfFileData
 {
     public SwfFile Swf { get; private init; } = null!;
-    public Dictionary<string, ushort> SymbolClass { get; private init; } = [];
-    public Dictionary<ushort, DefineSpriteTag> SpriteTags { get; private init; } = [];
-    public Dictionary<ushort, ShapeBaseTag> ShapeTags { get; private init; } = [];
-    public Dictionary<ushort, DefineTextBaseTag> TextTags { get; private init; } = [];
-    public Dictionary<string, uint[]> SpriteA { get; private init; } = [];
+    public Dictionary<string, ushort> SymbolClass { get; } = [];
+    public Dictionary<ushort, DefineSpriteTag> SpriteTags { get; } = [];
+    public Dictionary<ushort, ShapeBaseTag> ShapeTags { get; } = [];
+    public Dictionary<ushort, DefineTextBaseTag> TextTags { get; } = [];
+    public Dictionary<ushort, BitmapBaseTag> BitmapTags { get; } = [];
+    public Dictionary<string, uint[]> SpriteA { get; } = [];
 
     private SwfFileData() { }
 
@@ -69,6 +72,10 @@ public sealed class SwfFileData
             else if (tag is DefineTextBaseTag text)
             {
                 swf.TextTags[text.CharacterID] = text;
+            }
+            else if (tag is BitmapBaseTag bitmap)
+            {
+                swf.BitmapTags[bitmap.CharacterID] = bitmap;
             }
         }
 
