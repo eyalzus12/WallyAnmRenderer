@@ -24,6 +24,7 @@ public sealed class GfxInfo : IGfxInfo
     public PodiumTeamEnum PodiumTypeTeam = PodiumTeamEnum.None;
     public string? PodiumType { get; set; }
     public string? SeasonBorderType { get; set; }
+    public string? AvatarType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
     public GfxMouthOverride? MouthOverride { get; set; }
@@ -152,7 +153,23 @@ public sealed class GfxInfo : IGfxInfo
             }
             else
             {
-                throw new ArgumentException($"Invalid podium type {PodiumType}");
+                throw new ArgumentException($"Invalid border type {SeasonBorderType}");
+            }
+        }
+
+        if (AvatarType is not null)
+        {
+            AvatarTypes avatarTypes = gameFiles.AvatarTypes;
+            if (avatarTypes.TryGetGfx(AvatarType, out AvatarTypesGfx? avatar))
+            {
+                ICustomArt flagCustomArt = avatar.ToFlagCustomArt();
+                GfxType newGfx = new(gfx);
+                newGfx.CustomArts.Add(flagCustomArt);
+                gfx = newGfx;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid avatar type {AvatarType}");
             }
         }
 
@@ -168,4 +185,5 @@ public sealed class GfxInfo : IGfxInfo
 
         return (gfx, Animation, Flip);
     }
+
 }

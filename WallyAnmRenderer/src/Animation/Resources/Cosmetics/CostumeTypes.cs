@@ -28,8 +28,7 @@ public sealed class CostumeTypes : ICsvReader
             uint costumeIndex = uint.Parse(row["CostumeIndex"].ToString());
             _infos[costumeName] = new(costumeName, displayNameKey, ownerHero, costumeIndex);
 
-            CostumeTypesGfx info = new(adapter);
-            _gfx[costumeName] = info;
+            _gfx[costumeName] = new(adapter);
         }
 
         // sort (TODO: this is bad)

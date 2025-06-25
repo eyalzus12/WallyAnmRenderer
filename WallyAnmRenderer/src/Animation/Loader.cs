@@ -10,6 +10,7 @@ using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Anm;
 using BrawlhallaLangReader;
 using WallyAnmSpinzor;
+using BrawlhallaAnimLib.Gfx;
 
 namespace WallyAnmRenderer;
 
@@ -94,6 +95,22 @@ public sealed class Loader : ILoader
         }
 
         return ValueTask.FromResult<IAnmClass?>(impl());
+    }
+
+    public ValueTask<ISpriteData?> GetSpriteData(string boneName, string setName)
+    {
+        ISpriteData? impl()
+        {
+            if (SwzFiles?.Game is null)
+                return null;
+
+            SpriteData spriteData = SwzFiles.Game.SpriteData;
+            if (spriteData.TryGetSpriteData(setName, boneName, out SpriteDataInfo? info))
+                return info;
+            return null;
+        }
+
+        return ValueTask.FromResult(impl());
     }
 
     public ValueTask<string?> GetBoneName(short boneId)

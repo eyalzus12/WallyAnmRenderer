@@ -10,27 +10,61 @@ public sealed class AnimationInfoWindow
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
 
-    public void Show(BoneSpriteWithName[]? sprites, ref BoneSpriteWithName? highlight)
+    public void Show(BoneSprite[]? sprites, ref BoneSprite? highlight)
     {
-        Dictionary<string, uint> spriteIdDict = [];
+        Dictionary<string, uint> spriteNameNode = [];
+        Dictionary<uint, uint> spriteIdNode = [];
+        Dictionary<string, uint> boneNameNode = [];
 
         ImGui.Begin("Bones", ref _open);
 
         if (sprites is not null)
         {
-            foreach (BoneSpriteWithName sprite in sprites)
+            foreach (BoneSprite sprite in sprites)
             {
-                uint spriteId = spriteIdDict.AddOrUpdate(sprite.SpriteName, 0u, x => x + 1);
+                string spriteText;
+                uint nodeId;
+                if (sprite is SwfBoneSpriteWithId swfBoneSpriteWithId)
+                {
+                    spriteText = swfBoneSpriteWithId.SpriteId.ToString();
+                    nodeId = spriteIdNode.AddOrUpdate(swfBoneSpriteWithId.SpriteId, 0u, x => x + 1);
+                }
+                else if (sprite is SwfBoneSpriteWithName swfBoneSpriteWithName)
+                {
+                    spriteText = swfBoneSpriteWithName.SpriteName;
+                    nodeId = spriteNameNode.AddOrUpdate(swfBoneSpriteWithName.SpriteName, 0u, x => x + 1);
+                }
+                else if (sprite is BitmapBoneSprite bitmapSprite)
+                {
+                    spriteText = $"{bitmapSprite.SpriteData.BoneName} {bitmapSprite.SpriteData.SetName}";
+                    nodeId = boneNameNode.AddOrUpdate(spriteText, 0u, x => x + 1);
+                }
+                else
+                {
+                    spriteText = "ERROR-UNKNOWN";
+                    nodeId = (uint)sprite.GetHashCode();
+                }
 
-                if (ImGui.TreeNode($"{sprite.SpriteName}##{spriteId}"))
+                if (ImGui.TreeNode($"{spriteText}##{nodeId}"))
                 {
                     if (ImGui.IsItemHovered())
                     {
                         highlight = sprite;
                     }
-                    ImGui.Text($"File: {sprite.SwfFilePath}");
-                    ImGui.Text($"Frame: {sprite.Frame}");
+
+                    if (sprite is SwfBoneSprite boneSprite)
+                    {
+                        ImGui.Text($"File: {boneSprite.SwfFilePath}");
+                        ImGui.Text($"Frame: {boneSprite.Frame}");
+                    }
+                    else if (sprite is BitmapBoneSprite bitmapSprite)
+                    {
+                        ImGui.Text($"BoneName: {bitmapSprite.SpriteData.BoneName}");
+                        ImGui.Text($"SetName: {bitmapSprite.SpriteData.SetName}");
+                        ImGui.Text($"File: {bitmapSprite.SpriteData.File}");
+                    }
                     Transform2D transform = sprite.Transform;
+
                     ImGui.SeparatorText("Transform");
                     ImGui.Text($"X: {transform.TranslateX}");
                     ImGui.Text($"Y: {transform.TranslateY}");

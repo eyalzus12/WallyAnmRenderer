@@ -21,6 +21,7 @@ public sealed class PickerWindow
     private string _companionTypeFilter = "";
     private string _podiumTypeFilter = "";
     private string _seasonBorderTypeFilter = "";
+    private string _avatarTypesFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -105,6 +106,12 @@ public sealed class PickerWindow
         if (ImGui.TreeNode("Borders"))
         {
             SeasonBorderTypesSection(loader, info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Avatars"))
+        {
+            AvatarTypesSection(loader, info);
             ImGui.TreePop();
         }
 
@@ -482,6 +489,52 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(seasonBorderName, selected2))
                 {
                     gfxInfo.SeasonBorderType = seasonBorderType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void AvatarTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        AvatarTypes avatarTypes = loader.SwzFiles.Game.AvatarTypes;
+        ImGui.InputText("Filter avatars", ref _avatarTypesFilter, 256);
+        if (ImGui.BeginListBox("###avatarselect"))
+        {
+            bool selected = gfxInfo.AvatarType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.AvatarType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string avatarType in avatarTypes.Avatars)
+            {
+                string avatarName = avatarType;
+                if (avatarTypes.TryGetInfo(avatarType, out AvatarTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realAvatarName))
+                        avatarName = $"{realAvatarName} ({avatarType})";
+                }
+
+                if (!avatarName.Contains(_avatarTypesFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = avatarType == gfxInfo.AvatarType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(avatarName, selected2))
+                {
+                    gfxInfo.AvatarType = avatarType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }

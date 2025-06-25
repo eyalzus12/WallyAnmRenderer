@@ -25,8 +25,7 @@ public sealed class ItemTypes : ICsvReader
             string displayNameKey = row["DisplayNameKey"].ToString();
             _infos[itemName] = new(itemName, displayNameKey);
 
-            ItemTypesGfx info = new(adapter);
-            _gfx[itemName] = info;
+            _gfx[itemName] = new(adapter);
         }
     }
 

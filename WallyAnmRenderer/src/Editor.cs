@@ -158,8 +158,8 @@ public sealed class Editor
         Gui();
         bool finishedLoading = true;
 
-        Task<BoneSpriteWithName[]>? spritesTask = null;
-        BoneSpriteWithName? highlightedSprite = null;
+        Task<BoneSprite[]>? spritesTask = null;
+        BoneSprite? highlightedSprite = null;
         if (Animator?.Loader.SwzFiles?.Game is not null && GfxInfo.AnimationPicked)
         {
             var info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
@@ -180,7 +180,7 @@ public sealed class Editor
             }
         }
 
-        BoneSpriteWithName[]? sprites = null;
+        BoneSprite[]? sprites = null;
         if (spritesTask is not null && spritesTask.IsCompletedSuccessfully)
             sprites = spritesTask.Result;
 
@@ -201,21 +201,41 @@ public sealed class Editor
 
             Transform2D center = GetCenteringTransform();
 
-            foreach (BoneSpriteWithName sprite in sprites)
+            foreach (BoneSprite sprite in sprites)
             {
                 bool highlighted = sprite == highlightedSprite;
 
-                ValueTask<BoneShape[]> shapesTask = Animator.SpriteToShapes(sprite);
-                if (!shapesTask.IsCompletedSuccessfully)
+                if (sprite is SwfBoneSprite swfSprite)
                 {
-                    finishedLoading = false;
-                    continue;
-                }
+                    ValueTask<BoneShape[]> shapesTask = Animator.SpriteToShapes(swfSprite);
+                    if (!shapesTask.IsCompletedSuccessfully)
+                    {
+                        finishedLoading = false;
+                        continue;
+                    }
 
-                BoneShape[] shapes = shapesTask.Result;
-                foreach (BoneShape shape in shapes)
+                    BoneShape[] shapes = shapesTask.Result;
+                    foreach (BoneShape shape in shapes)
+                    {
+                        Texture2DWrapper? texture = Animator.ShapeToTexture(swfSprite, shape);
+                        if (texture is null)
+                        {
+                            finishedLoading = false;
+                            continue;
+                        }
+
+                        RaylibUtils.DrawTextureWithTransform(
+                            texture.Texture,
+                            0, 0, texture.Width, texture.Height,
+                            center * shape.Transform * texture.Transform,
+                            tintB: highlighted ? 0 : 1,
+                            tintA: (float)sprite.Opacity
+                        );
+                    }
+                }
+                else if (sprite is BitmapBoneSprite bitmapSprite)
                 {
-                    Texture2DWrapper? texture = Animator.ShapeToTexture(sprite, shape);
+                    Texture2DWrapper? texture = Animator.Loader.AssetLoader.LoadTexture(bitmapSprite.SpriteData);
                     if (texture is null)
                     {
                         finishedLoading = false;
@@ -225,7 +245,7 @@ public sealed class Editor
                     RaylibUtils.DrawTextureWithTransform(
                         texture.Texture,
                         0, 0, texture.Width, texture.Height,
-                        center * shape.Transform * texture.Transform,
+                        center * bitmapSprite.Transform * texture.Transform,
                         tintB: highlighted ? 0 : 1,
                         tintA: (float)sprite.Opacity
                     );
@@ -293,6 +313,7 @@ public sealed class Editor
         {
             if (ImGui.MenuItem("Clear swf shape cache")) Animator.Loader.AssetLoader.ClearSwfShapeCache();
             if (ImGui.MenuItem("Clear swf file cache")) Animator.Loader.AssetLoader.ClearSwfFileCache();
+            if (ImGui.MenuItem("Clear bitmap cache")) Animator.Loader.AssetLoader.ClearTextureCache();
             ImGui.EndMenu();
         }
 

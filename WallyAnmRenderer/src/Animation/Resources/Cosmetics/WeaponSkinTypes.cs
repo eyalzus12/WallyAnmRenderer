@@ -25,8 +25,7 @@ public sealed class WeaponSkinTypes : ICsvReader
             string displayNameKey = row["DisplayNameKey"].ToString();
             _infos[weaponSkinName] = new(weaponSkinName, displayNameKey);
 
-            WeaponSkinTypesGfx info = new(adapter, costumeTypes);
-            _gfx[weaponSkinName] = info;
+            _gfx[weaponSkinName] = new(adapter, costumeTypes);
         }
     }
 

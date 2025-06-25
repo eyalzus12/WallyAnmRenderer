@@ -15,30 +15,33 @@ public sealed class Animator(string brawlPath, uint key)
 
     public Loader Loader { get; } = new(brawlPath, key);
 
-    public async Task<BoneSpriteWithName[]> GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
+    public async Task<BoneSprite[]> GetAnimationInfo(IGfxType gfx, string animation, long frame, Transform2D transform)
     {
-        List<BoneSpriteWithName> result = [];
-        await foreach (BoneSpriteWithName sprite in AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform))
+        List<BoneSprite> result = [];
+        await foreach (BoneSprite sprite in AnimationBuilder.BuildAnim(Loader, gfx, animation, frame, transform))
         {
             result.Add(sprite);
         }
         return [.. result];
     }
 
-    public ValueTask<BoneShape[]> SpriteToShapes(BoneSpriteWithName sprite)
+    public ValueTask<BoneShape[]> SpriteToShapes(SwfBoneSprite sprite)
     {
         return SpriteToShapeConverter.ConvertToShapes(Loader, sprite);
     }
 
-    public Texture2DWrapper? ShapeToTexture(BoneSpriteWithName sprite, BoneShape shape)
+    public Texture2DWrapper? ShapeToTexture(SwfBoneSprite sprite, BoneShape shape)
     {
+        if (sprite is not SwfBoneSpriteWithName spriteWithName)
+            throw new System.ArgumentException("ShapeToTexture does not support sprites with id");
+
         return Loader.AssetLoader.LoadShapeFromSwf(
-            sprite.SwfFilePath,
-            sprite.SpriteName,
-            shape.ShapeId,
-            sprite.AnimScale,
-            sprite.ColorSwapDict
-        );
+                sprite.SwfFilePath,
+                spriteWithName.SpriteName,
+                shape.ShapeId,
+                sprite.AnimScale,
+                sprite.ColorSwapDict
+            );
     }
 
     public async ValueTask<long> GetFrameCount(GfxInfo info)

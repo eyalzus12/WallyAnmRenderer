@@ -92,7 +92,7 @@ public sealed partial class ExportModal(string? id = null)
         }
     }
 
-    private static (XDocument, Transform2D, ViewBox) ShapeToDocument(SwfFileData swf, BoneSpriteWithName sprite, BoneShape shape)
+    private static (XDocument, Transform2D, ViewBox) ShapeToDocument(SwfFileData swf, SwfBoneSprite sprite, BoneShape shape)
     {
         Transform2D transform = shape.Transform;
 
@@ -119,17 +119,76 @@ public sealed partial class ExportModal(string? id = null)
         return (svgExporter.Document, transform, viewBox);
     }
 
-    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpriteToDocuments(Loader loader, BoneSpriteWithName sprite)
+    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpriteToDocuments(Loader loader, BoneSprite sprite)
     {
-        SwfFileData swf = await loader.AssetLoader.LoadSwf(sprite.SwfFilePath);
-        BoneShape[] shapes = await SpriteToShapeConverter.ConvertToShapes(loader, sprite);
-        foreach (BoneShape shape in shapes)
-            yield return ShapeToDocument(swf, sprite, shape);
+        if (sprite is SwfBoneSprite swfSprite)
+        {
+            SwfFileData swf = await loader.AssetLoader.LoadSwf(swfSprite.SwfFilePath);
+            BoneShape[] shapes = await SpriteToShapeConverter.ConvertToShapes(loader, swfSprite);
+            foreach (BoneShape shape in shapes)
+                yield return ShapeToDocument(swf, swfSprite, shape);
+        }
+        else if (sprite is BitmapBoneSprite bitmapSprite)
+        {
+            double width = bitmapSprite.SpriteData.Width;
+            double height = bitmapSprite.SpriteData.Height;
+            double offX = bitmapSprite.SpriteData.XOffset;
+            double offY = bitmapSprite.SpriteData.YOffset;
+
+            XNamespace xmlns = XNamespace.Get("http://www.w3.org/2000/svg");
+            XElement imageElement = new(xmlns + "image");
+            imageElement.SetAttributeValue("x", bitmapSprite.SpriteData.XOffset);
+            imageElement.SetAttributeValue("y", bitmapSprite.SpriteData.YOffset);
+            imageElement.SetAttributeValue("width", bitmapSprite.SpriteData.Width);
+            imageElement.SetAttributeValue("height", bitmapSprite.SpriteData.Height);
+            XElement svg = new(xmlns + "svg", imageElement);
+            svg.SetAttributeValue("width", bitmapSprite.SpriteData.Width);
+            svg.SetAttributeValue("height", bitmapSprite.SpriteData.Height);
+            XDocument document = new(new XDeclaration("1.0", "UTF-8", "no"), svg);
+
+            string path = Path.Combine(loader.AssetLoader.BrawlPath, bitmapSprite.SpriteData.File);
+            SKEncodedImageFormat format;
+            using (SKCodec codec = SKCodec.Create(path))
+                format = codec.EncodedFormat;
+
+            ViewBox viewBox = new(0, 0, 0, 0);
+            (double, double)[] points = [(offX, offY), (offX + width, offY), (offX, offY + height), (offX + width, offY + height)];
+            foreach ((double x, double y) in points)
+            {
+                (double nx, double ny) = bitmapSprite.Transform * (x, y);
+                viewBox.ExtendWith(nx, ny);
+            }
+
+            string mimeType = format switch
+            {
+                SKEncodedImageFormat.Bmp => "image/bmp",
+                SKEncodedImageFormat.Gif => "image/gif",
+                SKEncodedImageFormat.Ico => "image/vnd.microsoft.icon",
+                SKEncodedImageFormat.Jpeg => "image/jpeg",
+                SKEncodedImageFormat.Png => "image/png",
+                //SKEncodedImageFormat.Wbmp => throw new NotSupportedException(),
+                SKEncodedImageFormat.Webp => "image/webp",
+                //SKEncodedImageFormat.Pkm => throw new NotSupportedException(),
+                //SKEncodedImageFormat.Ktx => throw new NotSupportedException(),
+                //SKEncodedImageFormat.Astc => throw new NotSupportedException(),
+                //SKEncodedImageFormat.Dng => throw new NotSupportedException(),
+                //SKEncodedImageFormat.Heif => throw new NotSupportedException(),
+                SKEncodedImageFormat.Avif => "image/avif",
+                //SKEncodedImageFormat.Jpegxl => throw new NotSupportedException(),
+                _ => throw new NotSupportedException(format.ToString()),
+            };
+
+            byte[] bytes = await File.ReadAllBytesAsync(path);
+            string base64 = Convert.ToBase64String(bytes);
+            imageElement.SetAttributeValue("href", $"data:{mimeType};base64,{base64}");
+
+            yield return (document, sprite.Transform, viewBox);
+        }
     }
 
-    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpritesToDocuments(Loader loader, IAsyncEnumerable<BoneSpriteWithName> sprites)
+    private static async IAsyncEnumerable<(XDocument, Transform2D, ViewBox)> SpritesToDocuments(Loader loader, IAsyncEnumerable<BoneSprite> sprites)
     {
-        await foreach (BoneSpriteWithName sprite in sprites)
+        await foreach (BoneSprite sprite in sprites)
             await foreach (var result in SpriteToDocuments(loader, sprite))
                 yield return result;
     }
@@ -141,7 +200,7 @@ public sealed partial class ExportModal(string? id = null)
             AnimScale = 1
         };
 
-        IAsyncEnumerable<BoneSpriteWithName> sprites = AnimationBuilder.BuildAnim(loader, gfxClone, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
+        IAsyncEnumerable<BoneSprite> sprites = AnimationBuilder.BuildAnim(loader, gfxClone, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
 
         ViewBox viewBox = new(0, 0, 0, 0);
         List<(XDocument, Transform2D)> svgList = [];
@@ -184,6 +243,19 @@ public sealed partial class ExportModal(string? id = null)
                 newG.SetAttributeValue("transform", transformString);
 
                 svg.Add(newG);
+            }
+
+            XElement? image = main.Element(xmlns + "image");
+            if (image is not null)
+            {
+                XElement newImage = new(image);
+                string transformString = SvgUtils.SvgMatrixString(
+                    transform.ScaleX, transform.SkewY, transform.SkewX, transform.ScaleY,
+                    transform.TranslateX, transform.TranslateY
+                );
+                newImage.SetAttributeValue("transform", transformString);
+
+                svg.Add(newImage);
             }
 
             XElement? defs = main.Element(xmlns + "defs");

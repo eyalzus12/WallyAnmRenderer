@@ -92,9 +92,11 @@ public sealed class SwzGameFile
     private const string COMPANION_TYPES = "CompanionTypes.xml";
     private const string PODIUM_TYPES = "PodiumTypes.xml";
     private const string SEASON_BORDER_TYPES = "SeasonBorderTypes.xml";
+    private const string AVATAR_TYPES = "avatarTypes.csv";
     private const string COLOR_SCHEME_TYPES = "ColorSchemeTypes.xml";
     private const string COLOR_EXCEPTION_TYPES = "colorExceptionTypes.csv";
     private const string HERO_TYPES = "HeroTypes.xml";
+    private const string SPRITE_DATA = "spriteData.csv";
     private static readonly HashSet<string> TO_READ = [
         COSTUME_TYPES,
         WEAPON_SKIN_TYPES,
@@ -103,9 +105,11 @@ public sealed class SwzGameFile
         COMPANION_TYPES,
         PODIUM_TYPES,
         SEASON_BORDER_TYPES,
+        AVATAR_TYPES,
         COLOR_SCHEME_TYPES,
         COLOR_EXCEPTION_TYPES,
-        HERO_TYPES
+        HERO_TYPES,
+        SPRITE_DATA,
     ];
 
     public CostumeTypes CostumeTypes { get; }
@@ -115,9 +119,11 @@ public sealed class SwzGameFile
     public CompanionTypes CompanionTypes { get; }
     public PodiumTypes PodiumTypes { get; }
     public SeasonBorderTypes SeasonBorderTypes { get; }
+    public AvatarTypes AvatarTypes { get; }
     public ColorSchemeTypes ColorSchemeTypes { get; }
     public ColorExceptionTypes ColorExceptionTypes { get; }
     public HeroTypes HeroTypes { get; }
+    public SpriteData SpriteData { get; }
 
     private SwzGameFile(SwzFileData data)
     {
@@ -168,6 +174,10 @@ public sealed class SwzGameFile
         XElement seasonBorderTypesElement = XElement.Parse(seasonBorderTypesContent);
         SeasonBorderTypes = new(seasonBorderTypesElement);
 
+        string avatarTypesContent = data[AVATAR_TYPES];
+        using (SepReader reader = readerFromText(avatarTypesContent))
+            AvatarTypes = new(reader);
+
         string colorSchemeTypesContent = data[COLOR_SCHEME_TYPES];
         XElement colorSchemeElement = XElement.Parse(colorSchemeTypesContent);
         ColorSchemeTypes = new(colorSchemeElement);
@@ -175,6 +185,10 @@ public sealed class SwzGameFile
         string colorExceptionTypesContent = data[COLOR_EXCEPTION_TYPES];
         using (SepReader reader = readerFromText(colorExceptionTypesContent))
             ColorExceptionTypes = new(reader);
+
+        string spriteDataContent = data[SPRITE_DATA];
+        using (SepReader reader = readerFromText(spriteDataContent))
+            SpriteData = new(reader);
     }
 
     public static SwzGameFile New(string filePath, uint key)
