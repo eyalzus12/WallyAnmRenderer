@@ -4,6 +4,7 @@ using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading.CompanionTypes;
 using BrawlhallaAnimLib.Reading.CostumeTypes;
 using BrawlhallaAnimLib.Reading.ItemTypes;
+using BrawlhallaAnimLib.Reading.PodiumTypes;
 using BrawlhallaAnimLib.Reading.SpawnBotTypes;
 using BrawlhallaAnimLib.Reading.WeaponSkinTypes;
 
@@ -13,7 +14,6 @@ public sealed class GfxInfo : IGfxInfo
 {
     public string? SourceFilePath { get; set; }
 
-    public int Team { get; set; } = 0;
     public string? AnimClass { get; set; }
     public string? AnimFile { get; set; }
     public string? Animation { get; set; }
@@ -22,9 +22,12 @@ public sealed class GfxInfo : IGfxInfo
 
     public string? CostumeType { get; set; }
     public string? WeaponSkinType { get; set; }
+    public int ItemTypeTeam { get; set; } = 0;
     public string? ItemType { get; set; }
     public string? SpawnBotType { get; set; }
     public string? CompanionType { get; set; }
+    public PodiumTeamEnum PodiumTypeTeam = PodiumTeamEnum.None;
+    public string? PodiumType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
     public GfxMouthOverride? MouthOverride { get; set; }
@@ -81,7 +84,7 @@ public sealed class GfxInfo : IGfxInfo
             ItemTypes itemTypes = gameFiles.ItemTypes;
             if (itemTypes.TryGetGfx(ItemType, out ItemTypesGfx? itemGfx))
             {
-                gfx = itemGfx.ToHeldGfx(gfx, Team);
+                gfx = itemGfx.ToHeldGfx(gfx, ItemTypeTeam);
             }
             else
             {
@@ -104,11 +107,11 @@ public sealed class GfxInfo : IGfxInfo
 
         if (CompanionType is not null)
         {
-            CompanionTypes spawnBotTypes = gameFiles.CompanionTypes;
-            if (spawnBotTypes.TryGetGfx(CompanionType, out CompanionTypesGfx? companion))
+            CompanionTypes companionTypes = gameFiles.CompanionTypes;
+            if (companionTypes.TryGetGfx(CompanionType, out CompanionTypesGfx? companion))
             {
                 IGfxType companionGfx = companion.ToGfxType();
-                // we do a bit of cheating. companion is meant to be a standalone gfx, so we merge it manually
+                // we do a bit of cheating. companion is meant to be a standalone gfx, so we merge it manually.
                 // this should be safe because the art type is unique.
                 GfxType newGfx = new(gfx);
                 newGfx.CustomArts.AddRange(companionGfx.CustomArts);
@@ -118,6 +121,24 @@ public sealed class GfxInfo : IGfxInfo
             else
             {
                 throw new ArgumentException($"Invalid companion type {CompanionType}");
+            }
+        }
+
+        if (PodiumType is not null)
+        {
+            PodiumTypes podiumTypes = gameFiles.PodiumTypes;
+            if (podiumTypes.TryGetGfx(PodiumType, out PodiumTypesGfx? podium))
+            {
+                IGfxType podiumGfx = podium.ToGfxType(PodiumTypeTeam);
+                // we do a bit of cheating. podium is meant to be a standalone gfx, so we merge it manually.
+                // this may cause conflicts with other custom arts, but hopefully not.
+                GfxType newGfx = new(gfx);
+                newGfx.CustomArts.AddRange(podiumGfx.CustomArts);
+                gfx = newGfx;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid podium type {PodiumType}");
             }
         }
 

@@ -33,12 +33,12 @@ public sealed class CostumeTypes : ICsvReader
             _gfx[costumeName] = info;
         }
 
+        // sort (TODO: this is bad)
         _infos = _infos.OrderBy(x => x.Value.OwnerHero == "Random" ? int.MaxValue : 0)
-                        .ThenBy(x => heroTypes.TryGetHero(x.Value.OwnerHero, out HeroType? hero) ? hero.ReleaseOrderId : 0)
+                        .ThenBy(x => heroTypes.TryGetHero(x.Value.OwnerHero, out HeroTypeInfo hero) ? hero.ReleaseOrderId : 0)
                         .ThenBy(x => x.Value.CostumeIndex)
                         .ThenBy(x => x.Value.CostumeName)
                         .ToDictionary(x => x.Key, x => x.Value);
-
         Dictionary<string, CostumeTypesGfx> sortedGfx = [];
         foreach (string key in _infos.Keys)
         {

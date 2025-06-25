@@ -2,6 +2,7 @@ using System;
 using System.Numerics;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading.ItemTypes;
+using BrawlhallaAnimLib.Reading.PodiumTypes;
 using ImGuiNET;
 
 namespace WallyAnmRenderer;
@@ -9,6 +10,7 @@ namespace WallyAnmRenderer;
 public sealed class PickerWindow
 {
     private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
+    private static readonly string[] TEAM_OPTIONS = ["None", "Red", "Blue"];
 
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
@@ -18,6 +20,7 @@ public sealed class PickerWindow
     private string _itemTypeFilter = "";
     private string _spawnBotTypeFilter = "";
     private string _companionTypeFilter = "";
+    private string _podiumTypeFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -93,6 +96,12 @@ public sealed class PickerWindow
             ImGui.TreePop();
         }
 
+        if (ImGui.TreeNode("Podiums"))
+        {
+            PodiumTypesSection(loader, info);
+            ImGui.TreePop();
+        }
+
         if (ImGui.TreeNode("Color schemes"))
         {
             ColorSchemeSection(loader, info);
@@ -141,8 +150,9 @@ public sealed class PickerWindow
                 string costumeName = costumeType;
                 if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
                 {
+                    bool hasHero = heroTypes.TryGetHero(info.OwnerHero, out HeroTypeInfo hero);
                     // First check if we have a hero and it's the default skin (highest priority case)
-                    if (heroTypes.TryGetHero(info.OwnerHero, out HeroType? hero) && info.CostumeIndex == 0)
+                    if (hasHero && info.CostumeIndex == 0)
                     {
                         // Default skin always uses hero name
                         // e.g. `Bödvar (Viking)`
@@ -152,7 +162,7 @@ public sealed class PickerWindow
                     else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
                     {
                         // We have the display name, now see if we also have hero info
-                        if (hero is not null && !string.IsNullOrEmpty(hero.BioName))
+                        if (hasHero && !string.IsNullOrEmpty(hero.BioName))
                         {
                             // Normal skin with both display name and hero info
                             // e.g. `Bear'dvar (Bödvar: Bear)`
@@ -232,7 +242,6 @@ public sealed class PickerWindow
         }
     }
 
-    private static readonly string[] TEAM_OPTIONS = ["None", "Red", "Blue"];
     private void HeldItemSection(Loader loader, GfxInfo gfxInfo)
     {
         if (loader.SwzFiles?.Game is null)
@@ -241,9 +250,9 @@ public sealed class PickerWindow
             return;
         }
 
-        int team = gfxInfo.Team;
+        int team = gfxInfo.ItemTypeTeam;
         ImGui.Combo("Team", ref team, TEAM_OPTIONS, TEAM_OPTIONS.Length);
-        gfxInfo.Team = team;
+        gfxInfo.ItemTypeTeam = team;
 
         ItemTypes itemTypes = loader.SwzFiles.Game.ItemTypes;
         ImGui.InputText("Filter items", ref _itemTypeFilter, 256);
@@ -371,6 +380,56 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(companionName, selected2))
                 {
                     gfxInfo.CompanionType = companionType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void PodiumTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        int team = (int)gfxInfo.PodiumTypeTeam;
+        ImGui.Combo("Team", ref team, TEAM_OPTIONS, TEAM_OPTIONS.Length);
+        gfxInfo.PodiumTypeTeam = (PodiumTeamEnum)team;
+
+        PodiumTypes podiumTypes = loader.SwzFiles.Game.PodiumTypes;
+        ImGui.InputText("Filter podiums", ref _podiumTypeFilter, 256);
+        if (ImGui.BeginListBox("###podiumselect"))
+        {
+            bool selected = gfxInfo.PodiumType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.PodiumType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string podiumType in podiumTypes.Podiums)
+            {
+                string podiumName = podiumType;
+                if (podiumTypes.TryGetInfo(podiumType, out PodiumTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realPodiumName))
+                        podiumName = $"{realPodiumName} ({podiumType})";
+                }
+
+                if (!podiumName.Contains(_podiumTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = podiumType == gfxInfo.PodiumType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(podiumName, selected2))
+                {
+                    gfxInfo.PodiumType = podiumType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }
