@@ -92,6 +92,7 @@ public sealed class SwzGameFile
     private const string COMPANION_TYPES = "CompanionTypes.xml";
     private const string PODIUM_TYPES = "PodiumTypes.xml";
     private const string SEASON_BORDER_TYPES = "SeasonBorderTypes.xml";
+    private const string PLAYER_THEME_TYPES = "PlayerThemeTypes.xml";
     private const string AVATAR_TYPES = "avatarTypes.csv";
     private const string COLOR_SCHEME_TYPES = "ColorSchemeTypes.xml";
     private const string COLOR_EXCEPTION_TYPES = "colorExceptionTypes.csv";
@@ -105,6 +106,7 @@ public sealed class SwzGameFile
         COMPANION_TYPES,
         PODIUM_TYPES,
         SEASON_BORDER_TYPES,
+        PLAYER_THEME_TYPES,
         AVATAR_TYPES,
         COLOR_SCHEME_TYPES,
         COLOR_EXCEPTION_TYPES,
@@ -119,6 +121,7 @@ public sealed class SwzGameFile
     public CompanionTypes CompanionTypes { get; }
     public PodiumTypes PodiumTypes { get; }
     public SeasonBorderTypes SeasonBorderTypes { get; }
+    public PlayerThemeTypes PlayerThemeTypes { get; }
     public AvatarTypes AvatarTypes { get; }
     public ColorSchemeTypes ColorSchemeTypes { get; }
     public ColorExceptionTypes ColorExceptionTypes { get; }
@@ -173,6 +176,10 @@ public sealed class SwzGameFile
         string seasonBorderTypesContent = data[SEASON_BORDER_TYPES];
         XElement seasonBorderTypesElement = XElement.Parse(seasonBorderTypesContent);
         SeasonBorderTypes = new(seasonBorderTypesElement);
+
+        string playerThemeTypesContent = data[PLAYER_THEME_TYPES];
+        XElement playerThemeTypesElement = XElement.Parse(playerThemeTypesContent);
+        PlayerThemeTypes = new(playerThemeTypesElement);
 
         string avatarTypesContent = data[AVATAR_TYPES];
         using (SepReader reader = readerFromText(avatarTypesContent))

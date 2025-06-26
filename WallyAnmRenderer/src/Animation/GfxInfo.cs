@@ -24,6 +24,7 @@ public sealed class GfxInfo : IGfxInfo
     public PodiumTeamEnum PodiumTypeTeam = PodiumTeamEnum.None;
     public string? PodiumType { get; set; }
     public string? SeasonBorderType { get; set; }
+    public string? PlayerThemeType { get; set; }
     public string? AvatarType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
@@ -142,18 +143,36 @@ public sealed class GfxInfo : IGfxInfo
         if (SeasonBorderType is not null)
         {
             SeasonBorderTypes seasonBorderTypes = gameFiles.SeasonBorderTypes;
-            if (seasonBorderTypes.TryGetGfx(SeasonBorderType, out SeasonBorderTypesGfx? border))
+            if (seasonBorderTypes.TryGetGfx(SeasonBorderType, out SeasonBorderTypesGfx? loadingFrame))
             {
-                IGfxType borderGfx = border.ToGfxType();
+                IGfxType loadingFrameGfx = loadingFrame.ToGfxType();
                 // we do a bit of cheating. season border is meant to be a standalone gfx, so we merge it manually.
                 // this may cause conflicts with other custom arts, but hopefully not.
                 GfxType newGfx = new(gfx);
-                newGfx.CustomArts.AddRange(borderGfx.CustomArts);
+                newGfx.CustomArts.AddRange(loadingFrameGfx.CustomArts);
                 gfx = newGfx;
             }
             else
             {
-                throw new ArgumentException($"Invalid border type {SeasonBorderType}");
+                throw new ArgumentException($"Invalid loading frame type {SeasonBorderType}");
+            }
+        }
+
+        if (PlayerThemeType is not null)
+        {
+            PlayerThemeTypes seasonBorderTypes = gameFiles.PlayerThemeTypes;
+            if (seasonBorderTypes.TryGetGfx(PlayerThemeType, out PlayerThemeTypesGfx? uiTheme))
+            {
+                IGfxType uiThemeGfx = uiTheme.ToGfxType();
+                // we do a bit of cheating. player theme is meant to be a standalone gfx, so we merge it manually.
+                // this may cause conflicts with other custom arts, but hopefully not.
+                GfxType newGfx = new(gfx);
+                newGfx.CustomArts.AddRange(uiThemeGfx.CustomArts);
+                gfx = newGfx;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid ui theme type {PlayerThemeType}");
             }
         }
 

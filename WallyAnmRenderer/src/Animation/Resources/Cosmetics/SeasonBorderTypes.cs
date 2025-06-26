@@ -35,9 +35,9 @@ public sealed class SeasonBorderTypes
         }
     }
 
-    public bool TryGetGfx(string name, [MaybeNullWhen(false)] out SeasonBorderTypesGfx border)
+    public bool TryGetGfx(string name, [MaybeNullWhen(false)] out SeasonBorderTypesGfx loadingFrame)
     {
-        return _gfx.TryGetValue(name, out border);
+        return _gfx.TryGetValue(name, out loadingFrame);
     }
 
     public bool TryGetInfo(string name, [MaybeNullWhen(false)] out SeasonBorderTypeInfo info)
@@ -45,5 +45,5 @@ public sealed class SeasonBorderTypes
         return _infos.TryGetValue(name, out info);
     }
 
-    public IEnumerable<string> Borders => _gfx.Keys;
+    public IEnumerable<string> LoadingFrames => _gfx.Keys;
 }

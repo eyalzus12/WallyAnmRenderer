@@ -11,7 +11,8 @@
   * Sidekick
   * Companion
   * Podium
-  * Border
+  * Loading frame
+  * UI theme
   * Color
 * A full implementation of the game's animation system.
 * Pause, frame step, and seeing exact animation timeline.

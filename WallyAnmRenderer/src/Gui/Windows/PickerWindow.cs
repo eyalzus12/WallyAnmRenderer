@@ -21,6 +21,7 @@ public sealed class PickerWindow
     private string _companionTypeFilter = "";
     private string _podiumTypeFilter = "";
     private string _seasonBorderTypeFilter = "";
+    private string _playerThemeTypeFilter = "";
     private string _avatarTypesFilter = "";
     private string _colorSchemeFilter = "";
 
@@ -103,9 +104,15 @@ public sealed class PickerWindow
             ImGui.TreePop();
         }
 
-        if (ImGui.TreeNode("Borders"))
+        if (ImGui.TreeNode("Loading frames"))
         {
             SeasonBorderTypesSection(loader, info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("UI themes"))
+        {
+            PlayerThemeTypesSection(loader, info);
             ImGui.TreePop();
         }
 
@@ -460,8 +467,8 @@ public sealed class PickerWindow
         }
 
         SeasonBorderTypes seasonBorderTypes = loader.SwzFiles.Game.SeasonBorderTypes;
-        ImGui.InputText("Filter borders", ref _seasonBorderTypeFilter, 256);
-        if (ImGui.BeginListBox("###borderselect"))
+        ImGui.InputText("Filter loading frames", ref _seasonBorderTypeFilter, 256);
+        if (ImGui.BeginListBox("###loadingframeselect"))
         {
             bool selected = gfxInfo.SeasonBorderType is null;
             if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
@@ -471,7 +478,7 @@ public sealed class PickerWindow
             }
             if (selected) ImGui.PopStyleColor();
 
-            foreach (string seasonBorderType in seasonBorderTypes.Borders)
+            foreach (string seasonBorderType in seasonBorderTypes.LoadingFrames)
             {
                 string seasonBorderName = seasonBorderType;
                 if (seasonBorderTypes.TryGetInfo(seasonBorderType, out SeasonBorderTypeInfo info))
@@ -489,6 +496,56 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(seasonBorderName, selected2))
                 {
                     gfxInfo.SeasonBorderType = seasonBorderType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void PlayerThemeTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(new(1, 1, 0, 1), "Some older UI themes may not work due to BMG-ness.");
+        ImGui.PopTextWrapPos();
+
+        PlayerThemeTypes playerThemeTypes = loader.SwzFiles.Game.PlayerThemeTypes;
+        ImGui.InputText("Filter UI themes", ref _playerThemeTypeFilter, 256);
+        if (ImGui.BeginListBox("###uithemeselect"))
+        {
+            bool selected = gfxInfo.PlayerThemeType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.PlayerThemeType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string playerThemeType in playerThemeTypes.UIThemes)
+            {
+                string playerThemeName = playerThemeType;
+                if (playerThemeTypes.TryGetInfo(playerThemeType, out PlayerThemeTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realPlayerThemeName))
+                        playerThemeName = $"{realPlayerThemeName} ({playerThemeType})";
+                }
+
+                if (!playerThemeName.Contains(_playerThemeTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = playerThemeType == gfxInfo.PlayerThemeType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(playerThemeName, selected2))
+                {
+                    gfxInfo.PlayerThemeType = playerThemeType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }
