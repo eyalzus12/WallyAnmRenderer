@@ -195,12 +195,13 @@ public sealed class SwzGameFile
         using (SepReader reader = readerFromText(colorExceptionTypesContent))
             ColorExceptionTypes = new(reader);
 
+        SpriteData = new();
         string spriteDataContent = data[SPRITE_DATA];
         using (SepReader reader = readerFromText(spriteDataContent))
-            SpriteData = new(reader);
+            SpriteData.ApplySpriteData(reader);
         string manualBoneSpriteDataContent = data[MANUAL_BONE_SPRITE_DATA];
         using (SepReader reader = readerFromText(manualBoneSpriteDataContent))
-            SpriteData.ApplyManualBoneSpriteData(reader);
+            SpriteData.ApplySpriteData(reader);
     }
 
     public static SwzGameFile New(string filePath, uint key)

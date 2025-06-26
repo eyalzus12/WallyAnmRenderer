@@ -8,8 +8,9 @@ namespace WallyAnmRenderer;
 public sealed class SpriteData
 {
     private readonly Dictionary<(string, string), SpriteDataInfo> _spriteData = [];
+    public SpriteData() { }
 
-    public SpriteData(SepReader reader)
+    public void ApplySpriteData(SepReader reader)
     {
         foreach (SepReader.Row row in reader)
         {
@@ -20,30 +21,15 @@ public sealed class SpriteData
             double height = row["Height"].Parse<double>();
             double offsetX = row["xOffset"].Parse<double>();
             double offsetY = row["yOffset"].Parse<double>();
-            _spriteData[(setName, boneName)] = new()
+
+            if (setName.Length == 0)
             {
-                SetName = setName,
-                BoneName = boneName,
-                File = file,
-                Width = width,
-                Height = height,
-                XOffset = offsetX,
-                YOffset = offsetY
-            };
-        }
-    }
+                offsetX = 0;
+                offsetY = 0;
+                width = 128;
+                height = 128;
+            }
 
-    public void ApplyManualBoneSpriteData(SepReader reader)
-    {
-        foreach (SepReader.Row row in reader)
-        {
-            string setName = row["SetName"].ToString();
-            string boneName = row["BoneName"].ToString();
-            string file = row["File"].ToString();
-            double width = row["Width"].Parse<double>();
-            double height = row["Height"].Parse<double>();
-            double offsetX = row["xOffset"].Parse<double>();
-            double offsetY = row["yOffset"].Parse<double>();
             _spriteData[(setName, boneName)] = new()
             {
                 SetName = setName,
