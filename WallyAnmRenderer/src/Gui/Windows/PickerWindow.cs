@@ -68,6 +68,7 @@ public sealed class PickerWindow
             loader.AssetLoader.ClearSwfShapeCache();
         }
 
+        ImGui.SeparatorText("Gameplay");
         if (ImGui.TreeNode("Legend skins"))
         {
             CostumeTypeSection(loader, info);
@@ -98,6 +99,28 @@ public sealed class PickerWindow
             ImGui.TreePop();
         }
 
+        if (ImGui.TreeNode("Mouth/Eye Overrides"))
+        {
+            OverridesSection(info);
+            ImGui.TreePop();
+        }
+
+        ImGui.SeparatorText("Colors");
+
+        if (ImGui.TreeNode("Color schemes"))
+        {
+            ColorSchemeSection(loader, info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Custom colors"))
+        {
+            _customColors.Show(info.ColorScheme);
+            ImGui.TreePop();
+        }
+
+        ImGui.SeparatorText("UI");
+
         if (ImGui.TreeNode("Podiums"))
         {
             PodiumTypesSection(loader, info);
@@ -119,24 +142,6 @@ public sealed class PickerWindow
         if (ImGui.TreeNode("Avatars"))
         {
             AvatarTypesSection(loader, info);
-            ImGui.TreePop();
-        }
-
-        if (ImGui.TreeNode("Color schemes"))
-        {
-            ColorSchemeSection(loader, info);
-            ImGui.TreePop();
-        }
-
-        if (ImGui.TreeNode("Custom colors"))
-        {
-            _customColors.Show(info.ColorScheme);
-            ImGui.TreePop();
-        }
-
-        if (ImGui.TreeNode("Overrides"))
-        {
-            OverridesSection(info);
             ImGui.TreePop();
         }
 
