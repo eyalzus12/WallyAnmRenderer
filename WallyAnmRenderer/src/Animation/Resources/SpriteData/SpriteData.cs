@@ -33,6 +33,30 @@ public sealed class SpriteData
         }
     }
 
+    public void ApplyManualBoneSpriteData(SepReader reader)
+    {
+        foreach (SepReader.Row row in reader)
+        {
+            string setName = row["SetName"].ToString();
+            string boneName = row["BoneName"].ToString();
+            string file = row["File"].ToString();
+            double width = row["Width"].Parse<double>();
+            double height = row["Height"].Parse<double>();
+            double offsetX = row["xOffset"].Parse<double>();
+            double offsetY = row["yOffset"].Parse<double>();
+            _spriteData[(setName, boneName)] = new()
+            {
+                SetName = setName,
+                BoneName = boneName,
+                File = file,
+                Width = width,
+                Height = height,
+                XOffset = offsetX,
+                YOffset = offsetY
+            };
+        }
+    }
+
     public bool TryGetSpriteData(string setName, string boneName, [MaybeNullWhen(false)] out SpriteDataInfo? spriteData)
     {
         return _spriteData.TryGetValue((setName, boneName), out spriteData);

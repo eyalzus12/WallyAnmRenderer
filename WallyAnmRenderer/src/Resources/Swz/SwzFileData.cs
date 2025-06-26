@@ -98,6 +98,7 @@ public sealed class SwzGameFile
     private const string COLOR_EXCEPTION_TYPES = "colorExceptionTypes.csv";
     private const string HERO_TYPES = "HeroTypes.xml";
     private const string SPRITE_DATA = "spriteData.csv";
+    private const string MANUAL_BONE_SPRITE_DATA = "manualBoneSpriteData.csv";
     private static readonly HashSet<string> TO_READ = [
         COSTUME_TYPES,
         WEAPON_SKIN_TYPES,
@@ -112,6 +113,7 @@ public sealed class SwzGameFile
         COLOR_EXCEPTION_TYPES,
         HERO_TYPES,
         SPRITE_DATA,
+        MANUAL_BONE_SPRITE_DATA,
     ];
 
     public CostumeTypes CostumeTypes { get; }
@@ -196,6 +198,9 @@ public sealed class SwzGameFile
         string spriteDataContent = data[SPRITE_DATA];
         using (SepReader reader = readerFromText(spriteDataContent))
             SpriteData = new(reader);
+        string manualBoneSpriteDataContent = data[MANUAL_BONE_SPRITE_DATA];
+        using (SepReader reader = readerFromText(manualBoneSpriteDataContent))
+            SpriteData.ApplyManualBoneSpriteData(reader);
     }
 
     public static SwzGameFile New(string filePath, uint key)

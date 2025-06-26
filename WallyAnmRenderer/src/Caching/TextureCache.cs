@@ -41,7 +41,6 @@ public class TextureCache : UploadCache<TextureCache.SpriteData, (RlImage, Trans
     {
         using SKBitmap bitmap = LoadSKBitmap(spriteData.FilePath);
         RlImage img1 = RaylibUtils.SKBitmapAsRlImage(bitmap);
-        // alpha premult done in LoadSKBitmap
         RlImage img2 = RaylibEx.ImageCopyWithMipmaps(img1);
         bitmap.Dispose(); // also unloads img1
 
