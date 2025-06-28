@@ -44,10 +44,10 @@ public sealed class Animator(string brawlPath, uint key)
             );
     }
 
-    public async ValueTask<long> GetFrameCount(GfxInfo info)
+    public async ValueTask<AnimationData> GetAnimData(GfxInfo info)
     {
         if (!info.AnimationPicked)
             throw new System.Exception();
-        return await AnimationBuilder.GetAnimFrameCount(Loader, info.AnimFile, info.AnimClass, info.Animation);
+        return await AnimationBuilder.GetAnimData(Loader, info.AnimFile, info.AnimClass, info.Animation);
     }
 }

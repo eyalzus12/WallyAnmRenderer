@@ -22,6 +22,11 @@ public readonly struct AnmClassAdapter(AnmClass anmClass) : IAnmClass
 
 public readonly struct AnmAnimationAdapter(AnmAnimation anmAnimation) : IAnmAnimation
 {
+    public uint LoopStart => anmAnimation.LoopStart;
+    public uint RecoveryStart => anmAnimation.RecoveryStart;
+    public uint FreeStart => anmAnimation.FreeStart;
+    public uint PreviewFrame => anmAnimation.PreviewFrame;
+    public uint BaseStart => anmAnimation.BaseStart;
     public IAnmFrame[] Frames { get; } = [.. anmAnimation.Frames.Select((frame) => new AnmFrameAdapter(frame))];
 }
 

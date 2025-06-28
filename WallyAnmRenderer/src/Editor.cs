@@ -9,6 +9,7 @@ using ImGuiNET;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Math;
 using BrawlhallaAnimLib.Bones;
+using BrawlhallaAnimLib;
 
 namespace WallyAnmRenderer;
 
@@ -283,11 +284,11 @@ public sealed class Editor
             AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator?.Loader.AssetLoader, GfxInfo);
         if (TimeWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
         {
-            ValueTask<long> frameCountTask = Animator.GetFrameCount(GfxInfo);
-            if (frameCountTask.IsCompletedSuccessfully)
+            ValueTask<AnimationData> animDataTask = Animator.GetAnimData(GfxInfo);
+            if (animDataTask.IsCompletedSuccessfully)
             {
-                long frameCount = frameCountTask.Result;
-                TimeWindow.Show(frameCount, Time, _paused);
+                AnimationData animData = animDataTask.Result;
+                TimeWindow.Show(animData, Time, _paused);
             }
         }
         if (PickerWindow.Open)
