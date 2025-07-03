@@ -353,9 +353,6 @@ public sealed class Editor
                 delta = Raymath.Vector2Scale(delta, -1.0f / _cam.Zoom);
                 _cam.Target += delta;
             }
-
-            if (!wantCaptureKeyboard && Rl.IsKeyPressed(KeyboardKey.R))
-                ResetCam();
         }
 
         //if (ViewportWindow.Hovered && Rl.IsMouseButtonReleased(MouseButton.Left))
@@ -381,6 +378,21 @@ public sealed class Editor
                 }
             }
             if (Rl.IsKeyPressed(KeyboardKey.F1)) _showMainMenuBar = !_showMainMenuBar;
+
+            if (Rl.IsKeyDown(KeyboardKey.LeftControl))
+            {
+                if (Animator is not null && Rl.IsKeyPressed(KeyboardKey.R))
+                {
+                    Animator.Loader.AssetLoader.ClearSwfFileCache();
+                    Animator.Loader.AssetLoader.ClearSwfShapeCache();
+                    Animator.Loader.AssetLoader.ClearTextureCache();
+                }
+            }
+            else
+            {
+                if (ViewportWindow.Hovered && Rl.IsKeyPressed(KeyboardKey.R))
+                    ResetCam();
+            }
         }
     }
 
