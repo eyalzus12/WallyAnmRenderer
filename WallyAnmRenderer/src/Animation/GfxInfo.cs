@@ -108,7 +108,7 @@ public sealed class GfxInfo : IGfxInfo
             CompanionTypes companionTypes = gameFiles.CompanionTypes;
             if (companionTypes.TryGetGfx(CompanionType, out CompanionTypesGfx? companion))
             {
-                IGfxType companionGfx = companion.ToGfxType();
+                IGfxType companionGfx = companion.ToGfxType(ColorScheme);
                 // we do a bit of cheating. companion is meant to be a standalone gfx, so we merge it manually.
                 // this should be safe because the art type is unique.
                 GfxType newGfx = new(gfx);
