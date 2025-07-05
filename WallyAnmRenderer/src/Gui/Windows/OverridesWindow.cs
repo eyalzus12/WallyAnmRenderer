@@ -68,13 +68,16 @@ public sealed class OverridesWindow
         {
             try
             {
-                // TODO: this should be done in a thread, but that requires ConcurrentDictionary in SwfOverrideMap
-                // not too important.
-                SwfFile swfFile;
-                using (FileStream file = File.OpenRead(_filePath!))
-                    swfFile = SwfFile.ReadFrom(file);
-                SwfFileData data = SwfFileData.CreateFrom(swfFile);
-                assetLoader.AddSwfOverride(_overridePath!, new(_overridePath!, _filePath!, data));
+                string overridePath = _overridePath!;
+                string filePath = _filePath!;
+                Task.Run(() =>
+                {
+                    SwfFile swfFile;
+                    using (FileStream file = File.OpenRead(filePath))
+                        swfFile = SwfFile.ReadFrom(file);
+                    SwfFileData data = SwfFileData.CreateFrom(swfFile);
+                    assetLoader.AddSwfOverride(overridePath, new(overridePath, filePath, data));
+                });
             }
             catch (Exception e)
             {
@@ -82,6 +85,8 @@ public sealed class OverridesWindow
                 Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
                 _loadingError = e.Message;
             }
+            _overridePath = null;
+            _filePath = null;
         }
 
         ImGui.SeparatorText("Overrides");

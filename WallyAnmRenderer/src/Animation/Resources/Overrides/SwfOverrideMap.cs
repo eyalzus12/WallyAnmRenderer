@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -10,7 +10,7 @@ public readonly record struct SwfOverride(string OverridePath, string OriginalPa
 public sealed class SwfOverrideMap(string brawlPath)
 {
     public string BrawlPath { get; set; } = brawlPath;
-    private readonly Dictionary<string, SwfOverride> _swfs = [];
+    private readonly ConcurrentDictionary<string, SwfOverride> _swfs = [];
 
     public SwfOverride this[string fullPath]
     {
@@ -35,7 +35,7 @@ public sealed class SwfOverrideMap(string brawlPath)
     public bool Remove(string fullPath)
     {
         string relativePath = GetRelativePath(fullPath);
-        return _swfs.Remove(relativePath);
+        return _swfs.Remove(relativePath, out _);
     }
 
     public IEnumerable<SwfOverride> Overrides => _swfs.Values;
