@@ -92,7 +92,12 @@ public sealed class OverridesWindow
         ImGui.SeparatorText("Overrides");
         foreach (SwfOverride swfOverride in assetLoader.Overrides)
         {
-            ImGui.BulletText($"Override {swfOverride.OverridePath} with {swfOverride.OriginalPath}");
+            if (ImGui.Button("X"))
+            {
+                assetLoader.RemoveSwfOverride(swfOverride.OverridePath);
+            }
+            ImGui.SameLine();
+            ImGui.Text($"Override {swfOverride.OverridePath} with {swfOverride.OriginalPath}");
         }
 
         if (_loadingStatus is not null)
