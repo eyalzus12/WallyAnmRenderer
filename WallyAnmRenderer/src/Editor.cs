@@ -35,6 +35,7 @@ public sealed class Editor
 
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();
+    public OverridesWindow OverridesWindow { get; } = new();
     public AnmWindow AnmWindow { get; } = new();
     public AnimationInfoWindow AnimationInfoWindow { get; } = new();
     public TimeWindow TimeWindow { get; } = new();
@@ -280,6 +281,8 @@ public sealed class Editor
             ViewportWindow.Show();
         if (PathsWindow.Open)
             PathsWindow.Show(PathPrefs);
+        if (OverridesWindow.Open)
+            OverridesWindow.Show(PathPrefs.BrawlhallaPath, Animator?.Loader.AssetLoader);
         if (AnmWindow.Open)
             AnmWindow.Show(PathPrefs.BrawlhallaPath, Animator?.Loader.AssetLoader, GfxInfo);
         if (TimeWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
@@ -303,6 +306,7 @@ public sealed class Editor
         {
             if (ImGui.MenuItem("Viewport", null, ViewportWindow.Open)) ViewportWindow.Open = !ViewportWindow.Open;
             if (ImGui.MenuItem("Pick paths", null, PathsWindow.Open)) PathsWindow.Open = !PathsWindow.Open;
+            if (ImGui.MenuItem("Override files", null, OverridesWindow.Open)) OverridesWindow.Open = !OverridesWindow.Open;
             if (ImGui.MenuItem("Pick animation", null, AnmWindow.Open)) AnmWindow.Open = !AnmWindow.Open;
             if (ImGui.MenuItem("Pick cosmetics", null, PickerWindow.Open)) PickerWindow.Open = !PickerWindow.Open;
             if (ImGui.MenuItem("Animation timeline", null, TimeWindow.Open)) TimeWindow.Open = !TimeWindow.Open;

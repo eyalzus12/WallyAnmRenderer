@@ -18,6 +18,7 @@ public sealed class AssetLoader(string brawlPath)
             if (_brawlPath == value) return;
 
             _brawlPath = value;
+            _swfFileOverrides.BrawlPath = value;
             ClearSwfFileCache();
             ClearAnmCache();
             ClearSwfShapeCache();
@@ -28,6 +29,7 @@ public sealed class AssetLoader(string brawlPath)
     private readonly TextureCache _textureCache = new();
     private readonly SwfFileCache _swfFileCache = new();
     private readonly SwfShapeCache _swfShapeCache = new();
+    private readonly SwfOverrideMap _swfFileOverrides = new(brawlPath);
 
     public bool IsAnmLoading(string filePath)
     {
@@ -53,6 +55,8 @@ public sealed class AssetLoader(string brawlPath)
     public ValueTask<SwfFileData> LoadSwf(string filePath)
     {
         string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
+        if (_swfFileOverrides.TryGetValue(finalPath, out SwfOverride overrideData))
+            return ValueTask.FromResult(overrideData.Data);
         return _swfFileCache.LoadAsync(finalPath);
     }
 
@@ -92,6 +96,20 @@ public sealed class AssetLoader(string brawlPath)
         _textureCache.Upload(MAX_TEXTURE_UPLOADS_PER_FRAME);
         _swfShapeCache.Upload(MAX_SWF_TEXTURE_UPLOADS_PER_FRAME);
     }
+
+    public void AddSwfOverride(string relativePath, SwfOverride data)
+    {
+        string fullPath = Path.GetFullPath(Path.Combine(_brawlPath, relativePath));
+        _swfFileOverrides[fullPath] = data;
+    }
+
+    public bool RemoveSwfOverride(string relativePath)
+    {
+        string fullPath = Path.GetFullPath(Path.Combine(_brawlPath, relativePath));
+        return _swfFileOverrides.Remove(fullPath);
+    }
+
+    public IEnumerable<SwfOverride> Overrides => _swfFileOverrides.Overrides;
 
     public void ClearTextureCache()
     {
