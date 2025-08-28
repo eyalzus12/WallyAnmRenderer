@@ -23,6 +23,7 @@ public sealed class PickerWindow
     private string _seasonBorderTypeFilter = "";
     private string _playerThemeTypeFilter = "";
     private string _avatarTypesFilter = "";
+    private string _emojiTypesFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -142,6 +143,12 @@ public sealed class PickerWindow
         if (ImGui.TreeNode("Avatars"))
         {
             AvatarTypesSection(loader, info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Emojis"))
+        {
+            EmojiTypesSection(loader, info);
             ImGui.TreePop();
         }
 
@@ -597,6 +604,52 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(avatarName, selected2))
                 {
                     gfxInfo.AvatarType = avatarType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void EmojiTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        EmojiTypes emojiTypes = loader.SwzFiles.Game.EmojiTypes;
+        ImGui.InputText("Filter avatars", ref _emojiTypesFilter, 256);
+        if (ImGui.BeginListBox("###emojiselect"))
+        {
+            bool selected = gfxInfo.EmojiType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.EmojiType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string emojiType in emojiTypes.Emojis)
+            {
+                string emojiName = emojiType;
+                if (emojiTypes.TryGetInfo(emojiType, out EmojiTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realAvatarName))
+                        emojiName = $"{realAvatarName} ({emojiType})";
+                }
+
+                if (!emojiName.Contains(_emojiTypesFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = emojiType == gfxInfo.EmojiType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(emojiName, selected2))
+                {
+                    gfxInfo.EmojiType = emojiType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }

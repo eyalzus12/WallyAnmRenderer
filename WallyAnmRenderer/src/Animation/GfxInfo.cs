@@ -26,6 +26,7 @@ public sealed class GfxInfo : IGfxInfo
     public string? SeasonBorderType { get; set; }
     public string? PlayerThemeType { get; set; }
     public string? AvatarType { get; set; }
+    public string? EmojiType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
     public GfxMouthOverride? MouthOverride { get; set; }
@@ -189,6 +190,20 @@ public sealed class GfxInfo : IGfxInfo
             else
             {
                 throw new ArgumentException($"Invalid avatar type {AvatarType}");
+            }
+        }
+
+        if (EmojiType is not null)
+        {
+            EmojiTypes emojiTypes = gameFiles.EmojiTypes;
+            if (emojiTypes.TryGetGfx(EmojiType, out EmojiTypesGfx? emoji))
+            {
+                IGfxType emojiGfx = emoji.ToGfxType();
+                // we do a bit of cheating. emoji is meant to be a standalone gfx, so we merge it manually.
+                // this may cause conflicts with other custom arts, but hopefully not.
+                GfxType newGfx = new(gfx);
+                newGfx.CustomArts.AddRange(emojiGfx.CustomArts);
+                gfx = newGfx;
             }
         }
 

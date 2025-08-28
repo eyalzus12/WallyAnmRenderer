@@ -35,9 +35,9 @@ public sealed class CompanionTypes
         }
     }
 
-    public bool TryGetGfx(string name, [MaybeNullWhen(false)] out CompanionTypesGfx spawnBot)
+    public bool TryGetGfx(string name, [MaybeNullWhen(false)] out CompanionTypesGfx companion)
     {
-        return _gfx.TryGetValue(name, out spawnBot);
+        return _gfx.TryGetValue(name, out companion);
     }
 
     public bool TryGetInfo(string name, [MaybeNullWhen(false)] out CompnaionTypeInfo info)

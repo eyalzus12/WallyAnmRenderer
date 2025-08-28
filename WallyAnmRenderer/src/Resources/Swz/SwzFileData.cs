@@ -94,6 +94,7 @@ public sealed class SwzGameFile
     private const string SEASON_BORDER_TYPES = "SeasonBorderTypes.xml";
     private const string PLAYER_THEME_TYPES = "PlayerThemeTypes.xml";
     private const string AVATAR_TYPES = "avatarTypes.csv";
+    private const string EMOJI_TYPES = "EmojiTypes.xml";
     private const string COLOR_SCHEME_TYPES = "ColorSchemeTypes.xml";
     private const string COLOR_EXCEPTION_TYPES = "colorExceptionTypes.csv";
     private const string HERO_TYPES = "HeroTypes.xml";
@@ -109,6 +110,7 @@ public sealed class SwzGameFile
         SEASON_BORDER_TYPES,
         PLAYER_THEME_TYPES,
         AVATAR_TYPES,
+        EMOJI_TYPES,
         COLOR_SCHEME_TYPES,
         COLOR_EXCEPTION_TYPES,
         HERO_TYPES,
@@ -125,6 +127,7 @@ public sealed class SwzGameFile
     public SeasonBorderTypes SeasonBorderTypes { get; }
     public PlayerThemeTypes PlayerThemeTypes { get; }
     public AvatarTypes AvatarTypes { get; }
+    public EmojiTypes EmojiTypes { get; }
     public ColorSchemeTypes ColorSchemeTypes { get; }
     public ColorExceptionTypes ColorExceptionTypes { get; }
     public HeroTypes HeroTypes { get; }
@@ -186,6 +189,10 @@ public sealed class SwzGameFile
         string avatarTypesContent = data[AVATAR_TYPES];
         using (SepReader reader = readerFromText(avatarTypesContent))
             AvatarTypes = new(reader);
+
+        string emojiTypesContent = data[EMOJI_TYPES];
+        XElement emojiTypesElement = XElement.Parse(emojiTypesContent);
+        EmojiTypes = new(emojiTypesElement);
 
         string colorSchemeTypesContent = data[COLOR_SCHEME_TYPES];
         XElement colorSchemeElement = XElement.Parse(colorSchemeTypesContent);
