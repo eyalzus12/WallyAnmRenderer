@@ -25,6 +25,7 @@ public sealed class PickerWindow
     private string _playerThemeTypeFilter = "";
     private string _avatarTypesFilter = "";
     private string _emojiTypesFilter = "";
+    private string _endMatchVoicelineTypesFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -150,6 +151,12 @@ public sealed class PickerWindow
         if (ImGui.TreeNode("Emojis"))
         {
             EmojiTypesSection(loader, info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("End of Match Voicelines"))
+        {
+            EndMatchVoicelineTypesSection(loader, info);
             ImGui.TreePop();
         }
 
@@ -655,8 +662,8 @@ public sealed class PickerWindow
                 if (emojiTypes.TryGetInfo(emojiType, out EmojiTypeInfo info))
                 {
                     string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realAvatarName))
-                        emojiName = $"{realAvatarName} ({emojiType})";
+                    if (loader.TryGetStringName(displayNameKey, out string? realEmojiName))
+                        emojiName = $"{realEmojiName} ({emojiType})";
                 }
 
                 if (!emojiName.Contains(_emojiTypesFilter, StringComparison.CurrentCultureIgnoreCase))
@@ -667,6 +674,55 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(emojiName, selected2))
                 {
                     gfxInfo.EmojiType = emojiType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void EndMatchVoicelineTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_GameUI");
+        ImGui.PopTextWrapPos();
+
+        EndMatchVoicelineTypes endMatchVoicelineTypes = loader.SwzFiles.Game.EndMatchVoicelineTypes;
+        ImGui.InputText("Filter voicelines", ref _endMatchVoicelineTypesFilter, 256);
+        if (ImGui.BeginListBox("###voicelineselect"))
+        {
+            bool selected = gfxInfo.EndMatchVoicelineType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.EndMatchVoicelineType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string endMatchVoicelineType in endMatchVoicelineTypes.Voicelines)
+            {
+                string endMatchVoicelineName = endMatchVoicelineType;
+                if (endMatchVoicelineTypes.TryGetInfo(endMatchVoicelineType, out EndMatchVoicelineTypesInfo info))
+                {
+                    // the wwise sound event contains the spoken word
+                    endMatchVoicelineName = $"{info.WWiseSoundName} ({endMatchVoicelineType})";
+                }
+
+                if (!endMatchVoicelineName.Contains(_endMatchVoicelineTypesFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = endMatchVoicelineType == gfxInfo.EndMatchVoicelineType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(endMatchVoicelineName, selected2))
+                {
+                    gfxInfo.EndMatchVoicelineType = endMatchVoicelineType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }

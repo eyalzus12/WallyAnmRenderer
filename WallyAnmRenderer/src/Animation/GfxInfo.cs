@@ -27,6 +27,7 @@ public sealed class GfxInfo : IGfxInfo
     public string? PlayerThemeType { get; set; }
     public string? AvatarType { get; set; }
     public string? EmojiType { get; set; }
+    public string? EndMatchVoicelineType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
     public GfxMouthOverride? MouthOverride { get; set; }
@@ -203,6 +204,20 @@ public sealed class GfxInfo : IGfxInfo
                 // this may cause conflicts with other custom arts, but hopefully not.
                 GfxType newGfx = new(gfx);
                 newGfx.CustomArts.AddRange(emojiGfx.CustomArts);
+                gfx = newGfx;
+            }
+        }
+
+        if (EndMatchVoicelineType is not null)
+        {
+            EndMatchVoicelineTypes endMatchVoicelineTypes = gameFiles.EndMatchVoicelineTypes;
+            if (endMatchVoicelineTypes.TryGetGfx(EndMatchVoicelineType, out EndMatchVoicelineTypesGfx? voiceline))
+            {
+                IGfxType voicelineGfx = voiceline.ToGfxType();
+                // we do a bit of cheating. voiceline is meant to be a standalone gfx, so we merge it manually.
+                // this may cause conflicts with other custom arts, but hopefully not.
+                GfxType newGfx = new(gfx);
+                newGfx.CustomArts.AddRange(voicelineGfx.CustomArts);
                 gfx = newGfx;
             }
         }

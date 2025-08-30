@@ -11,10 +11,10 @@ public readonly record struct EmojiTypeInfo(string EmojiName, string DisplayName
 {
     public static EmojiTypeInfo From(XElement element)
     {
-        string companionName = element.Attribute("EmojiName")?.Value ?? throw new ArgumentException("Missing CompanionName");
+        string emojiName = element.Attribute("EmojiName")?.Value ?? throw new ArgumentException("Missing EmojiName");
         string displayNameKey = element.Element("DisplayNameKey")?.Value ?? throw new ArgumentException("Missing DisplayNameKey");
         string category = element.Element("Category")?.Value ?? throw new ArgumentException("Missing Category");
-        return new(companionName, displayNameKey, category);
+        return new(emojiName, displayNameKey, category);
     }
 }
 
