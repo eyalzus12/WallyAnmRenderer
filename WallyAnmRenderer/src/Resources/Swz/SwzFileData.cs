@@ -96,6 +96,7 @@ public sealed class SwzGameFile
     private const string AVATAR_TYPES = "avatarTypes.csv";
     private const string EMOJI_TYPES = "EmojiTypes.xml";
     private const string END_MATCH_VOICELINE_TYPES = "EndMatchVoicelineTypes.xml";
+    private const string CLIENT_THEME_TYPES = "ClientThemeTypes.xml";
     private const string COLOR_SCHEME_TYPES = "ColorSchemeTypes.xml";
     private const string COLOR_EXCEPTION_TYPES = "colorExceptionTypes.csv";
     private const string HERO_TYPES = "HeroTypes.xml";
@@ -113,6 +114,7 @@ public sealed class SwzGameFile
         AVATAR_TYPES,
         EMOJI_TYPES,
         END_MATCH_VOICELINE_TYPES,
+        CLIENT_THEME_TYPES,
         COLOR_SCHEME_TYPES,
         COLOR_EXCEPTION_TYPES,
         HERO_TYPES,
@@ -131,6 +133,7 @@ public sealed class SwzGameFile
     public AvatarTypes AvatarTypes { get; }
     public EmojiTypes EmojiTypes { get; }
     public EndMatchVoicelineTypes EndMatchVoicelineTypes { get; }
+    public ClientThemeTypes ClientThemeTypes { get; }
     public ColorSchemeTypes ColorSchemeTypes { get; }
     public ColorExceptionTypes ColorExceptionTypes { get; }
     public HeroTypes HeroTypes { get; }
@@ -200,6 +203,10 @@ public sealed class SwzGameFile
         string endMatchVoicelineTypesContent = data[END_MATCH_VOICELINE_TYPES];
         XElement endMatchVoicelineTypesElement = XElement.Parse(endMatchVoicelineTypesContent);
         EndMatchVoicelineTypes = new(endMatchVoicelineTypesElement);
+
+        string clientThemeTypesContent = data[CLIENT_THEME_TYPES];
+        XElement clientThemeTypesElement = XElement.Parse(clientThemeTypesContent);
+        ClientThemeTypes = new(clientThemeTypesElement);
 
         string colorSchemeTypesContent = data[COLOR_SCHEME_TYPES];
         XElement colorSchemeElement = XElement.Parse(colorSchemeTypesContent);

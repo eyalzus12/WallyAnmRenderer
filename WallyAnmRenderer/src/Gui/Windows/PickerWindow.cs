@@ -26,6 +26,7 @@ public sealed class PickerWindow
     private string _avatarTypesFilter = "";
     private string _emojiTypesFilter = "";
     private string _endMatchVoicelineTypesFilter = "";
+    private string _clientThemeTypesFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -151,6 +152,12 @@ public sealed class PickerWindow
         if (ImGui.TreeNode("Emojis"))
         {
             EmojiTypesSection(loader, info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Event Logos"))
+        {
+            ClientThemeTypesSection(loader, info);
             ImGui.TreePop();
         }
 
@@ -723,6 +730,50 @@ public sealed class PickerWindow
                 if (ImGui.Selectable(endMatchVoicelineName, selected2))
                 {
                     gfxInfo.EndMatchVoicelineType = endMatchVoicelineType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+    }
+
+    private void ClientThemeTypesSection(Loader loader, GfxInfo gfxInfo)
+    {
+        if (loader.SwzFiles?.Game is null)
+        {
+            ImGui.Text("Swz files were not loaded");
+            return;
+        }
+
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_ClientThemeLogos");
+        ImGui.PopTextWrapPos();
+
+        ClientThemeTypes clientThemeTypes = loader.SwzFiles.Game.ClientThemeTypes;
+        ImGui.InputText("Filter event logos", ref _clientThemeTypesFilter, 256);
+        if (ImGui.BeginListBox("###clientthemeselect"))
+        {
+            bool selected = gfxInfo.ClientThemeType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.ClientThemeType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string endMatchVoicelineType in clientThemeTypes.Themes)
+            {
+                string clientThemeName = endMatchVoicelineType;
+
+                if (!clientThemeName.Contains(_clientThemeTypesFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = endMatchVoicelineType == gfxInfo.ClientThemeType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(clientThemeName, selected2))
+                {
+                    gfxInfo.ClientThemeType = endMatchVoicelineType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }

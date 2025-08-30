@@ -28,6 +28,7 @@ public sealed class GfxInfo : IGfxInfo
     public string? AvatarType { get; set; }
     public string? EmojiType { get; set; }
     public string? EndMatchVoicelineType { get; set; }
+    public string? ClientThemeType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
 
     public GfxMouthOverride? MouthOverride { get; set; }
@@ -218,6 +219,20 @@ public sealed class GfxInfo : IGfxInfo
                 // this may cause conflicts with other custom arts, but hopefully not.
                 GfxType newGfx = new(gfx);
                 newGfx.CustomArts.AddRange(voicelineGfx.CustomArts);
+                gfx = newGfx;
+            }
+        }
+
+        if (ClientThemeType is not null)
+        {
+            ClientThemeTypes endMatchVoicelineTypes = gameFiles.ClientThemeTypes;
+            if (endMatchVoicelineTypes.TryGetGfx(ClientThemeType, out ClientThemeTypesGfx? theme))
+            {
+                IGfxType themeGfx = theme.ToGfxType();
+                // we do a bit of cheating. client theme is meant to be a standalone gfx, so we merge it manually.
+                // this may cause conflicts with other custom arts, but hopefully not.
+                GfxType newGfx = new(gfx);
+                newGfx.CustomArts.AddRange(themeGfx.CustomArts);
                 gfx = newGfx;
             }
         }
