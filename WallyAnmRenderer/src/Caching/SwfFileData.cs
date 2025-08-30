@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using AbcDisassembler;
+using AbcDisassembler.Instructions;
+using AbcDisassembler.Multinames;
+using AbcDisassembler.Traits;
 using SwfLib;
 using SwfLib.Data;
 using SwfLib.Tags;
@@ -102,7 +104,7 @@ public sealed class SwfFileData
         for (int i = 0; i < abc.Instances.Count; ++i)
         {
             InstanceInfo instance = abc.Instances[i];
-            IBaseMultiname cmn = abc.ConstantPool.Multinames[(int)instance.Name];
+            IMultiname cmn = abc.ConstantPool.Multinames[(int)instance.Name];
             if (cmn is not INamedMultiname classMultiname) continue;
             string className = abc.ConstantPool.Strings[(int)classMultiname.Name];
 
@@ -111,7 +113,7 @@ public sealed class SwfFileData
             {
                 if (trait.Kind == TraitType.Method)
                 {
-                    IBaseMultiname mmn = abc.ConstantPool.Multinames[(int)trait.Name];
+                    IMultiname mmn = abc.ConstantPool.Multinames[(int)trait.Name];
                     if (mmn is not INamedMultiname methodMultiname) continue;
                     string methodName = abc.ConstantPool.Strings[(int)methodMultiname.Name];
                     if (methodName != "frame1") continue;
