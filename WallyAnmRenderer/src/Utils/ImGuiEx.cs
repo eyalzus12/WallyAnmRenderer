@@ -30,6 +30,14 @@ public static class ImGuiEx
         return ImGui.InputScalar(label, ImGuiDataType.Double, valuePtr, stepPtr, stepFastPtr);
     }
 
+    public static unsafe bool DragDouble(string label, ref double value, float speed = 1, double minValue = double.MinValue, double maxValue = double.MaxValue)
+    {
+        IntPtr valuePtr = (IntPtr)Unsafe.AsPointer(ref value);
+        IntPtr minValuePtr = (IntPtr)(&minValue);
+        IntPtr maxValuePtr = (IntPtr)(&maxValue);
+        return ImGui.DragScalar(label, ImGuiDataType.Double, valuePtr, speed, minValuePtr, maxValuePtr);
+    }
+
     public static uint ColorPicker3Hex(string label, uint col, Vector2 size)
     {
         byte r = (byte)(col >> 16), g = (byte)(col >> 8), b = (byte)col;

@@ -25,6 +25,7 @@ public sealed class Editor
     private Camera2D _cam;
 
     public TimeSpan Time { get; set; } = TimeSpan.FromSeconds(0);
+    private double _animationFps = 24.0;
     private bool _paused = false;
 
     private PathPreferences PathPrefs { get; }
@@ -88,20 +89,15 @@ public sealed class Editor
             }
         };
 
-        TimeWindow.Paused += (_, paused) =>
-        {
-            _paused = paused;
-        };
-
         TimeWindow.FrameSeeked += (_, frame) =>
         {
-            Time = TimeSpan.FromSeconds(frame / 24.0);
+            Time = TimeSpan.FromSeconds(frame / _animationFps);
             Time += TimeSpan.FromTicks(1); // required due to imprecision
         };
 
         TimeWindow.FrameMove += (_, frame) =>
         {
-            Time += TimeSpan.FromSeconds(frame / 24.0);
+            Time += TimeSpan.FromSeconds(frame / _animationFps);
             Time += TimeSpan.FromTicks(frame); // required due to imprecision
         };
     }
@@ -171,7 +167,7 @@ public sealed class Editor
             }
             else
             {
-                long frame = (long)Math.Floor(24 * Time.TotalSeconds);
+                long frame = (long)Math.Floor(_animationFps * Time.TotalSeconds);
                 (IGfxType gfxType, string animation, bool flip) = info.Value;
 
                 ExportModal.Update(PathPrefs, Animator, gfxType, animation, frame, flip);
@@ -291,7 +287,7 @@ public sealed class Editor
             if (animDataTask.IsCompletedSuccessfully)
             {
                 AnimationData animData = animDataTask.Result;
-                TimeWindow.Show(animData, Time, _paused);
+                TimeWindow.Show(animData, Time, ref _paused, ref _animationFps);
             }
         }
         if (PickerWindow.Open)

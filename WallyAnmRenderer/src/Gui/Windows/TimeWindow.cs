@@ -19,9 +19,8 @@ public sealed class TimeWindow
 
     public event EventHandler<long>? FrameSeeked;
     public event EventHandler<long>? FrameMove;
-    public event EventHandler<bool>? Paused;
 
-    public void Show(AnimationData data, TimeSpan time, bool paused)
+    public void Show(AnimationData data, TimeSpan time, ref bool paused, ref double fps)
     {
         ImGui.Begin("Timeline", ref _open);
 
@@ -33,7 +32,7 @@ public sealed class TimeWindow
             int textPad = (int)Math.Floor(Math.Log10(frames)) + 1;
             int neededWidth = BASE_WIDTH + textPad * TEXT_WIDTH_MULT;
 
-            long currentFrame = (long)Math.Floor(24 * time.TotalSeconds);
+            long currentFrame = (long)Math.Floor(fps * time.TotalSeconds);
             currentFrame = MathUtils.SafeMod(currentFrame, frames);
             for (long i = 0; i < frames; ++i)
             {
@@ -58,8 +57,14 @@ public sealed class TimeWindow
             }
         }
 
+        ImGui.SetNextItemWidth(80);
+        ImGuiEx.DragDouble("Animation FPS", ref fps, 0.5f);
+        ImGui.SameLine();
+        if (ImGui.Button("Reset"))
+            fps = 24;
+
         if (ImGui.Button(paused ? "Unpause" : "Pause"))
-            Paused?.Invoke(this, !paused);
+            paused = !paused;
 
         if (ImGui.Button("Prev frame"))
             FrameMove?.Invoke(this, -1);
