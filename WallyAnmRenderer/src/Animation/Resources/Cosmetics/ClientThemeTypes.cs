@@ -28,6 +28,10 @@ public sealed class ClientThemeTypes
             string name = child.Attribute("ClientThemeName")!.Value;
             if (name == "Template") continue;
 
+            // ignore those that have no custom art, because they just clutter
+            if (child.Element("AnimCustomArt") is null)
+                continue;
+
             ClientThemeTypesInfo info = ClientThemeTypesInfo.From(child);
             _infos[info.ClientThemeName] = info;
             ClientThemeTypesGfx gfx = new(child);
