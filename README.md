@@ -10,10 +10,12 @@
   * Held item
   * Sidekick
   * Companion
+  * Color
   * Podium
   * Loading frame
   * UI theme
-  * Color
+  * Avatar
+  * Emoji
 * A full implementation of the game's animation system.
 * Pause, frame step, and seeing exact animation timeline.
 * Listing the sprites and their data.
@@ -22,6 +24,7 @@
 * Exporting as svg or png.
 
 #### Planned features:
+* Exporting as png sequence/apng.
 * Bulk exporting of many animations.
 * Support for animation loop points.
 * Correct timing for attack animations.
