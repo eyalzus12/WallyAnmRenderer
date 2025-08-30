@@ -8,6 +8,7 @@ namespace WallyAnmRenderer;
 
 public sealed class PickerWindow
 {
+    private static readonly Vector4 NOTE_COLOR = ImGuiEx.RGBHexToVec4(0x00AAFF);
     private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
     private static readonly string[] TEAM_OPTIONS = ["None", "Red", "Blue"];
 
@@ -382,6 +383,10 @@ public sealed class PickerWindow
             return;
         }
 
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(NOTE_COLOR, "NOTE: Each companion is intended to be used with its unique anm file");
+        ImGui.PopTextWrapPos();
+
         CompanionTypes companionTypes = loader.SwzFiles.Game.CompanionTypes;
         ImGui.InputText("Filter companions", ref _companionTypeFilter, 256);
         if (ImGui.BeginListBox("###companionselect"))
@@ -478,6 +483,10 @@ public sealed class PickerWindow
             return;
         }
 
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_LoadingFrames");
+        ImGui.PopTextWrapPos();
+
         SeasonBorderTypes seasonBorderTypes = loader.SwzFiles.Game.SeasonBorderTypes;
         ImGui.InputText("Filter loading frames", ref _seasonBorderTypeFilter, 256);
         if (ImGui.BeginListBox("###loadingframeselect"))
@@ -523,6 +532,10 @@ public sealed class PickerWindow
             ImGui.Text("Swz files were not loaded");
             return;
         }
+
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_PlayerThemes");
+        ImGui.PopTextWrapPos();
 
         ImGui.PushTextWrapPos();
         ImGui.TextColored(new(1, 1, 0, 1), "Some older UI themes may not work due to BMG-ness.");
@@ -620,8 +633,12 @@ public sealed class PickerWindow
             return;
         }
 
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_Emojis");
+        ImGui.PopTextWrapPos();
+
         EmojiTypes emojiTypes = loader.SwzFiles.Game.EmojiTypes;
-        ImGui.InputText("Filter avatars", ref _emojiTypesFilter, 256);
+        ImGui.InputText("Filter emojis", ref _emojiTypesFilter, 256);
         if (ImGui.BeginListBox("###emojiselect"))
         {
             bool selected = gfxInfo.EmojiType is null;
