@@ -39,6 +39,7 @@ public sealed class Editor
     public OverridesWindow OverridesWindow { get; } = new();
     public AnmWindow AnmWindow { get; } = new();
     public AnimationInfoWindow AnimationInfoWindow { get; } = new();
+    public GfxInfoWindow GfxInfoWindow { get; } = new();
     public TimeWindow TimeWindow { get; } = new();
     public PickerWindow PickerWindow { get; } = new();
     public ExportModal ExportModal { get; } = new();
@@ -156,9 +157,10 @@ public sealed class Editor
         Gui();
         bool finishedLoading = true;
 
+        IGfxType? gfxType = null;
         Task<BoneSprite[]>? spritesTask = null;
         BoneSprite? highlightedSprite = null;
-        if (Animator?.Loader.SwzFiles?.Game is not null && GfxInfo.AnimationPicked)
+        if (Animator?.Loader.SwzFiles?.Game is not null)
         {
             var info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
             if (info is null)
@@ -167,14 +169,17 @@ public sealed class Editor
             }
             else
             {
-                long frame = (long)Math.Floor(_animationFps * Time.TotalSeconds);
-                (IGfxType gfxType, string animation, bool flip) = info.Value;
+                (gfxType, bool flip) = info.Value;
+                if (GfxInfo.AnimationPicked)
+                {
+                    string animation = GfxInfo.Animation;
+                    long frame = (long)Math.Floor(_animationFps * Time.TotalSeconds);
+                    ExportModal.Update(PathPrefs, Animator, gfxType, animation, frame, flip);
 
-                ExportModal.Update(PathPrefs, Animator, gfxType, animation, frame, flip);
-
-                spritesTask = Animator.GetAnimationInfo(gfxType, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
-                if (!spritesTask.IsCompletedSuccessfully)
-                    finishedLoading = false;
+                    spritesTask = Animator.GetAnimationInfo(gfxType, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
+                    if (!spritesTask.IsCompletedSuccessfully)
+                        finishedLoading = false;
+                }
             }
         }
 
@@ -183,10 +188,10 @@ public sealed class Editor
             sprites = spritesTask.Result;
 
         // done separate from other UI to have access to the animation information
-        if (AnimationInfoWindow.Open && Animator is not null && GfxInfo.AnimationPicked)
-        {
+        if (Animator is not null && GfxInfo.AnimationPicked && AnimationInfoWindow.Open)
             AnimationInfoWindow.Show(sprites, ref highlightedSprite);
-        }
+        if (GfxInfoWindow.Open)
+            GfxInfoWindow.Show(gfxType);
 
         Rl.BeginTextureMode(ViewportWindow.Framebuffer);
         Rl.BeginMode2D(_cam);
@@ -251,7 +256,7 @@ public sealed class Editor
             }
         }
 
-        if (!finishedLoading)
+        if (GfxInfo.AnimationPicked && !finishedLoading)
         {
             string text = "Loading...";
             int textSize = Rl.MeasureText(text, 100);
@@ -307,6 +312,7 @@ public sealed class Editor
             if (ImGui.MenuItem("Pick cosmetics", null, PickerWindow.Open)) PickerWindow.Open = !PickerWindow.Open;
             if (ImGui.MenuItem("Animation timeline", null, TimeWindow.Open)) TimeWindow.Open = !TimeWindow.Open;
             if (ImGui.MenuItem("Animation info", null, AnimationInfoWindow.Open)) AnimationInfoWindow.Open = !AnimationInfoWindow.Open;
+            if (ImGui.MenuItem("Gfx info", null, GfxInfoWindow.Open)) GfxInfoWindow.Open = !GfxInfoWindow.Open;
             ImGui.EndMenu();
         }
 

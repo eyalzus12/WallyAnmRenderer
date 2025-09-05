@@ -39,17 +39,14 @@ public sealed class GfxInfo : IGfxInfo
     [MemberNotNullWhen(true, nameof(Animation))]
     public bool AnimationPicked => AnimClass is not null && AnimFile is not null && Animation is not null;
 
-    public (IGfxType gfx, string animation, bool flip)? ToGfxType(SwzGameFile gameFiles)
+    public (IGfxType gfx, bool flip)? ToGfxType(SwzGameFile gameFiles)
     {
-        if (!AnimationPicked)
-            return null;
-
         ColorExceptionTypes colorExceptionTypes = gameFiles.ColorExceptionTypes;
 
         IGfxType gfx = new GfxType()
         {
-            AnimFile = AnimFile,
-            AnimClass = AnimClass,
+            AnimFile = AnimFile ?? "",
+            AnimClass = AnimClass ?? "a__Animation",
             AnimScale = AnimScale,
         };
 
@@ -247,7 +244,7 @@ public sealed class GfxInfo : IGfxInfo
             gfx = gfx.WithEyesOverride(EyesOverride.Value);
         }
 
-        return (gfx, Animation, Flip);
+        return (gfx, Flip);
     }
 
 }
