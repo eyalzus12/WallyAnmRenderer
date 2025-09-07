@@ -4,6 +4,7 @@ namespace WallyAnmRenderer;
 
 public interface IGfxInfo
 {
+    string? Animation { get; }
     bool AnimationPicked { get; }
-    (IGfxType gfx, string animation, bool flip)? ToGfxType(SwzGameFile gameFiles);
+    (IGfxType gfx, bool flip)? ToGfxType(SwzGameFile gameFiles);
 }
