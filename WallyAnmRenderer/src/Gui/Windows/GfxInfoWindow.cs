@@ -25,7 +25,7 @@ public sealed class GfxInfoWindow
                 foreach (ICustomArt customArt in gfxType.CustomArts)
                 {
                     hasAny = true;
-                    uint nodeId = customArtNode.AddOrUpdate(customArt, 0u, x => x + 1); ;
+                    uint nodeId = customArtNode.AddOrUpdate(customArt, 0u, x => x + 1);
 
                     if (ImGui.TreeNode($"{customArt.FileName} {customArt.Name}##{nodeId}"))
                     {
