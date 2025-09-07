@@ -123,6 +123,12 @@ public sealed class PickerWindow
             ImGui.TreePop();
         }
 
+        if (ImGui.TreeNode("Weapon spawn colors"))
+        {
+            CrateColorsSection(loader, info);
+            ImGui.TreePop();
+        }
+
         ImGui.SeparatorText("UI");
 
         if (ImGui.TreeNode("Podiums"))
@@ -822,6 +828,29 @@ public sealed class PickerWindow
             if (selected2) ImGui.PopStyleColor();
 
             ImGui.EndListBox();
+        }
+    }
+
+    private static void CrateColorsSection(Loader loader, GfxInfo info)
+    {
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(NOTE_COLOR, "NOTE: Pure black is treated by the game and program as no swap");
+        ImGui.PopTextWrapPos();
+
+        uint ogCrateColorA = info.CrateColorA;
+        info.CrateColorA = ImGuiEx.ColorPicker3Hex("##outer", info.CrateColorA);
+        ImGui.SameLine();
+        ImGui.Text("Outer color");
+
+        uint ogCrateColorB = info.CrateColorB;
+        info.CrateColorB = ImGuiEx.ColorPicker3Hex("##inner", info.CrateColorB);
+        ImGui.SameLine();
+        ImGui.Text("Inner color");
+
+        // gotta reload the cache because it's not keyed by the color swap
+        if (ogCrateColorA != info.CrateColorA || ogCrateColorB != info.CrateColorB)
+        {
+            loader.AssetLoader.ClearSwfShapeCache();
         }
     }
 

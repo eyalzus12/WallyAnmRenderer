@@ -38,7 +38,7 @@ public static class ImGuiEx
         return ImGui.DragScalar(label, ImGuiDataType.Double, valuePtr, speed, minValuePtr, maxValuePtr);
     }
 
-    public static uint ColorPicker3Hex(string label, uint col, Vector2 size)
+    public static uint ColorPicker3Hex(string label, uint col, Vector2 size = default)
     {
         byte r = (byte)(col >> 16), g = (byte)(col >> 8), b = (byte)col;
         Vector3 imCol = new((float)r / 255, (float)g / 255, (float)b / 255);

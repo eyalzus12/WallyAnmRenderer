@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading;
 
@@ -30,6 +32,9 @@ public sealed class GfxInfo : IGfxInfo
     public string? EndMatchVoicelineType { get; set; }
     public string? ClientThemeType { get; set; }
     public ColorScheme? ColorScheme { get; set; }
+
+    public uint CrateColorA { get; set; } = 0;
+    public uint CrateColorB { get; set; } = 0;
 
     public GfxMouthOverride? MouthOverride { get; set; }
     public GfxEyesOverride? EyesOverride { get; set; }
@@ -111,10 +116,8 @@ public sealed class GfxInfo : IGfxInfo
                 IGfxType companionGfx = companion.ToGfxType(ColorScheme);
                 // we do a bit of cheating. companion is meant to be a standalone gfx, so we merge it manually.
                 // this should be safe because the art type is unique.
-                GfxType newGfx = new(gfx);
-                newGfx.CustomArts.AddRange(companionGfx.CustomArts);
-                newGfx.ColorSwaps.AddRange(companionGfx.ColorSwaps);
-                gfx = newGfx;
+                gfx = AddCustomArts(gfx, companionGfx.CustomArts);
+                gfx = AddColorSwaps(gfx, companionGfx.ColorSwaps);
             }
             else
             {
@@ -130,9 +133,7 @@ public sealed class GfxInfo : IGfxInfo
                 IGfxType podiumGfx = podium.ToGfxType(PodiumTypeTeam);
                 // we do a bit of cheating. podium is meant to be a standalone gfx, so we merge it manually.
                 // this may cause conflicts with other custom arts, but hopefully not.
-                GfxType newGfx = new(gfx);
-                newGfx.CustomArts.AddRange(podiumGfx.CustomArts);
-                gfx = newGfx;
+                gfx = AddCustomArts(gfx, podiumGfx.CustomArts);
             }
             else
             {
@@ -148,9 +149,7 @@ public sealed class GfxInfo : IGfxInfo
                 IGfxType loadingFrameGfx = loadingFrame.ToGfxType();
                 // we do a bit of cheating. season border is meant to be a standalone gfx, so we merge it manually.
                 // this may cause conflicts with other custom arts, but hopefully not.
-                GfxType newGfx = new(gfx);
-                newGfx.CustomArts.AddRange(loadingFrameGfx.CustomArts);
-                gfx = newGfx;
+                gfx = AddCustomArts(gfx, loadingFrameGfx.CustomArts);
             }
             else
             {
@@ -166,9 +165,7 @@ public sealed class GfxInfo : IGfxInfo
                 IGfxType uiThemeGfx = uiTheme.ToGfxType();
                 // we do a bit of cheating. player theme is meant to be a standalone gfx, so we merge it manually.
                 // this may cause conflicts with other custom arts, but hopefully not.
-                GfxType newGfx = new(gfx);
-                newGfx.CustomArts.AddRange(uiThemeGfx.CustomArts);
-                gfx = newGfx;
+                gfx = AddCustomArts(gfx, uiThemeGfx.CustomArts);
             }
             else
             {
@@ -182,9 +179,7 @@ public sealed class GfxInfo : IGfxInfo
             if (avatarTypes.TryGetGfx(AvatarType, out AvatarTypesGfx? avatar))
             {
                 ICustomArt flagCustomArt = avatar.ToFlagCustomArt();
-                GfxType newGfx = new(gfx);
-                newGfx.CustomArts.Add(flagCustomArt);
-                gfx = newGfx;
+                gfx = AddCustomArts(gfx, [flagCustomArt]);
             }
             else
             {
@@ -200,9 +195,7 @@ public sealed class GfxInfo : IGfxInfo
                 IGfxType emojiGfx = emoji.ToGfxType();
                 // we do a bit of cheating. emoji is meant to be a standalone gfx, so we merge it manually.
                 // this may cause conflicts with other custom arts, but hopefully not.
-                GfxType newGfx = new(gfx);
-                newGfx.CustomArts.AddRange(emojiGfx.CustomArts);
-                gfx = newGfx;
+                gfx = AddCustomArts(gfx, emojiGfx.CustomArts);
             }
         }
 
@@ -214,9 +207,7 @@ public sealed class GfxInfo : IGfxInfo
                 IGfxType voicelineGfx = voiceline.ToGfxType();
                 // we do a bit of cheating. voiceline is meant to be a standalone gfx, so we merge it manually.
                 // this may cause conflicts with other custom arts, but hopefully not.
-                GfxType newGfx = new(gfx);
-                newGfx.CustomArts.AddRange(voicelineGfx.CustomArts);
-                gfx = newGfx;
+                gfx = AddCustomArts(gfx, voicelineGfx.CustomArts);
             }
         }
 
@@ -228,10 +219,18 @@ public sealed class GfxInfo : IGfxInfo
                 IGfxType themeGfx = theme.ToGfxType();
                 // we do a bit of cheating. client theme is meant to be a standalone gfx, so we merge it manually.
                 // this may cause conflicts with other custom arts, but hopefully not.
-                GfxType newGfx = new(gfx);
-                newGfx.CustomArts.AddRange(themeGfx.CustomArts);
-                gfx = newGfx;
+                gfx = AddCustomArts(gfx, themeGfx.CustomArts);
             }
+        }
+
+        if (CrateColorA != 0)
+        {
+            gfx = AddColorSwaps(gfx, [CrateColorUtils.GetCrateAColorSwap(CrateColorA)]);
+        }
+
+        if (CrateColorB != 0)
+        {
+            gfx = AddColorSwaps(gfx, [CrateColorUtils.GetCrateBColorSwap(CrateColorB)]);
         }
 
         if (MouthOverride is not null)
@@ -247,4 +246,17 @@ public sealed class GfxInfo : IGfxInfo
         return (gfx, Flip);
     }
 
+    private static GfxType AddCustomArts(IGfxType gfx, IEnumerable<ICustomArt> customArts)
+    {
+        GfxType gfxType = gfx is GfxType a ? a : new(gfx);
+        gfxType.CustomArts.AddRange(customArts);
+        return gfxType;
+    }
+
+    private static GfxType AddColorSwaps(IGfxType gfx, IEnumerable<IColorSwap> colorSwaps)
+    {
+        GfxType gfxType = gfx is GfxType a ? a : new(gfx);
+        gfxType.ColorSwaps.AddRange(colorSwaps);
+        return gfxType;
+    }
 }
