@@ -22,6 +22,9 @@ public sealed class Editor
     public const int INITIAL_SCREEN_WIDTH = 1280;
     public const int INITIAL_SCREEN_HEIGHT = 720;
 
+    public const string LOADING_TEXT = "Loading...";
+    public static readonly RlColor LOADING_TEXT_COLOR = RlColor.RayWhite with { A = 64 };
+
     private Camera2D _cam;
 
     public TimeSpan Time { get; set; } = TimeSpan.FromSeconds(0);
@@ -258,11 +261,10 @@ public sealed class Editor
 
         if (GfxInfo.AnimationPicked && !finishedLoading)
         {
-            string text = "Loading...";
-            int textSize = Rl.MeasureText(text, 100);
+            int textSize = Rl.MeasureText(LOADING_TEXT, 100);
             float width = ViewportWindow.Bounds.Width;
             float height = ViewportWindow.Bounds.Height;
-            Rl.DrawText(text, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, RlColor.RayWhite);
+            Rl.DrawText(LOADING_TEXT, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, LOADING_TEXT_COLOR);
         }
 
         Rl.EndMode2D();
