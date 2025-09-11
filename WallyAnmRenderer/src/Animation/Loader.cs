@@ -19,6 +19,7 @@ public sealed class Loader : ILoader
 {
     private CancellationTokenSource? _loadSwzToken = null;
     private CancellationTokenSource? _loadLangToken = null;
+    private BoneDatabase? _boneDatabase = null;
 
     private string _brawlPath;
     public string BrawlPath
@@ -184,8 +185,8 @@ public sealed class Loader : ILoader
         return LangFile.Entries.TryGetValue(stringKey, out stringName);
     }
 
-    public ValueTask<IBoneDatabase> GetBoneDatabase()
+    public async ValueTask<IBoneDatabase> GetBoneDatabase()
     {
-        return ValueTask.FromResult((IBoneDatabase)BoneDatabase.Instance);
+        return _boneDatabase ??= await BoneDatabase.NewAsync();
     }
 }
