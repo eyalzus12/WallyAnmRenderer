@@ -11,6 +11,7 @@ using BrawlhallaAnimLib.Anm;
 using BrawlhallaLangReader;
 using WallyAnmSpinzor;
 using BrawlhallaAnimLib.Gfx;
+using BrawlhallaAnimLib.Bones;
 
 namespace WallyAnmRenderer;
 
@@ -181,5 +182,10 @@ public sealed class Loader : ILoader
         }
 
         return LangFile.Entries.TryGetValue(stringKey, out stringName);
+    }
+
+    public ValueTask<IBoneDatabase> GetBoneDatabase()
+    {
+        return ValueTask.FromResult((IBoneDatabase)BoneDatabase.Instance);
     }
 }
