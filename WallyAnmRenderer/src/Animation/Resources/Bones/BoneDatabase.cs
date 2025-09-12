@@ -77,7 +77,7 @@ public class BoneDatabase : IBoneDatabase
                     {
                         UintValue artType = (UintValue)stack.Pop();
                         StringValue name = (StringValue)stack.Pop();
-                        db.Register1(name.Val, artType.Val);
+                        db.RegisterBone(name.Val, artType.Val);
                     }
                     else if (numArgs == 4)
                     {
@@ -85,7 +85,7 @@ public class BoneDatabase : IBoneDatabase
                         ByteValue boneType = (ByteValue)stack.Pop();
                         UintValue artType = (UintValue)stack.Pop();
                         StringValue name = (StringValue)stack.Pop();
-                        db.Register2(name.Val, artType.Val, boneType.Val, dir.Val);
+                        db.RegisterBoneWithType(name.Val, artType.Val, boneType.Val, dir.Val);
                     }
                     else if (numArgs == 5)
                     {
@@ -94,7 +94,7 @@ public class BoneDatabase : IBoneDatabase
                         ByteValue boneType = (ByteValue)stack.Pop();
                         UintValue artType = (UintValue)stack.Pop();
                         StringValue name = (StringValue)stack.Pop();
-                        db.Register2(name.Val, artType.Val, boneType.Val, dir.Val, hasRVar.Val);
+                        db.RegisterBoneWithType(name.Val, artType.Val, boneType.Val, dir.Val, hasRVar.Val);
                     }
                     break;
                 default:
@@ -125,7 +125,7 @@ public class BoneDatabase : IBoneDatabase
             {
                 name = "0" + name;
             }
-            db.Register1("a_Special" + name, 2);
+            db.RegisterBone("a_Special" + name, 2);
         }
         pc++;
     }
@@ -135,17 +135,23 @@ public class BoneDatabase : IBoneDatabase
 
     private readonly Dictionary<string, ArtTypeEnum> _artTypeDict = [];
     private readonly Dictionary<string, (BoneTypeEnum Type, bool Dir)> _boneTypeDict = [];
-    private readonly Dictionary<string, string> _forearmVariantDict = [];
-    private readonly Dictionary<string, string> _shinVariantDict = [];
-    private readonly Dictionary<string, string> _katarVariantDict = [];
     private readonly Dictionary<string, string> _asymSwapDict = [];
 
-    private void Register1(string name, uint artType)
+    // the game stores each pair as a dictionary, then checks ContainsKey and ContainsValue
+    // ContainsValue is slow, so this is better
+    private readonly HashSet<string> _hasForearmVariant = [];
+    private readonly HashSet<string> _isForearmVariant = [];
+    private readonly HashSet<string> _hasShinVariant = [];
+    private readonly HashSet<string> _isShinVariant = [];
+    private readonly HashSet<string> _hasKatarVariant = [];
+    private readonly HashSet<string> _isKatarVariant = [];
+
+    private void RegisterBone(string name, uint artType)
     {
         _artTypeDict[name] = (ArtTypeEnum)artType;
     }
 
-    private void Register2(string name, uint artType, int boneType, bool dir, bool hasRVar = false)
+    private void RegisterBoneWithType(string name, uint artType, int boneType, bool dir, bool hasRVar = false)
     {
         _boneTypeDict[name] = ((BoneTypeEnum)boneType, dir);
         if (hasRVar)
@@ -153,42 +159,44 @@ public class BoneDatabase : IBoneDatabase
             string rVar = name + "R";
             _boneTypeDict[rVar] = ((BoneTypeEnum)boneType, dir);
             if (boneType == 2)
-                _forearmVariantDict[name] = rVar;
+            {
+                _hasForearmVariant.Add(name);
+                _isForearmVariant.Add(rVar);
+            }
             else if (boneType == 6)
-                _shinVariantDict[name] = rVar;
+            {
+                _hasShinVariant.Add(name);
+                _isShinVariant.Add(rVar);
+            }
             else if (boneType == 12)
-                _katarVariantDict[name] = rVar;
-            Register1(rVar, artType);
+            {
+                _hasKatarVariant.Add(name);
+                _isKatarVariant.Add(rVar);
+            }
+            RegisterBone(rVar, artType);
         }
         if (name.EndsWith("Right"))
             _asymSwapDict[name] = name[..^"Right".Length];
         else if (name.EndsWith("Left"))
             _asymSwapDict[name] = name[..^"Left".Length];
-        Register1(name, artType);
+        RegisterBone(name, artType);
     }
 
-    public bool HasVariantFor(string boneName, BoneTypeEnum boneType)
+    public bool HasVariantFor(string boneName, BoneTypeEnum boneType) => boneType switch
     {
-        return boneType switch
-        {
-            BoneTypeEnum.FOREARM => _forearmVariantDict.ContainsKey(boneName),
-            BoneTypeEnum.SHIN => _shinVariantDict.ContainsKey(boneName),
-            BoneTypeEnum.KATAR => _katarVariantDict.ContainsKey(boneName),
-            _ => false,
-        };
-    }
+        BoneTypeEnum.FOREARM => _hasForearmVariant.Contains(boneName),
+        BoneTypeEnum.SHIN => _hasShinVariant.Contains(boneName),
+        BoneTypeEnum.KATAR => _hasKatarVariant.Contains(boneName),
+        _ => false,
+    };
 
-    // TODO: make this faster
-    public bool IsVariantFor(string boneName, BoneTypeEnum boneType)
+    public bool IsVariantFor(string boneName, BoneTypeEnum boneType) => boneType switch
     {
-        return boneType switch
-        {
-            BoneTypeEnum.FOREARM => _forearmVariantDict.ContainsValue(boneName),
-            BoneTypeEnum.SHIN => _shinVariantDict.ContainsValue(boneName),
-            BoneTypeEnum.KATAR => _katarVariantDict.ContainsValue(boneName),
-            _ => false,
-        };
-    }
+        BoneTypeEnum.FOREARM => _isForearmVariant.Contains(boneName),
+        BoneTypeEnum.SHIN => _isShinVariant.Contains(boneName),
+        BoneTypeEnum.KATAR => _isKatarVariant.Contains(boneName),
+        _ => false,
+    };
 
     public bool TryGetArtType(string boneName, out ArtTypeEnum artType)
     {
