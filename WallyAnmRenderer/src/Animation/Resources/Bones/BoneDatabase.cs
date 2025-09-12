@@ -96,6 +96,10 @@ public class BoneDatabase : IBoneDatabase
                         StringValue name = (StringValue)stack.Pop();
                         db.RegisterBoneWithType(name.Val, artType.Val, boneType.Val, dir.Val, hasRVar.Val);
                     }
+                    else
+                    {
+                        throw new Exception($"Unexpected callpropvoid with {numArgs} arguments");
+                    }
                     break;
                 default:
                     break;
