@@ -16,17 +16,20 @@ namespace WallyAnmRenderer;
 public class BoneDatabase : IBoneDatabase
 {
     private BoneDatabase() { }
-    public static ValueTask<BoneDatabase> NewAsync(string brawlPath)
+    public static async ValueTask<BoneDatabase> NewAsync(string brawlPath)
     {
-        try
+        return await Task.Run(() =>
         {
-            return ValueTask.FromResult(ReadBoneDB(new BoneDatabase(), brawlPath));
-        }
-        catch (Exception e)
-        {
-            Rl.TraceLog(TraceLogLevel.Error, "Failed to load bone database: " + e.Message);
-            return ValueTask.FromResult(new BoneDatabase()); // empty db
-        }
+            try
+            {
+                return ReadBoneDB(new BoneDatabase(), brawlPath);
+            }
+            catch (Exception e)
+            {
+                Rl.TraceLog(TraceLogLevel.Error, "Failed to load bone database: " + e.Message);
+                return new BoneDatabase(); // empty db
+            }
+        });
     }
 
     private interface IStackValue;
