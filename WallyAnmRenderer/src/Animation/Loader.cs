@@ -11,7 +11,6 @@ using BrawlhallaAnimLib.Anm;
 using BrawlhallaLangReader;
 using WallyAnmSpinzor;
 using BrawlhallaAnimLib.Gfx;
-using BrawlhallaAnimLib.Bones;
 
 namespace WallyAnmRenderer;
 
@@ -19,7 +18,7 @@ public sealed class Loader : ILoader
 {
     private CancellationTokenSource? _loadSwzToken = null;
     private CancellationTokenSource? _loadLangToken = null;
-    private BoneDatabase? _boneDatabase = null;
+    private Task<BoneDatabase>? _boneDatabase = null;
 
     private string _brawlPath;
     public string BrawlPath
@@ -187,6 +186,6 @@ public sealed class Loader : ILoader
 
     public async ValueTask<IBoneDatabase> GetBoneDatabase()
     {
-        return _boneDatabase ??= await BoneDatabase.NewAsync();
+        return await (_boneDatabase ??= BoneDatabase.NewAsync(BrawlPath).AsTask());
     }
 }
