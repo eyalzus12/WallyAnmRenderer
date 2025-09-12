@@ -133,37 +133,37 @@ public class BoneDatabase : IBoneDatabase
     private static MethodBodyInfo? FindBoneDBMethod(AbcFile abc) =>
         abc.MethodBodies.Find(mb => mb.Code.Exists(ins => ins.Name == "pushstring" && (string)ins.Args[0].Value == "a_WeaponCrateReady"));
 
-    public Dictionary<string, ArtTypeEnum> ArtTypeDict { get; } = [];
-    public Dictionary<string, (BoneTypeEnum Type, bool Dir)> BoneTypeDict { get; } = [];
-    public Dictionary<string, string> ForearmVariantDict { get; } = [];
-    public Dictionary<string, string> ShinVariantDict { get; } = [];
-    public Dictionary<string, string> KatarVariantDict { get; } = [];
-    public Dictionary<string, string> AsymSwapDict { get; } = [];
+    private readonly Dictionary<string, ArtTypeEnum> _artTypeDict = [];
+    private readonly Dictionary<string, (BoneTypeEnum Type, bool Dir)> _boneTypeDict = [];
+    private readonly Dictionary<string, string> _forearmVariantDict = [];
+    private readonly Dictionary<string, string> _shinVariantDict = [];
+    private readonly Dictionary<string, string> _katarVariantDict = [];
+    private readonly Dictionary<string, string> _asymSwapDict = [];
 
     private void Register1(string name, uint artType)
     {
-        ArtTypeDict[name] = (ArtTypeEnum)artType;
+        _artTypeDict[name] = (ArtTypeEnum)artType;
     }
 
     private void Register2(string name, uint artType, int boneType, bool dir, bool hasRVar = false)
     {
-        BoneTypeDict[name] = ((BoneTypeEnum)boneType, dir);
+        _boneTypeDict[name] = ((BoneTypeEnum)boneType, dir);
         if (hasRVar)
         {
             string rVar = name + "R";
-            BoneTypeDict[rVar] = ((BoneTypeEnum)boneType, dir);
+            _boneTypeDict[rVar] = ((BoneTypeEnum)boneType, dir);
             if (boneType == 2)
-                ForearmVariantDict[name] = rVar;
+                _forearmVariantDict[name] = rVar;
             else if (boneType == 6)
-                ShinVariantDict[name] = rVar;
+                _shinVariantDict[name] = rVar;
             else if (boneType == 12)
-                KatarVariantDict[name] = rVar;
+                _katarVariantDict[name] = rVar;
             Register1(rVar, artType);
         }
         if (name.EndsWith("Right"))
-            AsymSwapDict[name] = name[..^"Right".Length];
+            _asymSwapDict[name] = name[..^"Right".Length];
         else if (name.EndsWith("Left"))
-            AsymSwapDict[name] = name[..^"Left".Length];
+            _asymSwapDict[name] = name[..^"Left".Length];
         Register1(name, artType);
     }
 
@@ -171,9 +171,9 @@ public class BoneDatabase : IBoneDatabase
     {
         return boneType switch
         {
-            BoneTypeEnum.FOREARM => ForearmVariantDict.ContainsKey(boneName),
-            BoneTypeEnum.SHIN => ShinVariantDict.ContainsKey(boneName),
-            BoneTypeEnum.KATAR => KatarVariantDict.ContainsKey(boneName),
+            BoneTypeEnum.FOREARM => _forearmVariantDict.ContainsKey(boneName),
+            BoneTypeEnum.SHIN => _shinVariantDict.ContainsKey(boneName),
+            BoneTypeEnum.KATAR => _katarVariantDict.ContainsKey(boneName),
             _ => false,
         };
     }
@@ -183,26 +183,26 @@ public class BoneDatabase : IBoneDatabase
     {
         return boneType switch
         {
-            BoneTypeEnum.FOREARM => ForearmVariantDict.ContainsValue(boneName),
-            BoneTypeEnum.SHIN => ShinVariantDict.ContainsValue(boneName),
-            BoneTypeEnum.KATAR => KatarVariantDict.ContainsValue(boneName),
+            BoneTypeEnum.FOREARM => _forearmVariantDict.ContainsValue(boneName),
+            BoneTypeEnum.SHIN => _shinVariantDict.ContainsValue(boneName),
+            BoneTypeEnum.KATAR => _katarVariantDict.ContainsValue(boneName),
             _ => false,
         };
     }
 
     public bool TryGetArtType(string boneName, out ArtTypeEnum artType)
     {
-        return ArtTypeDict.TryGetValue(boneName, out artType);
+        return _artTypeDict.TryGetValue(boneName, out artType);
     }
 
     public bool TryGetAsymSwap(string boneName, [MaybeNullWhen(false)] out string asymBoneName)
     {
-        return AsymSwapDict.TryGetValue(boneName, out asymBoneName);
+        return _asymSwapDict.TryGetValue(boneName, out asymBoneName);
     }
 
     public bool TryGetBoneType(string boneName, out BoneTypeEnum boneType, out bool boneDir)
     {
-        if (BoneTypeDict.TryGetValue(boneName, out (BoneTypeEnum Type, bool Dir) info))
+        if (_boneTypeDict.TryGetValue(boneName, out (BoneTypeEnum Type, bool Dir) info))
         {
             boneType = info.Type;
             boneDir = info.Dir;
