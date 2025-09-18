@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using ImGuiNET;
 using NativeFileDialogSharp;
-using SwfLib;
 
 namespace WallyAnmRenderer;
 
@@ -12,8 +11,8 @@ public sealed class OverridesWindow
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
 
+    private string? _originalPath = null;
     private string? _overridePath = null;
-    private string? _filePath = null;
 
     private string? _loadingError;
     private string? _loadingStatus;
@@ -42,12 +41,12 @@ public sealed class OverridesWindow
             {
                 DialogResult result = Dialog.FileOpen("swf", brawlPath);
                 if (result.IsOk)
-                    _overridePath = Path.GetRelativePath(brawlPath, result.Path).Replace('\\', '/');
+                    _originalPath = Path.GetRelativePath(brawlPath, result.Path).Replace('\\', '/');
             });
         }
-        if (_overridePath is not null)
+        if (_originalPath is not null)
         {
-            ImGui.Text($"Original swf: {_overridePath}");
+            ImGui.Text($"Original swf: {_originalPath}");
         }
 
         if (ImGui.Button("Select new swf"))
@@ -56,37 +55,36 @@ public sealed class OverridesWindow
             {
                 DialogResult result = Dialog.FileOpen("swf");
                 if (result.IsOk)
-                    _filePath = result.Path;
+                    _overridePath = result.Path;
             });
         }
-        if (_filePath is not null)
+        if (_overridePath is not null)
         {
-            ImGui.Text($"New swf: {_filePath}");
+            ImGui.Text($"New swf: {_overridePath}");
         }
 
-        if (ImGuiEx.DisabledButton("Add override", string.IsNullOrWhiteSpace(_overridePath) || string.IsNullOrWhiteSpace(_filePath)))
+        if (ImGuiEx.DisabledButton("Add override", string.IsNullOrWhiteSpace(_overridePath) || string.IsNullOrWhiteSpace(_originalPath)))
         {
-            try
+            string originalPath = _originalPath!;
+            string overridePath = _overridePath!;
+            async Task addOverride()
             {
-                string overridePath = _overridePath!;
-                string filePath = _filePath!;
-                Task.Run(() =>
+                OnLoadingStarted();
+                try
                 {
-                    SwfFile swfFile;
-                    using (FileStream file = File.OpenRead(filePath))
-                        swfFile = SwfFile.ReadFrom(file);
-                    SwfFileData data = SwfFileData.CreateFrom(swfFile);
-                    assetLoader.AddSwfOverride(overridePath, new(overridePath, filePath, data));
-                });
+                    SwfOverride swfOverride = await SwfOverride.Create(originalPath, overridePath);
+                    assetLoader.AddSwfOverride(originalPath, swfOverride);
+                    OnLoadingFinished();
+                }
+                catch (Exception e)
+                {
+                    OnLoadingError(e);
+                }
             }
-            catch (Exception e)
-            {
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-                _loadingError = e.Message;
-            }
+            _ = addOverride();
+
+            _originalPath = null;
             _overridePath = null;
-            _filePath = null;
         }
 
         ImGui.SeparatorText("Overrides");
@@ -97,7 +95,26 @@ public sealed class OverridesWindow
                 assetLoader.RemoveSwfOverride(swfOverride.OverridePath);
             }
             ImGui.SameLine();
-            ImGui.Text($"Override {swfOverride.OverridePath} with {swfOverride.OriginalPath}");
+            ImGui.TextWrapped($"Override {swfOverride.OriginalPath} with {swfOverride.OverridePath}");
+            if (ImGui.Button("Reload"))
+            {
+                async Task reload()
+                {
+                    OnLoadingStarted();
+                    try
+                    {
+                        await assetLoader.ReloadOverride(swfOverride.OriginalPath);
+                        OnLoadingFinished();
+                    }
+                    catch (Exception e)
+                    {
+                        OnLoadingError(e);
+                    }
+                }
+                _ = reload();
+            }
+
+            ImGui.Separator();
         }
 
         if (_loadingStatus is not null)
@@ -117,19 +134,21 @@ public sealed class OverridesWindow
         ImGui.End();
     }
 
-    public void OnLoadingStarted()
+    private void OnLoadingStarted()
     {
         _loadingError = null;
         _loadingStatus = "Loading...";
     }
 
-    public void OnLoadingError(Exception e)
+    private void OnLoadingError(Exception e)
     {
+        Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
+        Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
         _loadingError = e.Message;
         _loadingStatus = null;
     }
 
-    public void OnLoadingFinished()
+    private void OnLoadingFinished()
     {
         _loadingError = null;
         _loadingStatus = null;

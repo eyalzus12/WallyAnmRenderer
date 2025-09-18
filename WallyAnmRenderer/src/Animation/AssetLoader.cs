@@ -109,6 +109,12 @@ public sealed class AssetLoader(string brawlPath)
         return _swfFileOverrides.Remove(fullPath);
     }
 
+    public Task ReloadOverride(string relativePath)
+    {
+        string fullPath = Path.GetFullPath(Path.Combine(_brawlPath, relativePath));
+        return _swfFileOverrides.ReloadOverride(fullPath);
+    }
+
     public IEnumerable<SwfOverride> Overrides => _swfFileOverrides.Overrides;
 
     public void ClearTextureCache()

@@ -2,10 +2,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace WallyAnmRenderer;
-
-public readonly record struct SwfOverride(string OverridePath, string OriginalPath, SwfFileData Data);
 
 public sealed class SwfOverrideMap(string brawlPath)
 {
@@ -36,6 +35,16 @@ public sealed class SwfOverrideMap(string brawlPath)
     {
         string relativePath = GetRelativePath(fullPath);
         return _swfs.Remove(relativePath, out _);
+    }
+
+    public async Task ReloadOverride(string fullPath)
+    {
+        string relativePath = GetRelativePath(fullPath);
+        if (_swfs.TryGetValue(relativePath, out SwfOverride swfOverride))
+        {
+            SwfOverride newOverride = await SwfOverride.Create(swfOverride.OriginalPath, swfOverride.OverridePath);
+            _swfs.TryUpdate(relativePath, newOverride, swfOverride);
+        }
     }
 
     public IEnumerable<SwfOverride> Overrides => _swfs.Values;
