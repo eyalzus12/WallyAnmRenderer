@@ -66,7 +66,7 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         double animScale = info.AnimScale;
-        if (ImGuiEx.InputDouble("Render quality", ref animScale))
+        if (ImGui.InputDouble("Render quality", ref animScale))
         {
             info.AnimScale = animScale;
             loader.AssetLoader.ClearSwfShapeCache();

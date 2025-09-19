@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -23,6 +25,7 @@ namespace WallyAnmRenderer;
 
 public sealed partial class ExportModal(string? id = null)
 {
+    private const char FILENAME_FORMAT_FRAME_CHAR = '@';
     private static readonly XNamespace xmlns = XNamespace.Get("http://www.w3.org/2000/svg");
 
     public const string NAME = "Export animation";
@@ -36,11 +39,31 @@ public sealed partial class ExportModal(string? id = null)
     private static readonly string[] EXPORT_AS = [".svg", ".png"];
     private ExportAsEnum _exportAs = ExportAsEnum.Svg;
 
+    private enum ExportModeEnum
+    {
+        SingleFrame = 0,
+        MultiFrame = 1,
+    };
+    private static readonly string[] EXPORT_MODE = ["Single frame", "Frame sequence"];
+    private ExportModeEnum _exportMode = ExportModeEnum.SingleFrame;
+
+    private string _fileNameFormat = $"Exported animation {FILENAME_FORMAT_FRAME_CHAR}";
+
+    private long _startFrame = -1;
+    private long _endFrame = -1;
+
+    private double _animScale = 4;
+
+    private bool _flip = false;
+
     private bool _shouldOpen;
     private bool _open = false;
     public void Open() => _shouldOpen = true;
 
+    private CancellationTokenSource _cancellationSource = new();
+
     private readonly List<string> _errors = [];
+    private string? _status = null;
 
     private static void NamespaceDefsGradients(XElement defs, string ns)
     {
@@ -193,11 +216,11 @@ public sealed partial class ExportModal(string? id = null)
                 yield return result;
     }
 
-    public static async ValueTask<XDocument> ExportAnimation(Loader loader, IGfxType gfx, string animation, long frame, bool flip)
+    public static async ValueTask<XDocument> ExportAnimation(Loader loader, IGfxType gfx, string animation, double animScale, long frame, bool flip)
     {
         GfxType gfxClone = new(gfx)
         {
-            AnimScale = 1
+            AnimScale = animScale
         };
 
         IAsyncEnumerable<BoneSprite> sprites = AnimationBuilder.BuildAnim(loader, gfxClone, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
@@ -282,6 +305,9 @@ public sealed partial class ExportModal(string? id = null)
             _shouldOpen = false;
             _open = true;
             _errors.Clear();
+
+            _startFrame = frame;
+            _endFrame = frame;
         }
 
         if (!ImGui.BeginPopupModal(PopupName, ref _open, ImGuiWindowFlags.AlwaysAutoResize)) return;
@@ -293,60 +319,63 @@ public sealed partial class ExportModal(string? id = null)
             return;
         }
 
-        async Task export(string path)
+        int currentExportAs = (int)_exportAs;
+        ImGui.Combo("Export as", ref currentExportAs, EXPORT_AS, EXPORT_AS.Length);
+        _exportAs = (ExportAsEnum)currentExportAs;
+
+        int currentExportMode = (int)_exportMode;
+        ImGui.Combo("Export mode", ref currentExportMode, EXPORT_MODE, EXPORT_MODE.Length);
+        _exportMode = (ExportModeEnum)currentExportMode;
+
+        ImGui.Text("Frames start at 0");
+        switch (_exportMode)
         {
-            try
-            {
-                XDocument document = await ExportAnimation(animator.Loader, gfx, animation, frame, flip);
-                switch (_exportAs)
-                {
-                    case ExportAsEnum.Svg:
-                        await SaveToPathSvg(document, path);
-                        break;
-                    case ExportAsEnum.Png:
-                        SaveToPathPng(document, path);
-                        break;
-                    default:
-                        break;
-                }
-            }
-            catch (Exception e)
-            {
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
-                Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-                _errors.Add(e.Message);
-            }
+            case ExportModeEnum.SingleFrame:
+                if (ImGuiEx.InputLong("Frame", ref _startFrame))
+                    _endFrame = _startFrame;
+                break;
+            case ExportModeEnum.MultiFrame:
+                ImGuiEx.InputLong("Start Frame", ref _startFrame);
+                ImGuiEx.InputLong("End Frame", ref _endFrame);
+                ImGui.Text("@ Will be replaced with the frame number.");
+                ImGui.InputText("File name format", ref _fileNameFormat, 256);
+                break;
         }
 
-        int currentItem = (int)_exportAs;
-        ImGui.Combo("Export as", ref currentItem, EXPORT_AS, EXPORT_AS.Length);
-        _exportAs = (ExportAsEnum)currentItem;
+        ImGui.InputDouble("Anim scale", ref _animScale);
+
+        if (_cancellationSource.IsCancellationRequested)
+        {
+            _cancellationSource.Dispose();
+            _cancellationSource = new();
+        }
 
         if (ImGui.Button("Export"))
         {
-            string extension = _exportAs switch
+            _status = "Exporting...";
+            Task.Run(async () =>
             {
-                ExportAsEnum.Svg => "svg",
-                ExportAsEnum.Png => "png",
-                _ => "*",
-            };
-
-            Task.Run(() => Dialog.FileSave(extension, prefs.ExportPath)).ContinueWith(async (task) =>
-            {
-                DialogResult result = task.Result;
-                if (result.IsError) _errors.Add(result.ErrorMessage);
-                if (!result.IsOk) return;
-
-                string? newExportPath = Path.GetDirectoryName(result.Path);
-                if (newExportPath is not null)
-                    prefs.ExportPath = newExportPath;
-
-                string path = result.Path;
-                if (Path.GetExtension(path) != extension)
-                    path = Path.ChangeExtension(path, extension);
-
-                await export(path);
+                switch (_exportMode)
+                {
+                    case ExportModeEnum.SingleFrame:
+                        await SaveSingleFrame(prefs, animator.Loader, gfx, animation);
+                        break;
+                    case ExportModeEnum.MultiFrame:
+                        await SaveMultiFrame(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
+                        break;
+                }
             });
+        }
+
+        if (ImGui.Button("Cancel"))
+        {
+            _cancellationSource.CancelAsync();
+            _status = null;
+        }
+
+        if (_status is not null)
+        {
+            ImGui.TextWrapped($"[Status]: {_status}");
         }
 
         if (_errors.Count > 0)
@@ -363,13 +392,112 @@ public sealed partial class ExportModal(string? id = null)
         ImGui.EndPopup();
     }
 
+    private async Task SaveSingleFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation)
+    {
+        string extension = _exportAs switch
+        {
+            ExportAsEnum.Svg => "svg",
+            ExportAsEnum.Png => "png",
+            _ => "*",
+        };
+        DialogResult result = Dialog.FileSave(extension, prefs.ExportPath);
+        if (result.IsError) _errors.Add(result.ErrorMessage);
+        if (!result.IsOk) return;
+
+        string? newExportPath = Path.GetDirectoryName(result.Path);
+        if (newExportPath is not null)
+            prefs.ExportPath = newExportPath;
+
+        string path = result.Path;
+        if (Path.GetExtension(path) != extension)
+            path = Path.ChangeExtension(path, extension);
+
+        await Export(path, loader, gfx, animation, _startFrame);
+        _status = null;
+    }
+
+    private async Task SaveMultiFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken token = default)
+    {
+        if (!_fileNameFormat.Contains(FILENAME_FORMAT_FRAME_CHAR))
+        {
+            _errors.Add($"File name format does not contain {FILENAME_FORMAT_FRAME_CHAR}");
+            return;
+        }
+
+        DialogResult result = Dialog.FolderPicker(prefs.ExportPath);
+        if (result.IsError) _errors.Add(result.ErrorMessage);
+        if (!result.IsOk) return;
+        prefs.ExportPath = result.Path;
+
+        int direction = Math.Sign(_endFrame - _startFrame);
+        if (direction == 0) direction = 1;
+
+        string extension = _exportAs switch
+        {
+            ExportAsEnum.Svg => "svg",
+            ExportAsEnum.Png => "png",
+            _ => "*",
+        };
+
+        int digitCount = (int)Math.Ceiling(Math.Log10(Math.Max(_startFrame, _endFrame)));
+
+        List<Task> exportTasks = [];
+        for (long frame = _startFrame; frame <= _endFrame; frame += direction)
+        {
+            token.ThrowIfCancellationRequested();
+
+            string filename = _fileNameFormat.Replace(FILENAME_FORMAT_FRAME_CHAR.ToString(), frame.ToString().PadLeft(digitCount, '0'));
+            string path = Path.Combine(result.Path, filename);
+            if (Path.GetExtension(path) != extension)
+                path = Path.ChangeExtension(path, extension);
+
+            exportTasks.Add(Export(path, loader, gfx, animation, frame));
+        }
+        await Task.WhenAll(exportTasks);
+        _status = null;
+    }
+
+    private async Task Export(string path, Loader loader, IGfxType gfx, string animation, long frame)
+    {
+        try
+        {
+            XDocument document = await ExportAnimation(loader, gfx, animation, _animScale, frame, _flip);
+            switch (_exportAs)
+            {
+                case ExportAsEnum.Svg:
+                    await SaveToPathSvg(document, path);
+                    break;
+                case ExportAsEnum.Png:
+                    SaveToPathPng(document, path);
+                    break;
+                default:
+                    break;
+            }
+            _status = "Exported " + path;
+        }
+        catch (Exception e)
+        {
+            Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
+            Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
+            _errors.Add(e.Message);
+        }
+    }
+
     [GeneratedRegex(@"url\(#(gradient[0-9]+)\)")]
     private static partial Regex PathFillUrlRegex();
+
+    private static readonly XmlWriterSettings XML_WRITER_SETTINGS = new()
+    {
+        Encoding = new UTF8Encoding(false),
+        Async = true,
+        NewLineChars = "\n",
+    };
 
     private static async Task SaveToPathSvg(XDocument document, string path)
     {
         using FileStream file = FileUtils.CreateWriteAsync(path);
-        await document.SaveAsync(file, SaveOptions.None, default);
+        using XmlWriter writer = XmlWriter.Create(file, XML_WRITER_SETTINGS);
+        await document.SaveAsync(writer, default);
     }
 
     private static void SaveToPathPng(XDocument document, string path)
@@ -380,6 +508,6 @@ public sealed partial class ExportModal(string? id = null)
         if (svg.Picture is null)
             throw new Exception("Loading svg failed");
         using FileStream file = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
-        svg.Picture.ToImage(file, SKColor.Empty, SKEncodedImageFormat.Png, int.MaxValue, 4, 4, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb());
+        svg.Picture.ToImage(file, SKColor.Empty, SKEncodedImageFormat.Png, int.MaxValue, 1, 1, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb());
     }
 }

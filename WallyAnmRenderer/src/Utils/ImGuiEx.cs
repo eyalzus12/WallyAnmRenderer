@@ -7,7 +7,7 @@ namespace WallyAnmRenderer;
 
 public static class ImGuiEx
 {
-    public static unsafe bool InputUInt(string label, ref uint value, uint step = 1, uint stepFast = 100)
+    public static unsafe bool InputUInt(ReadOnlySpan<char> label, ref uint value, uint step = 1, uint stepFast = 100)
     {
         IntPtr valuePtr = (IntPtr)Unsafe.AsPointer(ref value);
         IntPtr stepPtr = (IntPtr)(&step);
@@ -15,22 +15,22 @@ public static class ImGuiEx
         return ImGui.InputScalar(label, ImGuiDataType.U32, valuePtr, stepPtr, stepFastPtr);
     }
 
-    public static uint InputUInt(string label, uint value, uint step = 1, uint stepFast = 100)
+    public static unsafe bool InputLong(ReadOnlySpan<char> label, ref long value, long step = 1, long stepFast = 100)
+    {
+        IntPtr valuePtr = (IntPtr)Unsafe.AsPointer(ref value);
+        IntPtr stepPtr = (IntPtr)(&step);
+        IntPtr stepFastPtr = (IntPtr)(&stepFast);
+        return ImGui.InputScalar(label, ImGuiDataType.S64, valuePtr, stepPtr, stepFastPtr);
+    }
+
+    public static uint InputUInt(ReadOnlySpan<char> label, uint value, uint step = 1, uint stepFast = 100)
     {
         uint v = value;
         InputUInt(label, ref v, step, stepFast);
         return v;
     }
 
-    public static unsafe bool InputDouble(string label, ref double value, double step = 1, double stepFast = 100)
-    {
-        IntPtr valuePtr = (IntPtr)Unsafe.AsPointer(ref value);
-        IntPtr stepPtr = (IntPtr)(&step);
-        IntPtr stepFastPtr = (IntPtr)(&stepFast);
-        return ImGui.InputScalar(label, ImGuiDataType.Double, valuePtr, stepPtr, stepFastPtr);
-    }
-
-    public static unsafe bool DragDouble(string label, ref double value, float speed = 1, double minValue = double.MinValue, double maxValue = double.MaxValue)
+    public static unsafe bool DragDouble(ReadOnlySpan<char> label, ref double value, float speed = 1, double minValue = double.MinValue, double maxValue = double.MaxValue)
     {
         IntPtr valuePtr = (IntPtr)Unsafe.AsPointer(ref value);
         IntPtr minValuePtr = (IntPtr)(&minValue);
@@ -38,7 +38,7 @@ public static class ImGuiEx
         return ImGui.DragScalar(label, ImGuiDataType.Double, valuePtr, speed, minValuePtr, maxValuePtr);
     }
 
-    public static uint ColorPicker3Hex(string label, uint col, Vector2 size = default)
+    public static uint ColorPicker3Hex(ReadOnlySpan<char> label, uint col, Vector2 size = default)
     {
         byte r = (byte)(col >> 16), g = (byte)(col >> 8), b = (byte)col;
         Vector3 imCol = new((float)r / 255, (float)g / 255, (float)b / 255);
@@ -53,7 +53,7 @@ public static class ImGuiEx
         return ((uint)r << 16) | ((uint)g << 8) | b;
     }
 
-    public static bool DisabledButton(string label, bool disabled)
+    public static bool DisabledButton(ReadOnlySpan<char> label, bool disabled)
     {
         if (disabled) ImGui.BeginDisabled();
         bool result = ImGui.Button(label);
@@ -61,7 +61,7 @@ public static class ImGuiEx
         return result;
     }
 
-    public static bool DisabledSelectable(string label, bool disabled)
+    public static bool DisabledSelectable(ReadOnlySpan<char> label, bool disabled)
     {
         if (disabled) ImGui.BeginDisabled();
         bool result = ImGui.Selectable(label);
@@ -69,7 +69,7 @@ public static class ImGuiEx
         return result;
     }
 
-    public static void BeginStyledChild(string label)
+    public static void BeginStyledChild(ReadOnlySpan<char> label)
     {
         unsafe { ImGui.PushStyleColor(ImGuiCol.ChildBg, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg)); }
         ImGui.BeginChild(label, new Vector2(0, ImGui.GetTextLineHeightWithSpacing() * 8), ImGuiChildFlags.ResizeY | ImGuiChildFlags.Borders);
