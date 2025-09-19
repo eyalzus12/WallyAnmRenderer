@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -46,6 +48,8 @@ public sealed partial class ExportModal(string? id = null)
     };
     private static readonly string[] EXPORT_MODE = ["Single frame", "Frame sequence"];
     private ExportModeEnum _exportMode = ExportModeEnum.SingleFrame;
+
+    private bool _canvasContain = false;
 
     private string _fileNameFormat = $"Exported animation {FILENAME_FORMAT_FRAME_CHAR}";
 
@@ -100,18 +104,18 @@ public sealed partial class ExportModal(string? id = null)
 
         public void ExtendWith(double x, double y)
         {
-            if (x < MinX) MinX = x;
-            if (x > MaxX) MaxX = x;
-            if (y < MinY) MinY = y;
-            if (y > MaxY) MaxY = y;
+            if (double.IsNaN(MinX) || x < MinX) MinX = x;
+            if (double.IsNaN(MaxX) || x > MaxX) MaxX = x;
+            if (double.IsNaN(MinY) || y < MinY) MinY = y;
+            if (double.IsNaN(MaxY) || y > MaxY) MaxY = y;
         }
 
         public void ExtendWith(ViewBox viewBox)
         {
-            if (viewBox.MinX < MinX) MinX = viewBox.MinX;
-            if (viewBox.MaxX > MaxX) MaxX = viewBox.MaxX;
-            if (viewBox.MinY < MinY) MinY = viewBox.MinY;
-            if (viewBox.MaxY > MaxY) MaxY = viewBox.MaxY;
+            if (double.IsNaN(MinX) || viewBox.MinX < MinX) MinX = viewBox.MinX;
+            if (double.IsNaN(MaxX) || viewBox.MaxX > MaxX) MaxX = viewBox.MaxX;
+            if (double.IsNaN(MinY) || viewBox.MinY < MinY) MinY = viewBox.MinY;
+            if (double.IsNaN(MaxY) || viewBox.MaxY > MaxY) MaxY = viewBox.MaxY;
         }
     }
 
@@ -131,7 +135,7 @@ public sealed partial class ExportModal(string? id = null)
         SvgShapeExporter svgExporter = new(new(shapeW, shapeH), new(1, 0, 0, 1, 0, 0));
         compiledShape.Export(svgExporter);
 
-        ViewBox viewBox = new(0, 0, 0, 0);
+        ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
         (double, double)[] points = [(shapeX, shapeY), (shapeX + shapeW, shapeY), (shapeX, shapeY + shapeH), (shapeX + shapeW, shapeY + shapeH)];
         foreach ((double x, double y) in points)
         {
@@ -174,7 +178,7 @@ public sealed partial class ExportModal(string? id = null)
             using (SKCodec codec = SKCodec.Create(path))
                 format = codec.EncodedFormat;
 
-            ViewBox viewBox = new(0, 0, 0, 0);
+            ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
             (double, double)[] points = [(offX, offY), (offX + width, offY), (offX, offY + height), (offX + width, offY + height)];
             foreach ((double x, double y) in points)
             {
@@ -216,7 +220,7 @@ public sealed partial class ExportModal(string? id = null)
                 yield return result;
     }
 
-    public static async ValueTask<XDocument> ExportAnimation(Loader loader, IGfxType gfx, string animation, double animScale, long frame, bool flip)
+    private static async ValueTask<(XDocument, ViewBox)> ExportAnimation(Loader loader, IGfxType gfx, string animation, double animScale, long frame, bool flip)
     {
         GfxType gfxClone = new(gfx)
         {
@@ -225,7 +229,7 @@ public sealed partial class ExportModal(string? id = null)
 
         IAsyncEnumerable<BoneSprite> sprites = AnimationBuilder.BuildAnim(loader, gfxClone, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
 
-        ViewBox viewBox = new(0, 0, 0, 0);
+        ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
         List<(XDocument, Transform2D)> svgList = [];
         await foreach (var shape in SpritesToDocuments(loader, sprites))
         {
@@ -294,7 +298,7 @@ public sealed partial class ExportModal(string? id = null)
 
         XDocument result = new(new XDeclaration("1.0", "UTF-8", "no"), svg);
 
-        return result;
+        return (result, viewBox);
     }
 
     public void Update(PathPreferences prefs, Animator? animator, IGfxType gfx, string animation, long frame, bool flip)
@@ -339,6 +343,7 @@ public sealed partial class ExportModal(string? id = null)
                 ImGuiEx.InputLong("End Frame", ref _endFrame);
                 ImGui.Text("@ Will be replaced with the frame number.");
                 ImGui.InputText("File name format", ref _fileNameFormat, 256);
+                ImGui.Checkbox("Size canvas such that all frames fit", ref _canvasContain);
                 break;
         }
 
@@ -355,15 +360,25 @@ public sealed partial class ExportModal(string? id = null)
             _status = "Exporting...";
             Task.Run(async () =>
             {
-                switch (_exportMode)
+                try
                 {
-                    case ExportModeEnum.SingleFrame:
-                        await SaveSingleFrame(prefs, animator.Loader, gfx, animation);
-                        break;
-                    case ExportModeEnum.MultiFrame:
-                        await SaveMultiFrame(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
-                        break;
+                    switch (_exportMode)
+                    {
+                        case ExportModeEnum.SingleFrame:
+                            await SaveSingleFrame(prefs, animator.Loader, gfx, animation);
+                            break;
+                        case ExportModeEnum.MultiFrame:
+                            await SaveMultiFrame(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
+                            break;
+                    }
                 }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
+                    Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
+                    _errors.Add(e.Message);
+                }
+                _status = null;
             });
         }
 
@@ -412,11 +427,11 @@ public sealed partial class ExportModal(string? id = null)
         if (Path.GetExtension(path) != extension)
             path = Path.ChangeExtension(path, extension);
 
-        await Export(path, loader, gfx, animation, _startFrame);
-        _status = null;
+        (XDocument document, _) = await ExportAnimation(loader, gfx, animation, _animScale, _startFrame, _flip);
+        await ExportDocument(path, document);
     }
 
-    private async Task SaveMultiFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken token = default)
+    private async Task SaveMultiFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken cancellationToken = default)
     {
         if (!_fileNameFormat.Contains(FILENAME_FORMAT_FRAME_CHAR))
         {
@@ -441,49 +456,77 @@ public sealed partial class ExportModal(string? id = null)
 
         int digitCount = (int)Math.Ceiling(Math.Log10(Math.Max(_startFrame, _endFrame)));
 
-        List<Task> exportTasks = [];
+        List<(string, Task<(XDocument, ViewBox)>)> animationTasks = [];
         for (long frame = _startFrame; frame <= _endFrame; frame += direction)
         {
-            token.ThrowIfCancellationRequested();
-
             string filename = _fileNameFormat.Replace(FILENAME_FORMAT_FRAME_CHAR.ToString(), frame.ToString().PadLeft(digitCount, '0'));
             string path = Path.Combine(result.Path, filename);
             if (Path.GetExtension(path) != extension)
                 path = Path.ChangeExtension(path, extension);
 
-            exportTasks.Add(Export(path, loader, gfx, animation, frame));
+            animationTasks.Add((path, ExportAnimation(loader, gfx, animation, _animScale, frame, _flip).AsTask()));
         }
-        await Task.WhenAll(exportTasks);
-        _status = null;
-    }
 
-    private async Task Export(string path, Loader loader, IGfxType gfx, string animation, long frame)
-    {
-        try
+        if (_canvasContain)
         {
-            XDocument document = await ExportAnimation(loader, gfx, animation, _animScale, frame, _flip);
-            switch (_exportAs)
+            cancellationToken.ThrowIfCancellationRequested();
+            (string, XDocument, ViewBox)[] documents = await Task.WhenAll(animationTasks.Select(async x =>
             {
-                case ExportAsEnum.Svg:
-                    await SaveToPathSvg(document, path);
-                    break;
-                case ExportAsEnum.Png:
-                    SaveToPathPng(document, path);
-                    break;
-                default:
-                    break;
+                (string path, Task<(XDocument, ViewBox)> task) = x;
+                cancellationToken.ThrowIfCancellationRequested();
+                (XDocument document, ViewBox viewBox) = await task;
+                cancellationToken.ThrowIfCancellationRequested();
+                return (path, document, viewBox);
+            }));
+            cancellationToken.ThrowIfCancellationRequested();
+
+            ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
+            foreach ((_, _, ViewBox viewBox2) in documents)
+                viewBox.ExtendWith(viewBox2);
+            foreach ((_, XDocument document, _) in documents)
+            {
+                XElement svg = document.Element(xmlns + "svg")!;
+                svg.SetAttributeValue("width", viewBox.Width);
+                svg.SetAttributeValue("height", viewBox.Height);
+                svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
             }
-            _status = "Exported " + path;
+
+            await Task.WhenAll(documents.Select(async x =>
+            {
+                (string path, XDocument document, _) = x;
+                await ExportDocument(path, document, cancellationToken);
+                _status = "Exported " + path;
+            }));
         }
-        catch (Exception e)
+        else
         {
-            Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, e.Message);
-            Rl.TraceLog(Raylib_cs.TraceLogLevel.Trace, e.StackTrace);
-            _errors.Add(e.Message);
+            await Task.WhenAll(animationTasks.Select(async x =>
+            {
+                (string path, Task<(XDocument, ViewBox)> task) = x;
+                cancellationToken.ThrowIfCancellationRequested();
+                (XDocument document, _) = await task;
+                cancellationToken.ThrowIfCancellationRequested();
+                await ExportDocument(path, document, cancellationToken);
+                _status = "Exported " + path;
+                cancellationToken.ThrowIfCancellationRequested();
+            }));
         }
     }
 
-    [GeneratedRegex(@"url\(#(gradient[0-9]+)\)")]
+    private async Task ExportDocument(string path, XDocument document, CancellationToken cancellationToken = default)
+    {
+        switch (_exportAs)
+        {
+            case ExportAsEnum.Svg:
+                await SaveToPathSvg(document, path, cancellationToken);
+                break;
+            case ExportAsEnum.Png:
+                SaveToPathPng(document, path);
+                break;
+        }
+    }
+
+    [GeneratedRegex(@"^url\(#(gradient[0-9]+)\)$")]
     private static partial Regex PathFillUrlRegex();
 
     private static readonly XmlWriterSettings XML_WRITER_SETTINGS = new()
@@ -491,13 +534,14 @@ public sealed partial class ExportModal(string? id = null)
         Encoding = new UTF8Encoding(false),
         Async = true,
         NewLineChars = "\n",
+        Indent = true,
     };
 
-    private static async Task SaveToPathSvg(XDocument document, string path)
+    private static async Task SaveToPathSvg(XDocument document, string path, CancellationToken cancellationToken = default)
     {
         using FileStream file = FileUtils.CreateWriteAsync(path);
         using XmlWriter writer = XmlWriter.Create(file, XML_WRITER_SETTINGS);
-        await document.SaveAsync(writer, default);
+        await document.SaveAsync(writer, cancellationToken);
     }
 
     private static void SaveToPathPng(XDocument document, string path)
