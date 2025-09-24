@@ -73,7 +73,7 @@ public sealed class Editor
             await LoadFiles();
         };
 
-        AnmWindow.AnmUnloadRequested += (_, file) =>
+        AnmWindow.FileUnloaded += (_, file) =>
         {
             if (GfxInfo.SourceFilePath == file)
             {

@@ -22,6 +22,7 @@ public sealed class SwfFileData
 {
     public SwfFile Swf { get; private init; } = null!;
     public Dictionary<string, ushort> SymbolClass { get; } = [];
+    public Dictionary<ushort, string> ReverseSymbolClass { get; } = [];
     public Dictionary<ushort, DefineSpriteTag> SpriteTags { get; } = [];
     public Dictionary<ushort, ShapeBaseTag> ShapeTags { get; } = [];
     public Dictionary<ushort, DefineTextBaseTag> TextTags { get; } = [];
@@ -57,6 +58,7 @@ public sealed class SwfFileData
         foreach (SwfSymbolReference reference in symbolClass.References)
         {
             swf.SymbolClass[reference.SymbolName] = reference.SymbolID;
+            swf.ReverseSymbolClass[reference.SymbolID] = reference.SymbolName;
         }
 
         ctoken.ThrowIfCancellationRequested();

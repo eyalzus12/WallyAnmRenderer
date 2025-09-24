@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using ImGuiNET;
+using SwfLib.Tags;
 using WallyAnmSpinzor;
 
 namespace WallyAnmRenderer;
@@ -14,10 +17,13 @@ public sealed class AnmWindow
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
 
-    public event EventHandler<string>? AnmUnloadRequested;
+    public event EventHandler<string>? FileUnloaded;
 
-    private string _fileFilter = "";
+    private string _anmFileFilter = "";
     private readonly Dictionary<string, string> _animationFilterState = [];
+
+    private string _swfFileFilter = "";
+    private readonly Dictionary<string, string> _swfFilterState = [];
 
     public void Show(string? brawlPath, AssetLoader? assetLoader, GfxInfo info)
     {
@@ -36,16 +42,36 @@ public sealed class AnmWindow
             return;
         }
 
-        string brawlAnimPath = Path.Join(brawlPath, "anims");
-        string[] files = Directory.Exists(brawlAnimPath) ? Directory.GetFiles(brawlAnimPath) : [];
+        if (ImGui.BeginTabBar("options", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton))
+        {
+            if (ImGui.BeginTabItem("Anm"))
+            {
+                AnmTab(brawlPath, assetLoader, info);
+                ImGui.EndTabItem();
+            }
 
-        ImGui.InputText("Filter files", ref _fileFilter, 256);
+            if (ImGui.BeginTabItem("Swf"))
+            {
+                SwfTab(brawlPath, assetLoader, info);
+                ImGui.EndTabItem();
+            }
+
+            ImGui.EndTabBar();
+        }
+
+        ImGui.End();
+    }
+
+    private void AnmTab(string brawlPath, AssetLoader assetLoader, GfxInfo info)
+    {
+        string brawlAnimPath = Path.Join(brawlPath, "anims");
+        string[] files = Directory.Exists(brawlAnimPath) ? Directory.GetFiles(brawlAnimPath, "*.anm") : [];
+
+        ImGui.InputText("Filter files", ref _anmFileFilter, 256);
         foreach (string absolutePath in files)
         {
-            if (!absolutePath.EndsWith(".anm")) continue;
-
             string fileName = Path.GetRelativePath(brawlAnimPath, absolutePath);
-            if (!fileName.Contains(_fileFilter, StringComparison.CurrentCultureIgnoreCase))
+            if (!fileName.Contains(_anmFileFilter, StringComparison.CurrentCultureIgnoreCase))
                 continue;
             string relativePath = Path.GetRelativePath(brawlPath, absolutePath);
 
@@ -58,7 +84,7 @@ public sealed class AnmWindow
                     assetLoader.AnmFileCache.RemoveCached(absolutePath);
                 }
                 ImGui.SameLine();
-                ImGui.TextDisabled(" Loading...");
+                ImGui.TextDisabled("Loading...");
             }
             else if (assetLoader.TryGetAnm(relativePath, out AnmFile? anm))
             {
@@ -67,7 +93,7 @@ public sealed class AnmWindow
                     ImGui.SameLine();
                     if (ImGui.Button($"Unload##{fileName}"))
                     {
-                        AnmUnloadRequested?.Invoke(this, relativePath);
+                        FileUnloaded?.Invoke(this, relativePath);
                         assetLoader.AnmFileCache.RemoveCached(absolutePath);
                     }
                 }
@@ -137,7 +163,103 @@ public sealed class AnmWindow
                 }
             }
         }
+    }
 
-        ImGui.End();
+    private void SwfTab(string brawlPath, AssetLoader assetLoader, GfxInfo info)
+    {
+        string[] baseFiles = Directory.Exists(brawlPath) ? Directory.GetFiles(brawlPath, "*.swf") : [];
+        string bonesSwfPath = Path.Join(brawlPath, "bones");
+        string[] bonesFiles = Directory.Exists(bonesSwfPath) ? Directory.GetFiles(bonesSwfPath, "*.swf") : [];
+
+        ImGui.InputText("Filter files", ref _swfFileFilter, 256);
+        foreach (string absolutePath in baseFiles.Concat(bonesFiles))
+        {
+            string fileName = Path.GetRelativePath(brawlPath, absolutePath);
+            if (!fileName.Contains(_swfFileFilter, StringComparison.CurrentCultureIgnoreCase))
+                continue;
+            string relativePath = Path.GetRelativePath(brawlPath, absolutePath);
+
+            if (assetLoader.IsSwfLoading(relativePath))
+            {
+                ImGui.Text(fileName);
+                ImGui.SameLine();
+                if (ImGui.Button($"Cancel##{fileName}"))
+                {
+                    assetLoader.SwfFileCache.RemoveCached(absolutePath);
+                }
+                ImGui.SameLine();
+                ImGui.TextDisabled("Loading...");
+            }
+            else if (assetLoader.TryGetSwf(relativePath, out SwfFileData? swf))
+            {
+                void unloadButton()
+                {
+                    ImGui.SameLine();
+                    if (ImGui.Button($"Unload##{fileName}"))
+                    {
+                        FileUnloaded?.Invoke(this, relativePath);
+                        assetLoader.SwfFileCache.RemoveCached(absolutePath);
+                    }
+                }
+
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.TreeNode(fileName))
+                {
+                    unloadButton();
+
+                    string filter = _swfFilterState.GetValueOrDefault(fileName, "");
+                    if (ImGui.InputText("Filter sprites", ref filter, 256))
+                    {
+                        _swfFilterState[fileName] = filter;
+                    }
+
+                    if (ImGui.BeginListBox(""))
+                    {
+                        foreach ((_, DefineSpriteTag spriteTag) in swf.SpriteTags)
+                        {
+                            if (!swf.ReverseSymbolClass.TryGetValue(spriteTag.SpriteID, out string? spriteName))
+                                continue;
+                            if (!spriteName.Contains(filter, StringComparison.CurrentCultureIgnoreCase))
+                                continue;
+
+                            bool selected =
+                                fileName == info.AnimFile &&
+                                spriteName == info.AnimClass &&
+                                string.IsNullOrEmpty(info.Animation);
+
+                            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                            if (ImGui.Selectable(spriteName, selected))
+                            {
+                                info.SourceFilePath = relativePath;
+                                info.AnimFile = fileName;
+                                info.AnimClass = spriteName;
+                                info.Animation = "";
+                            }
+                            if (selected) ImGui.PopStyleColor();
+                        }
+                        ImGui.EndListBox();
+                    }
+
+                    ImGui.TreePop();
+                }
+                else
+                {
+                    unloadButton();
+                }
+            }
+            else
+            {
+                ImGui.Text(fileName);
+                ImGui.SameLine();
+                if (ImGui.Button($"Load##{fileName}"))
+                {
+                    async Task load()
+                    {
+                        await assetLoader.LoadSwf(relativePath);
+                    }
+                    _ = load();
+                }
+            }
+        }
     }
 }

@@ -27,7 +27,7 @@ public sealed class AssetLoader(string brawlPath)
 
     public AnmFileCache AnmFileCache { get; } = new();
     private readonly TextureCache _textureCache = new();
-    private readonly SwfFileCache _swfFileCache = new();
+    public SwfFileCache SwfFileCache { get; } = new();
     private readonly SwfShapeCache _swfShapeCache = new();
     private readonly SwfOverrideMap _swfFileOverrides = new(brawlPath);
 
@@ -52,12 +52,24 @@ public sealed class AssetLoader(string brawlPath)
         return null;
     }
 
+    public bool IsSwfLoading(string filePath)
+    {
+        string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
+        return SwfFileCache.IsLoading(finalPath);
+    }
+
+    public bool TryGetSwf(string filePath, [MaybeNullWhen(false)] out SwfFileData swf)
+    {
+        string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
+        return SwfFileCache.TryGetCached(finalPath, out swf);
+    }
+
     public ValueTask<SwfFileData> LoadSwf(string filePath)
     {
         string finalPath = Path.GetFullPath(Path.Combine(_brawlPath, filePath));
         if (_swfFileOverrides.TryGetValue(finalPath, out SwfOverride overrideData))
             return ValueTask.FromResult(overrideData.Data);
-        return _swfFileCache.LoadAsync(finalPath);
+        return SwfFileCache.LoadAsync(finalPath);
     }
 
     public Texture2DWrapper? LoadTexture(ISpriteData spriteData)
@@ -129,7 +141,7 @@ public sealed class AssetLoader(string brawlPath)
 
     public void ClearSwfFileCache()
     {
-        _swfFileCache.Clear();
+        SwfFileCache.Clear();
     }
 
     public void ClearAnmCache()
