@@ -44,13 +44,13 @@ public sealed class AnmWindow
 
         if (ImGui.BeginTabBar("options", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton))
         {
-            if (ImGui.BeginTabItem("Anm"))
+            if (ImGui.BeginTabItem(".ANM"))
             {
                 AnmTab(brawlPath, assetLoader, info);
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Swf"))
+            if (ImGui.BeginTabItem(".SWF"))
             {
                 SwfTab(brawlPath, assetLoader, info);
                 ImGui.EndTabItem();
@@ -175,13 +175,14 @@ public sealed class AnmWindow
         foreach (string absolutePath in baseFiles.Concat(bonesFiles))
         {
             string fileName = Path.GetRelativePath(brawlPath, absolutePath);
-            if (!fileName.Contains(_swfFileFilter, StringComparison.CurrentCultureIgnoreCase))
+            string displayName = Path.GetFileName(fileName);
+            if (!displayName.Contains(_swfFileFilter, StringComparison.CurrentCultureIgnoreCase))
                 continue;
             string relativePath = Path.GetRelativePath(brawlPath, absolutePath);
 
             if (assetLoader.IsSwfLoading(relativePath))
             {
-                ImGui.Text(fileName);
+                ImGui.Text(displayName);
                 ImGui.SameLine();
                 if (ImGui.Button($"Cancel##{fileName}"))
                 {
@@ -203,7 +204,7 @@ public sealed class AnmWindow
                 }
 
                 ImGui.SetNextItemAllowOverlap();
-                if (ImGui.TreeNode(fileName))
+                if (ImGui.TreeNode(displayName))
                 {
                     unloadButton();
 
@@ -249,7 +250,7 @@ public sealed class AnmWindow
             }
             else
             {
-                ImGui.Text(fileName);
+                ImGui.Text(displayName);
                 ImGui.SameLine();
                 if (ImGui.Button($"Load##{fileName}"))
                 {
