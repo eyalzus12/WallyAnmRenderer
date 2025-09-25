@@ -23,7 +23,7 @@ public sealed class GfxInfo : IGfxInfo
     public string? ItemType { get; set; }
     public string? SpawnBotType { get; set; }
     public string? CompanionType { get; set; }
-    public PodiumTeamEnum PodiumTypeTeam = PodiumTeamEnum.None;
+    public PodiumTeamEnum PodiumTypeTeam { get; set; } = PodiumTeamEnum.None;
     public string? PodiumType { get; set; }
     public string? SeasonBorderType { get; set; }
     public string? PlayerThemeType { get; set; }
@@ -31,6 +31,10 @@ public sealed class GfxInfo : IGfxInfo
     public string? EmojiType { get; set; }
     public string? EndMatchVoicelineType { get; set; }
     public string? ClientThemeType { get; set; }
+    public BubbleTagTeamEnum BubbleTagTeam { get; set; } = BubbleTagTeamEnum.Red;
+    public VolleyBattleTeamEnum VolleyBattleTeam { get; set; } = VolleyBattleTeamEnum.None;
+    public int VolleyBattleBallNumber { get; set; } = 1;
+    public HordeTypeEnum HordeType { get; set; } = HordeTypeEnum.Standard;
     public ColorScheme? ColorScheme { get; set; }
 
     public uint CrateColorA { get; set; } = 0;
@@ -221,6 +225,24 @@ public sealed class GfxInfo : IGfxInfo
                 // this may cause conflicts with other custom arts, but hopefully not.
                 gfx = AddCustomArts(gfx, themeGfx.CustomArts);
             }
+        }
+
+        ICustomArt? bubbleCustomArt = BubbleTagUtils.GetBubbleCustomArt(BubbleTagTeam);
+        if (bubbleCustomArt is not null)
+        {
+            gfx = AddCustomArts(gfx, [bubbleCustomArt]);
+        }
+
+        ICustomArt? volleyballCustomArt = VolleyBattleUtils.GetBallCustomArt(VolleyBattleTeam, VolleyBattleBallNumber);
+        if (volleyballCustomArt is not null)
+        {
+            gfx = AddCustomArts(gfx, [volleyballCustomArt]);
+        }
+
+        ICustomArt? hordeCustomArt = HordeUtils.GetDemonCustomArt(HordeType);
+        if (hordeCustomArt is not null)
+        {
+            gfx = AddCustomArts(gfx, [hordeCustomArt]);
         }
 
         if (CrateColorA != 0)

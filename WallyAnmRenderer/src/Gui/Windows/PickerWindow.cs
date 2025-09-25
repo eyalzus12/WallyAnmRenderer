@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading;
 using ImGuiNET;
@@ -106,6 +107,12 @@ public sealed class PickerWindow
         if (ImGui.TreeNode("Mouth/Eye Overrides"))
         {
             OverridesSection(info);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Gamemodes"))
+        {
+            GamemodesSection(info);
             ImGui.TreePop();
         }
 
@@ -893,6 +900,71 @@ public sealed class PickerWindow
             }
             ImGui.EndListBox();
         }
+    }
+
+    public static void GamemodesSection(GfxInfo info)
+    {
+        ImGui.PushTextWrapPos();
+        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_GameModes, each their own animation class");
+        ImGui.PopTextWrapPos();
+
+        ImGui.SeparatorText("Bubble tag (a__AnimationTagBubble)");
+        ImGui.Text("Bubble team");
+        if (ImGui.BeginListBox("###bubbleteam", new(0, 40)))
+        {
+            foreach (BubbleTagTeamEnum team in Enum.GetValues<BubbleTagTeamEnum>())
+            {
+                string overrideText = team.ToString();
+                bool selected = team == info.BubbleTagTeam;
+                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(overrideText, selected))
+                {
+                    info.BubbleTagTeam = team;
+                }
+                if (selected) ImGui.PopStyleColor();
+            }
+            ImGui.EndListBox();
+        }
+
+        ImGui.SeparatorText("Horde (a__AnimationHordeDemon)");
+        ImGui.Text("Demon style");
+        if (ImGui.BeginListBox("###hordedemon", new(0, 40)))
+        {
+            foreach (HordeTypeEnum type in Enum.GetValues<HordeTypeEnum>())
+            {
+                string overrideText = type.ToString();
+                bool selected = type == info.HordeType;
+                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(overrideText, selected))
+                {
+                    info.HordeType = type;
+                }
+                if (selected) ImGui.PopStyleColor();
+            }
+            ImGui.EndListBox();
+        }
+
+        ImGui.SeparatorText("Volleybrawl (a__AnimationSoccerBall)");
+        ImGui.Text("Ball color");
+        if (ImGui.BeginListBox("###volleybattleball", new(0, 80)))
+        {
+            foreach (VolleyBattleTeamEnum team in Enum.GetValues<VolleyBattleTeamEnum>())
+            {
+                string overrideText = team.ToString();
+                bool selected = team == info.VolleyBattleTeam;
+                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(overrideText, selected))
+                {
+                    info.VolleyBattleTeam = team;
+                }
+                if (selected) ImGui.PopStyleColor();
+            }
+            ImGui.EndListBox();
+        }
+        ImGui.Text("Ball damage amount");
+        int ballNumber = info.VolleyBattleBallNumber;
+        ImGui.SliderInt("###balldamage", ref ballNumber, 1, 4, "%d", ImGuiSliderFlags.AlwaysClamp);
+        info.VolleyBattleBallNumber = ballNumber;
     }
 
     private static void OnSelect(Loader loader)
