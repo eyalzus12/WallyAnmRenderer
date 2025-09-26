@@ -18,7 +18,9 @@ public sealed class PickerWindow
 
     private string _costumeTypeFilter = "";
     private string _weaponSkinTypeFilter = "";
-    private string _itemTypeFilter = "";
+    private string _heldItemTypeFilter = "";
+    private string _equipItemTypeFilter = "";
+    private string _worldItemTypeFilter = "";
     private string _spawnBotTypeFilter = "";
     private string _companionTypeFilter = "";
     private string _podiumTypeFilter = "";
@@ -86,9 +88,9 @@ public sealed class PickerWindow
             ImGui.TreePop();
         }
 
-        if (ImGui.TreeNode("Held items"))
+        if (ImGui.TreeNode("Items"))
         {
-            HeldItemSection(loader, info);
+            ItemsSection(loader, info);
             ImGui.TreePop();
         }
 
@@ -302,7 +304,7 @@ public sealed class PickerWindow
         }
     }
 
-    private void HeldItemSection(Loader loader, GfxInfo gfxInfo)
+    private void ItemsSection(Loader loader, GfxInfo gfxInfo)
     {
         if (loader.SwzFiles?.Game is null)
         {
@@ -310,19 +312,22 @@ public sealed class PickerWindow
             return;
         }
 
+        ImGui.SeparatorText("Held item");
+        ImGui.TextColored(NOTE_COLOR, "Use Animation_Player.swf/a__HeldItemAnimation");
+
         int team = gfxInfo.ItemTypeTeam;
-        ImGui.Combo("Team", ref team, TEAM_OPTIONS, TEAM_OPTIONS.Length);
+        ImGui.Combo("Team##held", ref team, TEAM_OPTIONS, TEAM_OPTIONS.Length);
         gfxInfo.ItemTypeTeam = team;
 
         ItemTypes itemTypes = loader.SwzFiles.Game.ItemTypes;
-        ImGui.InputText("Filter items", ref _itemTypeFilter, 256);
-        if (ImGui.BeginListBox("###itemselect"))
+        ImGui.InputText("Filter items##held", ref _heldItemTypeFilter, 256);
+        if (ImGui.BeginListBox("###helditemselect"))
         {
-            bool selected = gfxInfo.ItemType is null;
+            bool selected = gfxInfo.HeldItemType is null;
             if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
             if (ImGui.Selectable("None##none", selected))
             {
-                gfxInfo.ItemType = null;
+                gfxInfo.HeldItemType = null;
             }
             if (selected) ImGui.PopStyleColor();
 
@@ -340,14 +345,124 @@ public sealed class PickerWindow
                     if (loader.TryGetStringName(displayNameKey, out string? realItemName))
                         itemName = $"{realItemName} ({itemType})";
                 }
-                if (!itemName.Contains(_itemTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                if (!itemName.Contains(_heldItemTypeFilter, StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
-                bool selected2 = itemType == gfxInfo.ItemType;
+                bool selected2 = itemType == gfxInfo.HeldItemType;
                 if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
                 if (ImGui.Selectable(itemName, selected2))
                 {
-                    gfxInfo.ItemType = itemType;
+                    gfxInfo.HeldItemType = itemType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+
+        ImGui.SeparatorText("Equipped item");
+
+        if (gfxInfo.EquipItemType is not null && itemTypes.TryGetGfx(gfxInfo.EquipItemType, out ItemTypesGfx? equipItem))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {equipItem.EquipAnimFile}/{equipItem.EquipAnimClass}");
+
+            ImGui.PushTextWrapPos();
+            ImGui.TextColored(NOTE_COLOR, "You may not notice changes if you selected a weapon");
+            ImGui.PopTextWrapPos();
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Intended animation depends on item");
+        }
+
+        ImGui.InputText("Filter items##equip", ref _equipItemTypeFilter, 256);
+        if (ImGui.BeginListBox("###equipitemselect"))
+        {
+            bool selected = gfxInfo.EquipItemType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.EquipItemType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string itemType in itemTypes.Items)
+            {
+                string itemName = itemType;
+
+                // filter out items without an equip gfx
+                if (!itemTypes.TryGetGfx(itemType, out ItemTypesGfx? itemGfx) || !itemGfx.HasEquipCustomArt)
+                    continue;
+
+                if (itemTypes.TryGetInfo(itemType, out ItemTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realItemName))
+                        itemName = $"{realItemName} ({itemType})";
+                }
+                if (!itemName.Contains(_equipItemTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = itemType == gfxInfo.EquipItemType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(itemName, selected2))
+                {
+                    gfxInfo.EquipItemType = itemType;
+                }
+                if (selected2) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndListBox();
+        }
+
+        ImGui.SeparatorText("World item");
+
+        if (gfxInfo.WorldItemType is not null && itemTypes.TryGetGfx(gfxInfo.WorldItemType, out ItemTypesGfx? worldItem))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {worldItem.WorldAnimFile}/{worldItem.WorldAnimClass}");
+
+            ImGui.PushTextWrapPos();
+            ImGui.TextColored(NOTE_COLOR, "You may not notice changes if you selected a weapon");
+            ImGui.PopTextWrapPos();
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Intended animation depends on item");
+        }
+
+        ImGui.InputText("Filter items##world", ref _worldItemTypeFilter, 256);
+        if (ImGui.BeginListBox("###worlditemselect"))
+        {
+            bool selected = gfxInfo.WorldItemType is null;
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+            if (ImGui.Selectable("None##none", selected))
+            {
+                gfxInfo.WorldItemType = null;
+            }
+            if (selected) ImGui.PopStyleColor();
+
+            foreach (string itemType in itemTypes.Items)
+            {
+                string itemName = itemType;
+
+                // filter out items without a world gfx
+                if (!itemTypes.TryGetGfx(itemType, out ItemTypesGfx? itemGfx) || !itemGfx.HasWorldCustomArt)
+                    continue;
+
+                if (itemTypes.TryGetInfo(itemType, out ItemTypeInfo info))
+                {
+                    string displayNameKey = info.DisplayNameKey;
+                    if (loader.TryGetStringName(displayNameKey, out string? realItemName))
+                        itemName = $"{realItemName} ({itemType})";
+                }
+                if (!itemName.Contains(_worldItemTypeFilter, StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+
+                bool selected2 = itemType == gfxInfo.WorldItemType;
+                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                if (ImGui.Selectable(itemName, selected2))
+                {
+                    gfxInfo.WorldItemType = itemType;
                 }
                 if (selected2) ImGui.PopStyleColor();
             }

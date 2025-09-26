@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading;
@@ -20,7 +21,9 @@ public sealed class GfxInfo : IGfxInfo
     public string? CostumeType { get; set; }
     public string? WeaponSkinType { get; set; }
     public int ItemTypeTeam { get; set; } = 0;
-    public string? ItemType { get; set; }
+    public string? HeldItemType { get; set; }
+    public string? EquipItemType { get; set; }
+    public string? WorldItemType { get; set; }
     public string? SpawnBotType { get; set; }
     public string? CompanionType { get; set; }
     public PodiumTeamEnum PodiumTypeTeam { get; set; } = PodiumTeamEnum.None;
@@ -86,16 +89,49 @@ public sealed class GfxInfo : IGfxInfo
             }
         }
 
-        if (ItemType is not null)
+        if (HeldItemType is not null)
         {
             ItemTypes itemTypes = gameFiles.ItemTypes;
-            if (itemTypes.TryGetGfx(ItemType, out ItemTypesGfx? itemGfx))
+            if (itemTypes.TryGetGfx(HeldItemType, out ItemTypesGfx? itemGfx))
             {
                 gfx = itemGfx.ToHeldGfx(gfx, ItemTypeTeam);
             }
             else
             {
-                throw new ArgumentException($"Invalid item type {ItemType}");
+                throw new ArgumentException($"Invalid item type {HeldItemType}");
+            }
+        }
+
+        if (EquipItemType is not null)
+        {
+            ItemTypes itemTypes = gameFiles.ItemTypes;
+            if (itemTypes.TryGetGfx(EquipItemType, out ItemTypesGfx? itemGfx))
+            {
+                gfx = itemGfx.ToEquipGfx(gfx);
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid item type {EquipItemType}");
+            }
+        }
+
+        if (WorldItemType is not null)
+        {
+            ItemTypes itemTypes = gameFiles.ItemTypes;
+            if (itemTypes.TryGetGfx(WorldItemType, out ItemTypesGfx? itemGfx))
+            {
+                IGfxType? worldGfx = itemGfx.ToWorldGfx();
+                if (worldGfx is not null)
+                {
+                    // we do a bit of cheating. the world gfx is meant to be a standalone gfx, so we merge it manually.
+                    // this should be safe because the art type is unique.
+                    gfx = AddCustomArts(gfx, worldGfx.CustomArts);
+                    gfx = AddColorSwaps(gfx, worldGfx.ColorSwaps);
+                }
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid item type {WorldItemType}");
             }
         }
 
@@ -268,15 +304,21 @@ public sealed class GfxInfo : IGfxInfo
         return (gfx, Flip);
     }
 
-    private static GfxType AddCustomArts(IGfxType gfx, IEnumerable<ICustomArt> customArts)
+    private static IGfxType AddCustomArts(IGfxType gfx, IEnumerable<ICustomArt> customArts)
     {
+        if (customArts.TryGetNonEnumeratedCount(out int length) && length == 0)
+            return gfx;
+
         GfxType gfxType = gfx is GfxType a ? a : new(gfx);
         gfxType.CustomArts.AddRange(customArts);
         return gfxType;
     }
 
-    private static GfxType AddColorSwaps(IGfxType gfx, IEnumerable<IColorSwap> colorSwaps)
+    private static IGfxType AddColorSwaps(IGfxType gfx, IEnumerable<IColorSwap> colorSwaps)
     {
+        if (colorSwaps.TryGetNonEnumeratedCount(out int length) && length == 0)
+            return gfx;
+
         GfxType gfxType = gfx is GfxType a ? a : new(gfx);
         gfxType.ColorSwaps.AddRange(colorSwaps);
         return gfxType;
