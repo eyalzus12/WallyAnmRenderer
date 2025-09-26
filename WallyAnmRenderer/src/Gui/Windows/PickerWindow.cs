@@ -1,6 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
-using BrawlhallaAnimLib;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading;
 using ImGuiNET;
@@ -11,7 +12,12 @@ public sealed class PickerWindow
 {
     private static readonly Vector4 NOTE_COLOR = ImGuiEx.RGBHexToVec4(0x00AAFF);
     private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
-    private static readonly string[] TEAM_OPTIONS = ["None", "Red", "Blue"];
+    private static readonly string[] ITEM_TEAM_OPTIONS = ["None", "Red", "Blue"];
+    private static readonly string[] PODIUM_TEAM_OPTIONS = ["None", "Red", "Blue"];
+    private static readonly string[] BUBBLE_TEAM_OPTIONS = ["None", "Red", "Blue"];
+    private static readonly string[] HORDE_TYPE_OPTIONS = ["Standard", "Nightmare"];
+    private static readonly string[] VOLLEY_BALL_COLOR_OPTIONS = ["None", "White", "Red", "Blue"];
+    private const string DEBUG_COLOR_TEXT = "DEBUG (not a real color scheme)";
 
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
@@ -28,8 +34,8 @@ public sealed class PickerWindow
     private string _playerThemeTypeFilter = "";
     private string _avatarTypesFilter = "";
     private string _emojiTypesFilter = "";
-    private string _endMatchVoicelineTypesFilter = "";
-    private string _clientThemeTypesFilter = "";
+    private string _endMatchVoicelineTypeFilter = "";
+    private string _clientThemeTypeFilter = "";
     private string _colorSchemeFilter = "";
 
     private readonly CustomColorList _customColors = new();
@@ -44,7 +50,12 @@ public sealed class PickerWindow
         };
     }
 
-    public void Show(Loader? loader, GfxInfo info, ref RlColor bgColor)
+    private static Func<T, string, bool> CreateShouldShowFromFilter<T>(string filter)
+    {
+        return (thing, name) => thing is null || name.Contains(filter, StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    public void Show(Loader? loader, GfxInfo gfxInfo, ref RlColor bgColor)
     {
         ImGui.Begin("Options", ref _open);
         if (loader is null)
@@ -55,9 +66,9 @@ public sealed class PickerWindow
 
         ImGui.SeparatorText("Config");
 
-        bool flip = info.Flip;
+        bool flip = gfxInfo.Flip;
         if (ImGui.Checkbox("Flip", ref flip))
-            info.Flip = flip;
+            gfxInfo.Flip = flip;
 
         Vector3 bgColor2 = RaylibUtils.RlColorToVector3(bgColor);
         if (ImGui.ColorEdit3("Background color", ref bgColor2, ImGuiColorEditFlags.NoInputs))
@@ -68,53 +79,53 @@ public sealed class PickerWindow
         ImGui.TextColored(new(1, 1, 0, 1), "WARNING! Increasing this can make your CPU (and GPU) cry. The game seems to never use a value above 2.");
         ImGui.PopTextWrapPos();
 
-        double animScale = info.AnimScale;
+        double animScale = gfxInfo.AnimScale;
         if (ImGui.InputDouble("Render quality", ref animScale))
         {
-            info.AnimScale = animScale;
+            gfxInfo.AnimScale = animScale;
             loader.AssetLoader.ClearSwfShapeCache();
         }
 
         ImGui.SeparatorText("Gameplay");
         if (ImGui.TreeNode("Legend skins"))
         {
-            CostumeTypeSection(loader, info);
+            CostumeTypeSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Weapon skins"))
         {
-            WeaponSkinTypeSection(loader, info);
+            WeaponSkinTypeSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Items"))
         {
-            ItemsSection(loader, info);
+            ItemsSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Sidekicks"))
         {
-            SpawnBotTypesSection(loader, info);
+            SpawnBotTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Companions"))
         {
-            CompanionTypesSection(loader, info);
+            CompanionTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Mouth/Eye Overrides"))
         {
-            OverridesSection(info);
+            OverridesSection(gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Gamemodes"))
         {
-            GamemodesSection(info);
+            GamemodesSection(gfxInfo);
             ImGui.TreePop();
         }
 
@@ -122,19 +133,19 @@ public sealed class PickerWindow
 
         if (ImGui.TreeNode("Color schemes"))
         {
-            ColorSchemeSection(loader, info);
+            ColorSchemeSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Custom colors"))
         {
-            _customColors.Show(info.ColorScheme);
+            _customColors.Show(gfxInfo.ColorScheme);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Weapon spawn colors"))
         {
-            CrateColorsSection(loader, info);
+            CrateColorsSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
@@ -142,43 +153,43 @@ public sealed class PickerWindow
 
         if (ImGui.TreeNode("Podiums"))
         {
-            PodiumTypesSection(loader, info);
+            PodiumTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Loading frames"))
         {
-            SeasonBorderTypesSection(loader, info);
+            SeasonBorderTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("UI themes"))
         {
-            PlayerThemeTypesSection(loader, info);
+            PlayerThemeTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Avatars"))
         {
-            AvatarTypesSection(loader, info);
+            AvatarTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Emojis"))
         {
-            EmojiTypesSection(loader, info);
+            EmojiTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("Event Logos"))
         {
-            ClientThemeTypesSection(loader, info);
+            ClientThemeTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNode("End of Match Voicelines"))
         {
-            EndMatchVoicelineTypesSection(loader, info);
+            EndMatchVoicelineTypesSection(loader, gfxInfo);
             ImGui.TreePop();
         }
 
@@ -195,67 +206,60 @@ public sealed class PickerWindow
 
         CostumeTypes costumeTypes = loader.SwzFiles.Game.CostumeTypes;
         HeroTypes heroTypes = loader.SwzFiles.Game.HeroTypes;
-        ImGui.InputText("Filter costumes", ref _costumeTypeFilter, 256);
-        if (ImGui.BeginListBox("###costumeselect"))
+
+        string costumeToName(string? costumeType)
         {
-            bool selected = gfxInfo.CostumeType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (costumeType is null) return "None##none";
+
+            string costumeName = costumeType;
+            if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
             {
-                gfxInfo.CostumeType = null;
-                OnSelect(loader);
-            }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string costumeType in costumeTypes.Costumes)
-            {
-                string costumeName = costumeType;
-                if (costumeTypes.TryGetInfo(costumeType, out CostumeTypeInfo info))
+                bool hasHero = heroTypes.TryGetHero(info.OwnerHero, out HeroTypeInfo hero);
+                // First check if we have a hero and it's the default skin (highest priority case)
+                if (hasHero && info.CostumeIndex == 0)
                 {
-                    bool hasHero = heroTypes.TryGetHero(info.OwnerHero, out HeroTypeInfo hero);
-                    // First check if we have a hero and it's the default skin (highest priority case)
-                    if (hasHero && info.CostumeIndex == 0)
-                    {
-                        // Default skin always uses hero name
-                        // e.g. `Bödvar (Viking)`
-                        costumeName = $"{hero.BioName} ({costumeType})";
-                    }
-                    // Otherwise try to get the display name
-                    else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
-                    {
-                        // We have the display name, now see if we also have hero info
-                        if (hasHero && !string.IsNullOrEmpty(hero.BioName))
-                        {
-                            // Normal skin with both display name and hero info
-                            // e.g. `Bear'dvar (Bödvar: Bear)`
-                            costumeName = $"{realCostumeName} ({hero.BioName}: {costumeType})";
-                        }
-                        else
-                        {
-                            // Just display name
-                            // e.g. `DEFAULT_CHARACTER (Default)`
-                            costumeName = $"{realCostumeName} ({costumeType})";
-                        }
-                    }
-                    // If we reach here, we keep the default costumeName = costumeType
-                    // e.g. `Mech`
+                    // Default skin always uses hero name
+                    // e.g. `Bödvar (Viking)`
+                    costumeName = $"{hero.BioName} ({costumeType})";
                 }
-
-                if (!costumeName.Contains(_costumeTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = costumeType == gfxInfo.CostumeType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(costumeName, selected2))
+                // Otherwise try to get the display name
+                else if (loader.TryGetStringName(info.DisplayNameKey, out string? realCostumeName))
                 {
-                    gfxInfo.CostumeType = costumeType;
-                    OnSelect(loader);
+                    // We have the display name, now see if we also have hero info
+                    if (hasHero && !string.IsNullOrEmpty(hero.BioName))
+                    {
+                        // Normal skin with both display name and hero info
+                        // e.g. `Bear'dvar (Bödvar: Bear)`
+                        costumeName = $"{realCostumeName} ({hero.BioName}: {costumeType})";
+                    }
+                    else
+                    {
+                        // Just display name
+                        // e.g. `DEFAULT_CHARACTER (Default)`
+                        costumeName = $"{realCostumeName} ({costumeType})";
+                    }
                 }
-                if (selected2) ImGui.PopStyleColor();
+                // If we reach here, we keep the default costumeName = costumeType
+                // e.g. `Mech`
             }
-
-            ImGui.EndListBox();
+            return costumeName;
         }
+
+        void selectCostume(string? costumeType)
+        {
+            gfxInfo.CostumeType = costumeType;
+            OnSelect(loader);
+        }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = costumeTypes.Costumes.Prepend(null),
+            OptionToString = costumeToName,
+            OnSelect = selectCostume,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_costumeTypeFilter)
+        };
+        ImGui.InputText("Filter costumes", ref _costumeTypeFilter, 256);
+        picker.Show(gfxInfo.CostumeType);
     }
 
     private void WeaponSkinTypeSection(Loader loader, GfxInfo gfxInfo)
@@ -267,42 +271,33 @@ public sealed class PickerWindow
         }
 
         WeaponSkinTypes weaponSkinTypes = loader.SwzFiles.Game.WeaponSkinTypes;
-        ImGui.InputText("Filter weapon skins", ref _weaponSkinTypeFilter, 256);
-        if (ImGui.BeginListBox("###weaponselect"))
+
+        string weaponSkinToName(string? weaponSkinType)
         {
-            bool selected = gfxInfo.WeaponSkinType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (weaponSkinType is null) return "None##none";
+
+            string weaponSkinName = weaponSkinType;
+            if (weaponSkinTypes.TryGetInfo(weaponSkinType, out WeaponSkinTypeInfo info))
             {
-                gfxInfo.WeaponSkinType = null;
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realWeaponSkinName))
+                    weaponSkinName = $"{realWeaponSkinName} ({weaponSkinType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string weaponSkinType in weaponSkinTypes.WeaponSkins)
-            {
-                string weaponSkinName = weaponSkinType;
-                if (weaponSkinTypes.TryGetInfo(weaponSkinType, out WeaponSkinTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realWeaponSkinName))
-                        weaponSkinName = $"{realWeaponSkinName} ({weaponSkinType})";
-                }
-
-                if (!weaponSkinName.Contains(_weaponSkinTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = weaponSkinType == gfxInfo.WeaponSkinType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(weaponSkinName, selected2))
-                {
-                    gfxInfo.WeaponSkinType = weaponSkinType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return weaponSkinName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = weaponSkinTypes.WeaponSkins.Prepend(null),
+            OptionToString = weaponSkinToName,
+            OnSelect = (weaponSkinType) => gfxInfo.WeaponSkinType = weaponSkinType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_weaponSkinTypeFilter),
+        };
+        ImGui.InputText("Filter weapon skins", ref _weaponSkinTypeFilter, 256);
+        picker.Show(gfxInfo.WeaponSkinType);
     }
+
+    private readonly record struct ShouldShowItem(string ItemType, bool Held = false, bool Equip = false, bool World = false);
 
     private void ItemsSection(Loader loader, GfxInfo gfxInfo)
     {
@@ -312,54 +307,59 @@ public sealed class PickerWindow
             return;
         }
 
+        ItemTypes itemTypes = loader.SwzFiles.Game.ItemTypes;
+
+        string itemToName(string? itemType)
+        {
+            if (itemType is null) return "None##none";
+
+            string itemName = itemType;
+            if (itemTypes.TryGetInfo(itemType, out ItemTypeInfo info))
+            {
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realItemName))
+                    itemName = $"{realItemName} ({itemType})";
+            }
+            return itemName;
+        }
+
+        IEnumerable<ShouldShowItem> shouldShowItemTypes = itemTypes.Items.Select((itemType) =>
+        {
+            if (!itemTypes.TryGetGfx(itemType, out ItemTypesGfx? itemGfx))
+                return new ShouldShowItem(itemType);
+
+            return new(itemType)
+            {
+                Held = itemGfx.HasHeldCustomArt,
+                Equip = itemGfx.HasEquipCustomArt,
+                World = itemGfx.HasWorldCustomArt,
+            };
+        });
+
+        ImGui.PushID("held");
         ImGui.SeparatorText("Held item");
         ImGui.TextColored(NOTE_COLOR, "Use Animation_Player.swf/a__HeldItemAnimation");
 
+        // team
         int team = gfxInfo.ItemTypeTeam;
-        ImGui.Combo("Team##held", ref team, TEAM_OPTIONS, TEAM_OPTIONS.Length);
+        ImGui.Combo("Team", ref team, ITEM_TEAM_OPTIONS, ITEM_TEAM_OPTIONS.Length);
         gfxInfo.ItemTypeTeam = team;
-
-        ItemTypes itemTypes = loader.SwzFiles.Game.ItemTypes;
-        ImGui.InputText("Filter items##held", ref _heldItemTypeFilter, 256);
-        if (ImGui.BeginListBox("###helditemselect"))
+        // item
+        IEnumerable<string?> heldItemTypes = shouldShowItemTypes
+            .Where((shouldShow) => shouldShow.Held)
+            .Select((shouldShow) => shouldShow.ItemType)
+            .Prepend(null);
+        PickerListBox<string?> heldPicker = new()
         {
-            bool selected = gfxInfo.HeldItemType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
-            {
-                gfxInfo.HeldItemType = null;
-            }
-            if (selected) ImGui.PopStyleColor();
+            Options = heldItemTypes,
+            OptionToString = itemToName,
+            OnSelect = (itemType) => gfxInfo.HeldItemType = itemType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_heldItemTypeFilter),
+        };
+        ImGui.InputText("Filter items", ref _heldItemTypeFilter, 256);
+        heldPicker.Show(gfxInfo.HeldItemType);
 
-            foreach (string itemType in itemTypes.Items)
-            {
-                string itemName = itemType;
-
-                // filter out items without a held gfx
-                if (!itemTypes.TryGetGfx(itemType, out ItemTypesGfx? itemGfx) || !itemGfx.HasHeldCustomArt)
-                    continue;
-
-                if (itemTypes.TryGetInfo(itemType, out ItemTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realItemName))
-                        itemName = $"{realItemName} ({itemType})";
-                }
-                if (!itemName.Contains(_heldItemTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = itemType == gfxInfo.HeldItemType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(itemName, selected2))
-                {
-                    gfxInfo.HeldItemType = itemType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
-        }
-
+        ImGui.PopID(); ImGui.PushID("equip");
         ImGui.SeparatorText("Equipped item");
 
         if (gfxInfo.EquipItemType is not null && itemTypes.TryGetGfx(gfxInfo.EquipItemType, out ItemTypesGfx? equipItem))
@@ -375,46 +375,21 @@ public sealed class PickerWindow
             ImGui.TextColored(NOTE_COLOR, "Intended animation depends on item");
         }
 
-        ImGui.InputText("Filter items##equip", ref _equipItemTypeFilter, 256);
-        if (ImGui.BeginListBox("###equipitemselect"))
+        IEnumerable<string?> equipItemTypes = shouldShowItemTypes
+            .Where((shouldShow) => shouldShow.Equip)
+            .Select((shouldShow) => shouldShow.ItemType)
+            .Prepend(null);
+        PickerListBox<string?> equipPicker = new()
         {
-            bool selected = gfxInfo.EquipItemType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
-            {
-                gfxInfo.EquipItemType = null;
-            }
-            if (selected) ImGui.PopStyleColor();
+            Options = equipItemTypes,
+            OptionToString = itemToName,
+            OnSelect = (itemType) => gfxInfo.EquipItemType = itemType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_equipItemTypeFilter),
+        };
+        ImGui.InputText("Filter items", ref _equipItemTypeFilter, 256);
+        equipPicker.Show(gfxInfo.EquipItemType);
 
-            foreach (string itemType in itemTypes.Items)
-            {
-                string itemName = itemType;
-
-                // filter out items without an equip gfx
-                if (!itemTypes.TryGetGfx(itemType, out ItemTypesGfx? itemGfx) || !itemGfx.HasEquipCustomArt)
-                    continue;
-
-                if (itemTypes.TryGetInfo(itemType, out ItemTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realItemName))
-                        itemName = $"{realItemName} ({itemType})";
-                }
-                if (!itemName.Contains(_equipItemTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = itemType == gfxInfo.EquipItemType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(itemName, selected2))
-                {
-                    gfxInfo.EquipItemType = itemType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
-        }
-
+        ImGui.PopID(); ImGui.PushID("world");
         ImGui.SeparatorText("World item");
 
         if (gfxInfo.WorldItemType is not null && itemTypes.TryGetGfx(gfxInfo.WorldItemType, out ItemTypesGfx? worldItem))
@@ -430,45 +405,21 @@ public sealed class PickerWindow
             ImGui.TextColored(NOTE_COLOR, "Intended animation depends on item");
         }
 
-        ImGui.InputText("Filter items##world", ref _worldItemTypeFilter, 256);
-        if (ImGui.BeginListBox("###worlditemselect"))
+        IEnumerable<string?> worldItemTypes = shouldShowItemTypes
+            .Where((shouldShow) => shouldShow.World)
+            .Select((shouldShow) => shouldShow.ItemType)
+            .Prepend(null);
+        PickerListBox<string?> worldPicker = new()
         {
-            bool selected = gfxInfo.WorldItemType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
-            {
-                gfxInfo.WorldItemType = null;
-            }
-            if (selected) ImGui.PopStyleColor();
+            Options = worldItemTypes,
+            OptionToString = itemToName,
+            OnSelect = (itemType) => gfxInfo.WorldItemType = itemType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_worldItemTypeFilter),
+        };
+        ImGui.InputText("Filter items", ref _worldItemTypeFilter, 256);
+        worldPicker.Show(gfxInfo.WorldItemType);
 
-            foreach (string itemType in itemTypes.Items)
-            {
-                string itemName = itemType;
-
-                // filter out items without a world gfx
-                if (!itemTypes.TryGetGfx(itemType, out ItemTypesGfx? itemGfx) || !itemGfx.HasWorldCustomArt)
-                    continue;
-
-                if (itemTypes.TryGetInfo(itemType, out ItemTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realItemName))
-                        itemName = $"{realItemName} ({itemType})";
-                }
-                if (!itemName.Contains(_worldItemTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = itemType == gfxInfo.WorldItemType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(itemName, selected2))
-                {
-                    gfxInfo.WorldItemType = itemType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
-        }
+        ImGui.PopID();
     }
 
     private void SpawnBotTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -480,41 +431,30 @@ public sealed class PickerWindow
         }
 
         SpawnBotTypes spawnBotTypes = loader.SwzFiles.Game.SpawnBotTypes;
-        ImGui.InputText("Filter sidekicks", ref _spawnBotTypeFilter, 256);
-        if (ImGui.BeginListBox("###spawnbotselect"))
+
+        string spawnBotToName(string? spawnBotType)
         {
-            bool selected = gfxInfo.SpawnBotType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (spawnBotType is null) return "None##none";
+
+            string spawnBotName = spawnBotType;
+            if (spawnBotTypes.TryGetInfo(spawnBotType, out SpawnBotTypeInfo info))
             {
-                gfxInfo.SpawnBotType = null;
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realSpawnBotName))
+                    spawnBotName = $"{realSpawnBotName} ({spawnBotType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string spawnBotType in spawnBotTypes.SpawnBots)
-            {
-                string spawnBotName = spawnBotType;
-                if (spawnBotTypes.TryGetInfo(spawnBotType, out SpawnBotTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realSpawnBotName))
-                        spawnBotName = $"{realSpawnBotName} ({spawnBotType})";
-                }
-
-                if (!spawnBotName.Contains(_spawnBotTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = spawnBotType == gfxInfo.SpawnBotType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(spawnBotName, selected2))
-                {
-                    gfxInfo.SpawnBotType = spawnBotType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return spawnBotName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = spawnBotTypes.SpawnBots.Prepend(null),
+            OptionToString = spawnBotToName,
+            OnSelect = (spawnBotType) => gfxInfo.SpawnBotType = spawnBotType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_spawnBotTypeFilter),
+        };
+        ImGui.InputText("Filter sidekicks", ref _spawnBotTypeFilter, 256);
+        picker.Show(gfxInfo.SpawnBotType);
     }
 
     private void CompanionTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -530,41 +470,30 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         CompanionTypes companionTypes = loader.SwzFiles.Game.CompanionTypes;
-        ImGui.InputText("Filter companions", ref _companionTypeFilter, 256);
-        if (ImGui.BeginListBox("###companionselect"))
+
+        string companionToName(string? companionType)
         {
-            bool selected = gfxInfo.CompanionType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (companionType is null) return "None##none";
+
+            string companionName = companionType;
+            if (companionTypes.TryGetInfo(companionType, out CompnaionTypeInfo info))
             {
-                gfxInfo.CompanionType = null;
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realCompanionName))
+                    companionName = $"{realCompanionName} ({companionType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string companionType in companionTypes.Companions)
-            {
-                string companionName = companionType;
-                if (companionTypes.TryGetInfo(companionType, out CompnaionTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realCompanionName))
-                        companionName = $"{realCompanionName} ({companionType})";
-                }
-
-                if (!companionName.Contains(_companionTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = companionType == gfxInfo.CompanionType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(companionName, selected2))
-                {
-                    gfxInfo.CompanionType = companionType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return companionName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = companionTypes.Companions.Prepend(null),
+            OptionToString = companionToName,
+            OnSelect = (companionType) => gfxInfo.CompanionType = companionType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_companionTypeFilter),
+        };
+        ImGui.InputText("Filter companions", ref _companionTypeFilter, 256);
+        picker.Show(gfxInfo.CompanionType);
     }
 
     private void PodiumTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -575,46 +504,33 @@ public sealed class PickerWindow
             return;
         }
 
-        int team = (int)gfxInfo.PodiumTypeTeam;
-        ImGui.Combo("Team", ref team, TEAM_OPTIONS, TEAM_OPTIONS.Length);
-        gfxInfo.PodiumTypeTeam = (PodiumTeamEnum)team;
+        gfxInfo.PodiumTypeTeam = ImGuiEx.EnumCombo("Team", gfxInfo.PodiumTypeTeam, PODIUM_TEAM_OPTIONS);
 
         PodiumTypes podiumTypes = loader.SwzFiles.Game.PodiumTypes;
-        ImGui.InputText("Filter podiums", ref _podiumTypeFilter, 256);
-        if (ImGui.BeginListBox("###podiumselect"))
+
+        string podiumToName(string? podiumType)
         {
-            bool selected = gfxInfo.PodiumType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (podiumType is null) return "None##none";
+
+            string podiumName = podiumType;
+            if (podiumTypes.TryGetInfo(podiumType, out PodiumTypeInfo info))
             {
-                gfxInfo.PodiumType = null;
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realPodiumName))
+                    podiumName = $"{realPodiumName} ({podiumType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string podiumType in podiumTypes.Podiums)
-            {
-                string podiumName = podiumType;
-                if (podiumTypes.TryGetInfo(podiumType, out PodiumTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realPodiumName))
-                        podiumName = $"{realPodiumName} ({podiumType})";
-                }
-
-                if (!podiumName.Contains(_podiumTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = podiumType == gfxInfo.PodiumType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(podiumName, selected2))
-                {
-                    gfxInfo.PodiumType = podiumType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return podiumName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = podiumTypes.Podiums.Prepend(null),
+            OptionToString = podiumToName,
+            OnSelect = (podiumType) => gfxInfo.PodiumType = podiumType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_podiumTypeFilter),
+        };
+        ImGui.InputText("Filter podiums", ref _podiumTypeFilter, 256);
+        picker.Show(gfxInfo.PodiumType);
     }
 
     private void SeasonBorderTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -630,41 +546,30 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         SeasonBorderTypes seasonBorderTypes = loader.SwzFiles.Game.SeasonBorderTypes;
-        ImGui.InputText("Filter loading frames", ref _seasonBorderTypeFilter, 256);
-        if (ImGui.BeginListBox("###loadingframeselect"))
+
+        string seasonBorderToName(string? seasonBorderType)
         {
-            bool selected = gfxInfo.SeasonBorderType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (seasonBorderType is null) return "None##none";
+
+            string seasonBorderName = seasonBorderType;
+            if (seasonBorderTypes.TryGetInfo(seasonBorderType, out SeasonBorderTypeInfo info))
             {
-                gfxInfo.SeasonBorderType = null;
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realSeasonBorderName))
+                    seasonBorderName = $"{realSeasonBorderName} ({seasonBorderType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string seasonBorderType in seasonBorderTypes.LoadingFrames)
-            {
-                string seasonBorderName = seasonBorderType;
-                if (seasonBorderTypes.TryGetInfo(seasonBorderType, out SeasonBorderTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realSeasonBorderName))
-                        seasonBorderName = $"{realSeasonBorderName} ({seasonBorderType})";
-                }
-
-                if (!seasonBorderName.Contains(_seasonBorderTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = seasonBorderType == gfxInfo.SeasonBorderType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(seasonBorderName, selected2))
-                {
-                    gfxInfo.SeasonBorderType = seasonBorderType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return seasonBorderName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = seasonBorderTypes.LoadingFrames.Prepend(null),
+            OptionToString = seasonBorderToName,
+            OnSelect = (seasonBorderType) => gfxInfo.SeasonBorderType = seasonBorderType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_seasonBorderTypeFilter),
+        };
+        ImGui.InputText("Filter loading frames", ref _seasonBorderTypeFilter, 256);
+        picker.Show(gfxInfo.SeasonBorderType);
     }
 
     private void PlayerThemeTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -684,41 +589,30 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         PlayerThemeTypes playerThemeTypes = loader.SwzFiles.Game.PlayerThemeTypes;
-        ImGui.InputText("Filter UI themes", ref _playerThemeTypeFilter, 256);
-        if (ImGui.BeginListBox("###uithemeselect"))
+
+        string playerThemeToName(string? playerThemeType)
         {
-            bool selected = gfxInfo.PlayerThemeType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (playerThemeType is null) return "None##none";
+
+            string playerThemeName = playerThemeType;
+            if (playerThemeTypes.TryGetInfo(playerThemeType, out PlayerThemeTypeInfo info))
             {
-                gfxInfo.PlayerThemeType = null;
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realPlayerThemeName))
+                    playerThemeName = $"{realPlayerThemeName} ({playerThemeType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string playerThemeType in playerThemeTypes.UIThemes)
-            {
-                string playerThemeName = playerThemeType;
-                if (playerThemeTypes.TryGetInfo(playerThemeType, out PlayerThemeTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realPlayerThemeName))
-                        playerThemeName = $"{realPlayerThemeName} ({playerThemeType})";
-                }
-
-                if (!playerThemeName.Contains(_playerThemeTypeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = playerThemeType == gfxInfo.PlayerThemeType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(playerThemeName, selected2))
-                {
-                    gfxInfo.PlayerThemeType = playerThemeType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return playerThemeName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = playerThemeTypes.UIThemes.Prepend(null),
+            OptionToString = playerThemeToName,
+            OnSelect = (playerThemeType) => gfxInfo.PlayerThemeType = playerThemeType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_playerThemeTypeFilter),
+        };
+        ImGui.InputText("Filter UI themes", ref _playerThemeTypeFilter, 256);
+        picker.Show(gfxInfo.PlayerThemeType);
     }
 
     private void AvatarTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -730,41 +624,30 @@ public sealed class PickerWindow
         }
 
         AvatarTypes avatarTypes = loader.SwzFiles.Game.AvatarTypes;
-        ImGui.InputText("Filter avatars", ref _avatarTypesFilter, 256);
-        if (ImGui.BeginListBox("###avatarselect"))
+
+        string avatarToName(string? avatarType)
         {
-            bool selected = gfxInfo.AvatarType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (avatarType is null) return "None##none";
+
+            string avatarName = avatarType;
+            if (avatarTypes.TryGetInfo(avatarType, out AvatarTypeInfo info))
             {
-                gfxInfo.AvatarType = null;
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realAvatarName))
+                    avatarName = $"{realAvatarName} ({avatarType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string avatarType in avatarTypes.Avatars)
-            {
-                string avatarName = avatarType;
-                if (avatarTypes.TryGetInfo(avatarType, out AvatarTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realAvatarName))
-                        avatarName = $"{realAvatarName} ({avatarType})";
-                }
-
-                if (!avatarName.Contains(_avatarTypesFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = avatarType == gfxInfo.AvatarType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(avatarName, selected2))
-                {
-                    gfxInfo.AvatarType = avatarType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return avatarName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = avatarTypes.Avatars.Prepend(null),
+            OptionToString = avatarToName,
+            OnSelect = (avatarType) => gfxInfo.AvatarType = avatarType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_avatarTypesFilter),
+        };
+        ImGui.InputText("Filter avatars", ref _avatarTypesFilter, 256);
+        picker.Show(gfxInfo.AvatarType);
     }
 
     private void EmojiTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -780,41 +663,30 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         EmojiTypes emojiTypes = loader.SwzFiles.Game.EmojiTypes;
-        ImGui.InputText("Filter emojis", ref _emojiTypesFilter, 256);
-        if (ImGui.BeginListBox("###emojiselect"))
+
+        string emojiToName(string? emojiType)
         {
-            bool selected = gfxInfo.EmojiType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (emojiType is null) return "None##none";
+
+            string emojiName = emojiType;
+            if (emojiTypes.TryGetInfo(emojiType, out EmojiTypeInfo info))
             {
-                gfxInfo.EmojiType = null;
+                string displayNameKey = info.DisplayNameKey;
+                if (loader.TryGetStringName(displayNameKey, out string? realEmojiName))
+                    emojiName = $"{realEmojiName} ({emojiType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string emojiType in emojiTypes.Emojis)
-            {
-                string emojiName = emojiType;
-                if (emojiTypes.TryGetInfo(emojiType, out EmojiTypeInfo info))
-                {
-                    string displayNameKey = info.DisplayNameKey;
-                    if (loader.TryGetStringName(displayNameKey, out string? realEmojiName))
-                        emojiName = $"{realEmojiName} ({emojiType})";
-                }
-
-                if (!emojiName.Contains(_emojiTypesFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = emojiType == gfxInfo.EmojiType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(emojiName, selected2))
-                {
-                    gfxInfo.EmojiType = emojiType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return emojiName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = emojiTypes.Emojis.Prepend(null),
+            OptionToString = emojiToName,
+            OnSelect = (emojiType) => gfxInfo.EmojiType = emojiType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_emojiTypesFilter),
+        };
+        ImGui.InputText("Filter emojis", ref _emojiTypesFilter, 256);
+        picker.Show(gfxInfo.EmojiType);
     }
 
     private void EndMatchVoicelineTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -830,40 +702,29 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         EndMatchVoicelineTypes endMatchVoicelineTypes = loader.SwzFiles.Game.EndMatchVoicelineTypes;
-        ImGui.InputText("Filter voicelines", ref _endMatchVoicelineTypesFilter, 256);
-        if (ImGui.BeginListBox("###voicelineselect"))
+
+        string voicelineToName(string? endMatchVoicelineType)
         {
-            bool selected = gfxInfo.EndMatchVoicelineType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
+            if (endMatchVoicelineType is null) return "None##none";
+
+            string endMatchVoicelineName = endMatchVoicelineType;
+            if (endMatchVoicelineTypes.TryGetInfo(endMatchVoicelineType, out EndMatchVoicelineTypesInfo info))
             {
-                gfxInfo.EndMatchVoicelineType = null;
+                // the wwise sound event contains the spoken word
+                endMatchVoicelineName = $"{info.WWiseSoundName} ({endMatchVoicelineType})";
             }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string endMatchVoicelineType in endMatchVoicelineTypes.Voicelines)
-            {
-                string endMatchVoicelineName = endMatchVoicelineType;
-                if (endMatchVoicelineTypes.TryGetInfo(endMatchVoicelineType, out EndMatchVoicelineTypesInfo info))
-                {
-                    // the wwise sound event contains the spoken word
-                    endMatchVoicelineName = $"{info.WWiseSoundName} ({endMatchVoicelineType})";
-                }
-
-                if (!endMatchVoicelineName.Contains(_endMatchVoicelineTypesFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = endMatchVoicelineType == gfxInfo.EndMatchVoicelineType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(endMatchVoicelineName, selected2))
-                {
-                    gfxInfo.EndMatchVoicelineType = endMatchVoicelineType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return endMatchVoicelineName;
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = endMatchVoicelineTypes.Voicelines.Prepend(null),
+            OptionToString = voicelineToName,
+            OnSelect = (voicelineType) => gfxInfo.EndMatchVoicelineType = voicelineType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_endMatchVoicelineTypeFilter),
+        };
+        ImGui.InputText("Filter voicelines", ref _endMatchVoicelineTypeFilter, 256);
+        picker.Show(gfxInfo.EndMatchVoicelineType);
     }
 
     private void ClientThemeTypesSection(Loader loader, GfxInfo gfxInfo)
@@ -879,38 +740,24 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         ClientThemeTypes clientThemeTypes = loader.SwzFiles.Game.ClientThemeTypes;
-        ImGui.InputText("Filter event logos", ref _clientThemeTypesFilter, 256);
-        if (ImGui.BeginListBox("###clientthemeselect"))
+
+        static string clientThemeToName(string? clientThemeType)
         {
-            bool selected = gfxInfo.ClientThemeType is null;
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("None##none", selected))
-            {
-                gfxInfo.ClientThemeType = null;
-            }
-            if (selected) ImGui.PopStyleColor();
-
-            foreach (string endMatchVoicelineType in clientThemeTypes.Themes)
-            {
-                string clientThemeName = endMatchVoicelineType;
-
-                if (!clientThemeName.Contains(_clientThemeTypesFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected2 = endMatchVoicelineType == gfxInfo.ClientThemeType;
-                if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(clientThemeName, selected2))
-                {
-                    gfxInfo.ClientThemeType = endMatchVoicelineType;
-                }
-                if (selected2) ImGui.PopStyleColor();
-            }
-
-            ImGui.EndListBox();
+            return clientThemeType ?? "None#none";
         }
+
+        PickerListBox<string?> picker = new()
+        {
+            Options = clientThemeTypes.Themes.Prepend(null),
+            OptionToString = clientThemeToName,
+            OnSelect = (voicelineType) => gfxInfo.ClientThemeType = voicelineType,
+            ShouldShow = CreateShouldShowFromFilter<string?>(_clientThemeTypeFilter),
+        };
+        ImGui.InputText("Filter event logos", ref _clientThemeTypeFilter, 256);
+        picker.Show(gfxInfo.ClientThemeType);
     }
 
-    private void ColorSchemeSection(Loader loader, GfxInfo info)
+    private void ColorSchemeSection(Loader loader, GfxInfo gfxInfo)
     {
         if (loader.SwzFiles?.Game is null)
         {
@@ -919,167 +766,119 @@ public sealed class PickerWindow
         }
 
         ColorSchemeTypes colorSchemeTypes = loader.SwzFiles.Game.ColorSchemeTypes;
-        ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
-        if (ImGui.BeginListBox("###colorselect"))
+
+        string colorSchemeToName(ColorScheme colorScheme)
         {
-            foreach (ColorScheme colorScheme in colorSchemeTypes.ColorSchemes)
-            {
-                string colorSchemeName = colorScheme.Name;
-                string? displayNameKey = colorScheme.DisplayNameKey;
-                if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
-                    colorSchemeName = $"{realSchemeName} ({colorSchemeName})";
+            if (colorScheme == ColorScheme.DEBUG)
+                return DEBUG_COLOR_TEXT;
 
-                if (!colorSchemeName.Contains(_colorSchemeFilter, StringComparison.CurrentCultureIgnoreCase))
-                    continue;
-
-                bool selected = colorScheme == info.ColorScheme;
-                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(colorSchemeName, selected))
-                {
-                    ColorSchemeSelected?.Invoke(this, colorScheme);
-                }
-                if (selected) ImGui.PopStyleColor();
-            }
-
-            bool selected2 = info.ColorScheme == ColorScheme.DEBUG;
-            if (selected2) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-            if (ImGui.Selectable("DEBUG (not a real color scheme)", selected2))
-            {
-                ColorSchemeSelected?.Invoke(this, ColorScheme.DEBUG);
-            }
-            if (selected2) ImGui.PopStyleColor();
-
-            ImGui.EndListBox();
+            string colorSchemeName = colorScheme.Name;
+            string? displayNameKey = colorScheme.DisplayNameKey;
+            if (displayNameKey is not null && loader.TryGetStringName(displayNameKey, out string? realSchemeName))
+                colorSchemeName = $"{realSchemeName} ({colorSchemeName})";
+            return colorSchemeName;
         }
+
+        void selectColorScheme(ColorScheme colorScheme)
+        {
+            ColorSchemeSelected?.Invoke(this, colorScheme);
+        }
+
+        PickerListBox<ColorScheme> picker = new()
+        {
+            Options = colorSchemeTypes.ColorSchemes.Append(ColorScheme.DEBUG),
+            OptionToString = colorSchemeToName,
+            OnSelect = selectColorScheme,
+            ShouldShow = CreateShouldShowFromFilter<ColorScheme>(_colorSchemeFilter),
+        };
+        ImGui.InputText("Filter color schemes", ref _colorSchemeFilter, 256);
+        picker.Show(gfxInfo.ColorScheme);
     }
 
-    private static void CrateColorsSection(Loader loader, GfxInfo info)
+    private static void CrateColorsSection(Loader loader, GfxInfo gfxInfo)
     {
         ImGui.PushTextWrapPos();
         ImGui.TextColored(NOTE_COLOR, "NOTE: Pure black is treated by the game and program as no swap");
         ImGui.PopTextWrapPos();
 
-        uint ogCrateColorA = info.CrateColorA;
-        info.CrateColorA = ImGuiEx.ColorPicker3Hex("##outer", info.CrateColorA);
+        uint ogCrateColorA = gfxInfo.CrateColorA;
+        gfxInfo.CrateColorA = ImGuiEx.ColorPicker3Hex("##outer", gfxInfo.CrateColorA);
         ImGui.SameLine();
         ImGui.Text("Outer color");
 
-        uint ogCrateColorB = info.CrateColorB;
-        info.CrateColorB = ImGuiEx.ColorPicker3Hex("##inner", info.CrateColorB);
+        uint ogCrateColorB = gfxInfo.CrateColorB;
+        gfxInfo.CrateColorB = ImGuiEx.ColorPicker3Hex("##inner", gfxInfo.CrateColorB);
         ImGui.SameLine();
         ImGui.Text("Inner color");
 
         // gotta reload the cache because it's not keyed by the color swap
-        if (ogCrateColorA != info.CrateColorA || ogCrateColorB != info.CrateColorB)
+        if (ogCrateColorA != gfxInfo.CrateColorA || ogCrateColorB != gfxInfo.CrateColorB)
         {
             loader.AssetLoader.ClearSwfShapeCache();
         }
     }
 
-    private static void OverridesSection(GfxInfo info)
+    private static void OverridesSection(GfxInfo gfxInfo)
     {
         ImGui.Text("Mouth override");
-        if (ImGui.BeginListBox("###mouthoverride"))
+        ImGui.PushID("mouth");
+        PickerListBox<GfxMouthOverride> mouthPicker = new()
         {
-            foreach (GfxMouthOverride mouthOverride in Enum.GetValues<GfxMouthOverride>())
-            {
-                GfxMouthOverride? real = mouthOverride == GfxMouthOverride.NoChange ? null : mouthOverride;
-
-                string overrideText = EnumStringDicts.GetMouthOverridesString(mouthOverride);
-                bool selected = real == info.MouthOverride;
-                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(overrideText, selected))
-                {
-                    info.MouthOverride = real;
-                }
-                if (selected) ImGui.PopStyleColor();
-            }
-            ImGui.EndListBox();
-        }
+            Options = Enum.GetValues<GfxMouthOverride>(),
+            OptionToString = EnumStringDicts.GetMouthOverridesString,
+            OnSelect = (mouthOverride) => gfxInfo.MouthOverride = mouthOverride,
+        };
+        mouthPicker.Show(gfxInfo.MouthOverride);
+        ImGui.PopID();
 
         ImGui.Text("Eyes override");
-        if (ImGui.BeginListBox("###eyesoverride"))
+        ImGui.PushID("eyes");
+        PickerListBox<GfxEyesOverride> eyesPicker = new()
         {
-            foreach (GfxEyesOverride eyesOverride in Enum.GetValues<GfxEyesOverride>())
-            {
-                GfxEyesOverride? real = eyesOverride == GfxEyesOverride.NoChange ? null : eyesOverride;
-
-                string overrideText = EnumStringDicts.GetEyesOverridesString(eyesOverride);
-                bool selected = real == info.EyesOverride;
-                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(overrideText, selected))
-                {
-                    info.EyesOverride = real;
-                }
-                if (selected) ImGui.PopStyleColor();
-            }
-            ImGui.EndListBox();
-        }
+            Options = Enum.GetValues<GfxEyesOverride>(),
+            OptionToString = EnumStringDicts.GetEyesOverridesString,
+            OnSelect = (eyesOverride) => gfxInfo.EyesOverride = eyesOverride,
+        };
+        eyesPicker.Show(gfxInfo.EyesOverride);
+        ImGui.PopID();
     }
 
-    public static void GamemodesSection(GfxInfo info)
+    public static void GamemodesSection(GfxInfo gfxInfo)
     {
         ImGui.PushTextWrapPos();
         ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_GameModes, each their own animation class");
         ImGui.PopTextWrapPos();
 
         ImGui.SeparatorText("Bubble tag (a__AnimationTagBubble)");
-        ImGui.Text("Bubble team");
-        if (ImGui.BeginListBox("###bubbleteam", new(0, 40)))
-        {
-            foreach (BubbleTagTeamEnum team in Enum.GetValues<BubbleTagTeamEnum>())
-            {
-                string overrideText = team.ToString();
-                bool selected = team == info.BubbleTagTeam;
-                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(overrideText, selected))
-                {
-                    info.BubbleTagTeam = team;
-                }
-                if (selected) ImGui.PopStyleColor();
-            }
-            ImGui.EndListBox();
-        }
+        ImGui.PushID("bubbletag");
 
+        ImGui.Text("Bubble team"); ImGui.SameLine();
+        ImGui.SetNextItemWidth(-1);
+        gfxInfo.BubbleTagTeam = ImGuiEx.EnumCombo(string.Empty, gfxInfo.BubbleTagTeam, BUBBLE_TEAM_OPTIONS);
+
+        ImGui.PopID();
         ImGui.SeparatorText("Horde (a__AnimationHordeDemon)");
-        ImGui.Text("Demon style");
-        if (ImGui.BeginListBox("###hordedemon", new(0, 40)))
-        {
-            foreach (HordeTypeEnum type in Enum.GetValues<HordeTypeEnum>())
-            {
-                string overrideText = type.ToString();
-                bool selected = type == info.HordeType;
-                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(overrideText, selected))
-                {
-                    info.HordeType = type;
-                }
-                if (selected) ImGui.PopStyleColor();
-            }
-            ImGui.EndListBox();
-        }
+        ImGui.PushID("horde");
 
+        ImGui.Text("Demon style"); ImGui.SameLine();
+        ImGui.SetNextItemWidth(-1);
+        gfxInfo.HordeType = ImGuiEx.EnumCombo(string.Empty, gfxInfo.HordeType, HORDE_TYPE_OPTIONS);
+
+        ImGui.PopID();
         ImGui.SeparatorText("Volleybrawl (a__AnimationSoccerBall)");
-        ImGui.Text("Ball color");
-        if (ImGui.BeginListBox("###volleybattleball", new(0, 80)))
-        {
-            foreach (VolleyBattleTeamEnum team in Enum.GetValues<VolleyBattleTeamEnum>())
-            {
-                string overrideText = team.ToString();
-                bool selected = team == info.VolleyBattleTeam;
-                if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
-                if (ImGui.Selectable(overrideText, selected))
-                {
-                    info.VolleyBattleTeam = team;
-                }
-                if (selected) ImGui.PopStyleColor();
-            }
-            ImGui.EndListBox();
-        }
-        ImGui.Text("Ball damage amount");
-        int ballNumber = info.VolleyBattleBallNumber;
-        ImGui.SliderInt("###balldamage", ref ballNumber, 1, 4, "%d", ImGuiSliderFlags.AlwaysClamp);
-        info.VolleyBattleBallNumber = ballNumber;
+        ImGui.PushID("volleybrawl");
+
+        ImGui.Text("Ball color"); ImGui.SameLine();
+        ImGui.SetNextItemWidth(-1);
+        gfxInfo.VolleyBattleTeam = ImGuiEx.EnumCombo(string.Empty, gfxInfo.VolleyBattleTeam, VOLLEY_BALL_COLOR_OPTIONS);
+
+        ImGui.Text("Ball damage amount"); ImGui.SameLine();
+        int ballNumber = gfxInfo.VolleyBattleBallNumber;
+        ImGui.SetNextItemWidth(-1);
+        ImGui.SliderInt(string.Empty, ref ballNumber, 1, 4, "%d Hits", ImGuiSliderFlags.AlwaysClamp);
+        gfxInfo.VolleyBattleBallNumber = ballNumber;
+
+        ImGui.PopID();
     }
 
     private static void OnSelect(Loader loader)

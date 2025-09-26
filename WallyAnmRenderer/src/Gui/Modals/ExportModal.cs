@@ -25,13 +25,12 @@ using SwiffCheese.Shapes;
 
 namespace WallyAnmRenderer;
 
-public sealed partial class ExportModal(string? id = null)
+public sealed partial class ExportModal
 {
     private const char FILENAME_FORMAT_FRAME_CHAR = '@';
     private static readonly XNamespace xmlns = XNamespace.Get("http://www.w3.org/2000/svg");
 
     public const string NAME = "Export animation";
-    private string PopupName => $"{NAME}{(id is null ? "" : $"##{id}")}";
 
     private enum ExportAsEnum
     {
@@ -305,7 +304,7 @@ public sealed partial class ExportModal(string? id = null)
     {
         if (_shouldOpen)
         {
-            ImGui.OpenPopup(PopupName);
+            ImGui.OpenPopup(NAME);
             _shouldOpen = false;
             _open = true;
             _errors.Clear();
@@ -314,7 +313,7 @@ public sealed partial class ExportModal(string? id = null)
             _endFrame = frame;
         }
 
-        if (!ImGui.BeginPopupModal(PopupName, ref _open, ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!ImGui.BeginPopupModal(NAME, ref _open, ImGuiWindowFlags.AlwaysAutoResize)) return;
 
         if (animator is null)
         {

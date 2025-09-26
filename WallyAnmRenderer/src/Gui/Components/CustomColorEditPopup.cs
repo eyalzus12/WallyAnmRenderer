@@ -7,10 +7,9 @@ using ImGuiNET;
 
 namespace WallyAnmRenderer;
 
-public sealed class CustomColorEditPopup(string? id = null)
+public sealed class CustomColorEditPopup
 {
     public const string NAME = "Edit color";
-    private string PopupName => $"{NAME}{(id is null ? "" : $"##{id}")}";
 
     private bool _shouldOpen;
     private bool _open = false;
@@ -25,14 +24,14 @@ public sealed class CustomColorEditPopup(string? id = null)
     {
         if (_shouldOpen)
         {
-            ImGui.OpenPopup(PopupName);
+            ImGui.OpenPopup(NAME);
             _shouldOpen = false;
             _open = true;
             _saving = false;
             _errors.Clear();
         }
 
-        if (!ImGui.BeginPopupModal(PopupName, ref _open)) return;
+        if (!ImGui.BeginPopupModal(NAME, ref _open)) return;
 
         string name = color.Name;
         ImGui.BeginDisabled(_saving);
@@ -56,9 +55,13 @@ public sealed class CustomColorEditPopup(string? id = null)
         ImGui.SameLine(0, 0);
         ImGui.Text(") means \"don't swap\"");
         ImGui.PopTextWrapPos();
-        CustomColorComponent.MainTable(PopupName, color);
+        ImGui.PushID("main");
+        CustomColorComponent.MainTable(NAME, color);
+        ImGui.PopID();
         ImGui.TextWrapped("Note that no color scheme in the game uses these.");
-        CustomColorComponent.HandsTable(PopupName, color);
+        ImGui.PushID("hands");
+        CustomColorComponent.HandsTable(color);
+        ImGui.PopID();
 
         ImGui.SeparatorText("Save");
         if (ImGuiEx.DisabledButton("Save", _saving || !valid))

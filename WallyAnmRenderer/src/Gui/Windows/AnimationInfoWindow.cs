@@ -45,7 +45,8 @@ public sealed class AnimationInfoWindow
                     nodeId = (uint)sprite.GetHashCode();
                 }
 
-                if (ImGui.TreeNode($"{spriteText}##{nodeId}"))
+                ImGui.PushID((int)nodeId);
+                if (ImGui.TreeNode(spriteText))
                 {
                     if (ImGui.IsItemHovered())
                     {
@@ -79,6 +80,7 @@ public sealed class AnimationInfoWindow
                 {
                     highlight = sprite;
                 }
+                ImGui.PopID();
             }
         }
         else

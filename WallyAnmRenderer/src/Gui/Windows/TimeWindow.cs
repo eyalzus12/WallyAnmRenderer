@@ -36,6 +36,7 @@ public sealed class TimeWindow
             currentFrame = MathUtils.SafeMod(currentFrame, frames);
             for (long i = 0; i < frames; ++i)
             {
+                ImGui.PushID((nint)i);
                 float width = ImGui.GetContentRegionAvail().X;
                 int columns = (int)Math.Floor(width / neededWidth);
                 if (columns != 0 && i % columns != 0) ImGui.SameLine();
@@ -54,6 +55,7 @@ public sealed class TimeWindow
                 }
                 ImGui.SameLine();
                 ImGui.Spacing();
+                ImGui.PopID();
             }
         }
 

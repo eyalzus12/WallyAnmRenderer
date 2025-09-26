@@ -88,4 +88,11 @@ public static class ImGuiEx
         float b = (hex & 0xFF) / 255f;
         return new(r, g, b, 1);
     }
+
+    public static E EnumCombo<E>(ReadOnlySpan<char> label, E value, string[] options) where E : struct, Enum
+    {
+        int index = Convert.ToInt32(value);
+        ImGui.Combo(label, ref index, options, options.Length);
+        return (E)(object)index;
+    }
 }

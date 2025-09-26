@@ -59,10 +59,10 @@ public static class CustomColorComponent
     {
         bool changed = false;
         ImGuiTableFlags flags = ImGuiTableFlags.SizingFixedSame;
-        if (ImGui.BeginTable($"##{label}_main", 7, flags))
+        if (ImGui.BeginTable(label, 7, flags))
         {
             ImGui.TableNextColumn();
-            ImGui.TableHeader("##");
+            ImGui.TableHeader(string.Empty);
             ImGui.TableNextColumn();
             ImGui.TableHeader("Hair");
             ImGui.TableNextColumn();
@@ -78,9 +78,10 @@ public static class CustomColorComponent
 
             foreach ((string name, ColorSchemeSwapEnum?[] row) in MAIN_TABLE)
             {
+                ImGui.PushID(name);
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                ImGui.TableHeader($"##{name}");
+                ImGui.TableHeader(string.Empty);
                 ImGui.SameLine();
                 ImGui.Text(name);
                 foreach (ColorSchemeSwapEnum? col in row)
@@ -88,13 +89,16 @@ public static class CustomColorComponent
                     ImGui.TableNextColumn();
                     if (col is null) continue;
                     uint currentColor = colorScheme[col.Value];
-                    uint newColor = ImGuiEx.ColorPicker3Hex($"##${col}", currentColor, new(45, 45));
+                    ImGui.PushID((int)col.Value);
+                    uint newColor = ImGuiEx.ColorPicker3Hex(string.Empty, currentColor, new(45, 45));
+                    ImGui.PopID();
                     if (currentColor != newColor)
                     {
                         colorScheme[col.Value] = newColor;
                         changed = true;
                     }
                 }
+                ImGui.PopID();
             }
 
             ImGui.EndTable();
@@ -102,14 +106,14 @@ public static class CustomColorComponent
         return changed;
     }
 
-    public static bool HandsTable(string label, ColorScheme colorScheme)
+    public static bool HandsTable(ColorScheme colorScheme)
     {
         bool changed = false;
         ImGuiTableFlags flags = ImGuiTableFlags.SizingFixedSame;
-        if (ImGui.BeginTable($"##{label}_hands", 3, flags))
+        if (ImGui.BeginTable(string.Empty, 3, flags))
         {
             ImGui.TableNextColumn();
-            ImGui.TableHeader("##");
+            ImGui.TableHeader(string.Empty);
             ImGui.TableNextColumn();
             ImGui.TableHeader("Hands");
             ImGui.TableNextColumn();
@@ -117,22 +121,26 @@ public static class CustomColorComponent
 
             foreach ((string name, ColorSchemeSwapEnum[] row) in HANDS_TABLE)
             {
+                ImGui.PushID(name);
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                ImGui.TableHeader($"##{name}");
+                ImGui.TableHeader(string.Empty);
                 ImGui.SameLine();
                 ImGui.Text(name);
                 foreach (ColorSchemeSwapEnum col in row)
                 {
+                    ImGui.PushID((int)col);
                     ImGui.TableNextColumn();
                     uint currentColor = colorScheme[col];
-                    uint newColor = ImGuiEx.ColorPicker3Hex($"##${col}", currentColor, new(45, 45));
+                    uint newColor = ImGuiEx.ColorPicker3Hex(string.Empty, currentColor, new(45, 45));
                     if (currentColor != newColor)
                     {
                         colorScheme[col] = newColor;
                         changed = true;
                     }
+                    ImGui.PopID();
                 }
+                ImGui.PopID();
             }
 
             ImGui.EndTable();

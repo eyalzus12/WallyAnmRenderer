@@ -34,7 +34,7 @@ public sealed class Editor
     private PathPreferences PathPrefs { get; }
 
     public Animator? Animator { get; private set; }
-    public GfxInfo GfxInfo { get; private set; } = new();
+    public GfxInfo GfxInfo { get; } = new();
     private RlColor _bgColor = new(0, 0, 51, 255); // #000033
 
     public ViewportWindow ViewportWindow { get; } = new();
@@ -86,11 +86,8 @@ public sealed class Editor
 
         PickerWindow.ColorSchemeSelected += (_, color) =>
         {
-            if (Animator is not null)
-            {
-                GfxInfo.ColorScheme = color;
-                Animator.Loader.AssetLoader.ClearSwfShapeCache();
-            }
+            GfxInfo.ColorScheme = color;
+            Animator?.Loader.AssetLoader.ClearSwfShapeCache();
         };
 
         TimeWindow.FrameSeeked += (_, frame) =>

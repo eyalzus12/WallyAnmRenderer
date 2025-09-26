@@ -75,11 +75,12 @@ public sealed class AnmWindow
                 continue;
             string relativePath = Path.GetRelativePath(brawlPath, absolutePath);
 
+            ImGui.PushID(fileName);
             if (assetLoader.IsAnmLoading(relativePath))
             {
                 ImGui.Text(fileName);
                 ImGui.SameLine();
-                if (ImGui.Button($"Cancel##{fileName}"))
+                if (ImGui.Button("Cancel"))
                 {
                     assetLoader.AnmFileCache.RemoveCached(absolutePath);
                 }
@@ -91,7 +92,7 @@ public sealed class AnmWindow
                 void unloadButton()
                 {
                     ImGui.SameLine();
-                    if (ImGui.Button($"Unload##{fileName}"))
+                    if (ImGui.Button("Unload"))
                     {
                         FileUnloaded?.Invoke(this, relativePath);
                         assetLoader.AnmFileCache.RemoveCached(absolutePath);
@@ -157,11 +158,12 @@ public sealed class AnmWindow
             {
                 ImGui.Text(fileName);
                 ImGui.SameLine();
-                if (ImGui.Button($"Load##{fileName}"))
+                if (ImGui.Button("Load"))
                 {
                     assetLoader.LoadAnm(relativePath);
                 }
             }
+            ImGui.PopID();
         }
     }
 
@@ -180,11 +182,12 @@ public sealed class AnmWindow
                 continue;
             string relativePath = Path.GetRelativePath(brawlPath, absolutePath);
 
+            ImGui.PushID(fileName);
             if (assetLoader.IsSwfLoading(relativePath))
             {
                 ImGui.Text(displayName);
                 ImGui.SameLine();
-                if (ImGui.Button($"Cancel##{fileName}"))
+                if (ImGui.Button("Cancel"))
                 {
                     assetLoader.SwfFileCache.RemoveCached(absolutePath);
                 }
@@ -196,7 +199,7 @@ public sealed class AnmWindow
                 void unloadButton()
                 {
                     ImGui.SameLine();
-                    if (ImGui.Button($"Unload##{fileName}"))
+                    if (ImGui.Button("Unload"))
                     {
                         FileUnloaded?.Invoke(this, relativePath);
                         assetLoader.SwfFileCache.RemoveCached(absolutePath);
@@ -252,7 +255,7 @@ public sealed class AnmWindow
             {
                 ImGui.Text(displayName);
                 ImGui.SameLine();
-                if (ImGui.Button($"Load##{fileName}"))
+                if (ImGui.Button("Load"))
                 {
                     async Task load()
                     {
@@ -261,6 +264,7 @@ public sealed class AnmWindow
                     _ = load();
                 }
             }
+            ImGui.PopID();
         }
     }
 }

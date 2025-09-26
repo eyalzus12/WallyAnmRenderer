@@ -43,8 +43,8 @@ public sealed class GfxInfo : IGfxInfo
     public uint CrateColorA { get; set; } = 0;
     public uint CrateColorB { get; set; } = 0;
 
-    public GfxMouthOverride? MouthOverride { get; set; }
-    public GfxEyesOverride? EyesOverride { get; set; }
+    public GfxMouthOverride MouthOverride { get; set; } = GfxMouthOverride.NoChange;
+    public GfxEyesOverride EyesOverride { get; set; } = GfxEyesOverride.NoChange;
 
     [MemberNotNullWhen(true, nameof(AnimClass))]
     [MemberNotNullWhen(true, nameof(AnimFile))]
@@ -291,15 +291,8 @@ public sealed class GfxInfo : IGfxInfo
             gfx = AddColorSwaps(gfx, [CrateColorUtils.GetCrateBColorSwap(CrateColorB)]);
         }
 
-        if (MouthOverride is not null)
-        {
-            gfx = gfx.WithMouthOverride(MouthOverride.Value);
-        }
-
-        if (EyesOverride is not null)
-        {
-            gfx = gfx.WithEyesOverride(EyesOverride.Value);
-        }
+        gfx = gfx.WithMouthOverride(MouthOverride);
+        gfx = gfx.WithEyesOverride(EyesOverride);
 
         return (gfx, Flip);
     }

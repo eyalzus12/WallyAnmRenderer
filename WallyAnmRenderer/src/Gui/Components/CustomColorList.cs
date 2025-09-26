@@ -151,25 +151,26 @@ public sealed class CustomColorList
             ColorScheme color = _colors[i];
             if (!color.Name.Contains(_colorFilter, StringComparison.CurrentCultureIgnoreCase))
                 continue;
+            ImGui.PushID(color.GetHashCode());
 
             bool selected = selectedColor == color;
             ImGui.SetNextItemAllowOverlap();
             if (selected) ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1, 0.5f, 0, 1));
-            if (ImGui.Selectable($"{color.Name}##{color.GetHashCode()}", selected))
+            if (ImGui.Selectable(color.Name, selected))
             {
                 ColorSchemeSelected?.Invoke(this, color);
             }
             if (selected) ImGui.PopStyleColor();
 
             ImGui.SameLine();
-            if (ImGuiEx.DisabledButton($"Edit##{color.GetHashCode()}", loadingColors))
+            if (ImGuiEx.DisabledButton("Edit", loadingColors))
             {
                 _originalColor = color;
                 _editedColor = new(_originalColor);
                 _editModal.Open();
             }
             ImGui.SameLine();
-            if (ImGuiEx.DisabledButton($"X##{color.GetHashCode()}", loadingColors))
+            if (ImGuiEx.DisabledButton("X", loadingColors))
             {
                 deleted ??= [];
                 deleted.Add(color);
@@ -178,6 +179,8 @@ public sealed class CustomColorList
                 if (File.Exists(deletedPath))
                     File.Delete(deletedPath);
             }
+
+            ImGui.PopID();
         }
 
         if (deleted is not null)
