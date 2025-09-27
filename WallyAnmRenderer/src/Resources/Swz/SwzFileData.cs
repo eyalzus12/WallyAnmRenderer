@@ -126,7 +126,7 @@ public sealed class SwzGameFile
     public WeaponSkinTypes WeaponSkinTypes { get; }
     public ItemTypes ItemTypes { get; }
     public SpawnBotTypes SpawnBotTypes { get; }
-    public CompanionTypes CompanionTypes { get; }
+    public CompanionTypes? CompanionTypes { get; } = null;
     public PodiumTypes PodiumTypes { get; }
     public SeasonBorderTypes SeasonBorderTypes { get; }
     public PlayerThemeTypes PlayerThemeTypes { get; }
@@ -176,9 +176,11 @@ public sealed class SwzGameFile
         XElement spawnBotTypesElement = XElement.Parse(spawnBotTypesContent);
         SpawnBotTypes = new(spawnBotTypesElement);
 
-        string companionTypesContent = data[COMPANION_TYPES];
-        XElement companionTypesElement = XElement.Parse(companionTypesContent);
-        CompanionTypes = new(companionTypesElement);
+        if (data.TryGetFile(COMPANION_TYPES, out string? companionTypesContent))
+        {
+            XElement companionTypesElement = XElement.Parse(companionTypesContent);
+            CompanionTypes = new(companionTypesElement);
+        }
 
         string podiumTypesContent = data[PODIUM_TYPES];
         XElement podiumTypesElement = XElement.Parse(podiumTypesContent);

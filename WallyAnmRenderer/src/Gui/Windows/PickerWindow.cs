@@ -469,7 +469,13 @@ public sealed class PickerWindow
         ImGui.TextColored(NOTE_COLOR, "NOTE: Each companion is intended to be used with its unique anm file");
         ImGui.PopTextWrapPos();
 
-        CompanionTypes companionTypes = loader.SwzFiles.Game.CompanionTypes;
+        CompanionTypes? companionTypes = loader.SwzFiles.Game.CompanionTypes;
+
+        if (companionTypes is null)
+        {
+            ImGui.TextWrapped("No CompanionTypes.xml found in swz file. You may be using an older version of the game.");
+            return;
+        }
 
         string companionToName(string? companionType)
         {

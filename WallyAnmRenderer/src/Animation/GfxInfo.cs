@@ -148,9 +148,9 @@ public sealed class GfxInfo : IGfxInfo
             }
         }
 
-        if (CompanionType is not null)
+        CompanionTypes? companionTypes = gameFiles.CompanionTypes;
+        if (CompanionType is not null && companionTypes is not null)
         {
-            CompanionTypes companionTypes = gameFiles.CompanionTypes;
             if (companionTypes.TryGetGfx(CompanionType, out CompanionTypesGfx? companion))
             {
                 IGfxType companionGfx = companion.ToGfxType(ColorScheme);
