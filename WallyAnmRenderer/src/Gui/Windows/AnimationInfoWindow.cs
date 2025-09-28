@@ -74,6 +74,9 @@ public sealed class AnimationInfoWindow
                     ImGui.Text($"RotateSkew0: {transform.SkewY}");
                     ImGui.Text($"RotateSkew1: {transform.SkewX}");
 
+                    ImGui.SeparatorText("Effects");
+                    ImGui.Text($"Opacity: {sprite.Opacity}");
+
                     ImGui.TreePop();
                 }
                 else if (ImGui.IsItemHovered())
