@@ -133,6 +133,11 @@ public sealed partial class ExportModal
 
         SvgShapeExporter svgExporter = new(new(shapeW, shapeH), new(1, 0, 0, 1, 0, 0));
         compiledShape.Export(svgExporter);
+        if (sprite.Opacity != 1)
+        {
+            svgExporter.Document.Root!.SetAttributeValue("opacity", sprite.Opacity);
+        }
+        // TODO: Tint
 
         ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
         (double, double)[] points = [(shapeX, shapeY), (shapeX + shapeW, shapeY), (shapeX, shapeY + shapeH), (shapeX + shapeW, shapeY + shapeH)];
@@ -200,7 +205,7 @@ public sealed partial class ExportModal
                 //SKEncodedImageFormat.Dng => throw new NotSupportedException(),
                 //SKEncodedImageFormat.Heif => throw new NotSupportedException(),
                 SKEncodedImageFormat.Avif => "image/avif",
-                //SKEncodedImageFormat.Jpegxl => throw new NotSupportedException(),
+                SKEncodedImageFormat.Jpegxl => "image/jxl",
                 _ => throw new NotSupportedException(format.ToString()),
             };
 
@@ -268,6 +273,12 @@ public sealed partial class ExportModal
                 );
                 newG.SetAttributeValue("transform", transformString);
 
+                string? opacity = main.Attribute("opacity")?.Value;
+                if (opacity is not null)
+                    newG.SetAttributeValue("opacity", opacity);
+
+                // TODO: tint
+
                 svg.Add(newG);
             }
 
@@ -280,6 +291,8 @@ public sealed partial class ExportModal
                     transform.TranslateX, transform.TranslateY
                 );
                 newImage.SetAttributeValue("transform", transformString);
+
+                // No opacity/tint for bitmap bone
 
                 svg.Add(newImage);
             }
