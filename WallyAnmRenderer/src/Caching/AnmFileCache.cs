@@ -5,13 +5,22 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using WallyAnmSpinzor;
+using WallyAnmSpinzor.Version_904;
 
 namespace WallyAnmRenderer;
+
+public enum AnmFormatEnum
+{
+    Current,
+    Pre904,
+}
 
 public sealed class AnmFileCache : ManagedCache<string, AnmFile>
 {
     private readonly ConcurrentDictionary<string, ConcurrentBag<string>> _classOwnership = [];
     private readonly ConcurrentDictionary<string, AnmClass> _classes = [];
+
+    public AnmFormatEnum AnmFormat { get; set; } = AnmFormatEnum.Current;
 
     public bool TryGetAnmClass(string name, [MaybeNullWhen(false)] out AnmClass @class)
     {
@@ -22,7 +31,19 @@ public sealed class AnmFileCache : ManagedCache<string, AnmFile>
     {
         AnmFile anm;
         using (FileStream file = FileUtils.OpenReadAsyncSeq(path))
-            anm = await AnmFile.CreateFromAsync(file, false, ctoken);
+        {
+            switch (AnmFormat)
+            {
+                case AnmFormatEnum.Pre904:
+                    AnmFile_904 old = await AnmFile_904.CreateFromAsync(file, false, ctoken);
+                    anm = Anm904Migrator.MigrateFile(old);
+                    break;
+                case AnmFormatEnum.Current:
+                default:
+                    anm = await AnmFile.CreateFromAsync(file, false, ctoken);
+                    break;
+            }
+        }
 
         ConcurrentBag<string> bag = _classOwnership.GetOrAdd(path, []);
         foreach ((string name, AnmClass @class) in anm.Classes)

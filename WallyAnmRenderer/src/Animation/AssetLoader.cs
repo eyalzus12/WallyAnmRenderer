@@ -25,6 +25,12 @@ public sealed class AssetLoader(string brawlPath)
         }
     }
 
+    public AnmFormatEnum AnmFormat
+    {
+        get => AnmFileCache.AnmFormat;
+        set => AnmFileCache.AnmFormat = value;
+    }
+
     public AnmFileCache AnmFileCache { get; } = new();
     private readonly TextureCache _textureCache = new();
     public SwfFileCache SwfFileCache { get; } = new();

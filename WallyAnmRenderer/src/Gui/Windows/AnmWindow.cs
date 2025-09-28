@@ -13,6 +13,8 @@ namespace WallyAnmRenderer;
 public sealed class AnmWindow
 {
     private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
+    private static readonly Vector4 YELLOW = ImGuiEx.RGBHexToVec4(0xFFFF00);
+    private static readonly string[] ANM_FORMAT_OPTIONS = ["Current", "?.??-9.04"];
 
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
@@ -64,6 +66,15 @@ public sealed class AnmWindow
 
     private void AnmTab(string brawlPath, AssetLoader assetLoader, GfxInfo info)
     {
+        assetLoader.AnmFormat = ImGuiEx.EnumCombo("Anm format", assetLoader.AnmFormat, ANM_FORMAT_OPTIONS);
+
+        if (assetLoader.AnmFormat != AnmFormatEnum.Current)
+        {
+            ImGui.PushTextWrapPos();
+            ImGui.TextColored(YELLOW, "You selected an older anm format. Unless you are working with older patches, loading anm files will fail.");
+            ImGui.PopTextWrapPos();
+        }
+
         string brawlAnimPath = Path.Join(brawlPath, "anims");
         string[] files = Directory.Exists(brawlAnimPath) ? Directory.GetFiles(brawlAnimPath, "*.anm") : [];
 
