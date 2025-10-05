@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using BrawlhallaAnimLib.Gfx;
 using ImGuiNET;
 
@@ -27,7 +28,17 @@ public sealed class GfxInfoWindow
                     hasAny = true;
                     uint nodeId = customArtNode.AddOrUpdate(customArt, 0u, x => x + 1);
 
-                    if (ImGui.TreeNode($"{customArt.FileName} {customArt.Name}##{nodeId}"))
+                    // FileName Name (ArtType R)##ID
+                    StringBuilder sb = new();
+                    sb.Append(customArt.FileName);
+                    sb.Append(' ');
+                    sb.Append(customArt.Name);
+                    sb.Append([' ', '(']);
+                    sb.Append(ArtTypeToString(customArt.Type));
+                    if (customArt.Right) sb.Append([' ', 'R']);
+                    sb.Append([')', '#', '#']);
+                    sb.Append(nodeId);
+                    if (ImGui.TreeNode(sb.ToString()))
                     {
                         ImGui.Text($"Filename: {customArt.FileName}");
                         ImGui.Text($"Suffix: {customArt.Name}");
