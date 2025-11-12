@@ -76,7 +76,7 @@ public sealed class PickerWindow
 
         ImGui.Spacing();
         ImGui.PushTextWrapPos();
-        ImGui.TextColored(new(1, 1, 0, 1), "WARNING! Increasing this can make your CPU (and GPU) cry. The game seems to never use a value above 2.");
+        ImGui.TextColored(new(1, 1, 0, 1), "WARNING! Increasing this too much will make your computer cry.");
         ImGui.PopTextWrapPos();
 
         double animScale = gfxInfo.AnimScale;
