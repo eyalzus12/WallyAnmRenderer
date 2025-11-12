@@ -876,12 +876,12 @@ public sealed class PickerWindow
 
         ImGui.Text("Ball color"); ImGui.SameLine();
         ImGui.SetNextItemWidth(-1);
-        gfxInfo.VolleyBattleTeam = ImGuiEx.EnumCombo(string.Empty, gfxInfo.VolleyBattleTeam, VOLLEY_BALL_COLOR_OPTIONS);
+        gfxInfo.VolleyBattleTeam = ImGuiEx.EnumCombo("##team", gfxInfo.VolleyBattleTeam, VOLLEY_BALL_COLOR_OPTIONS);
 
         ImGui.Text("Ball damage amount"); ImGui.SameLine();
         int ballNumber = gfxInfo.VolleyBattleBallNumber;
         ImGui.SetNextItemWidth(-1);
-        ImGui.SliderInt(string.Empty, ref ballNumber, 1, 4, "%d Hits", ImGuiSliderFlags.AlwaysClamp);
+        ImGui.SliderInt("##damage", ref ballNumber, 1, 4, "%d Hits", ImGuiSliderFlags.AlwaysClamp);
         gfxInfo.VolleyBattleBallNumber = ballNumber;
 
         ImGui.PopID();
