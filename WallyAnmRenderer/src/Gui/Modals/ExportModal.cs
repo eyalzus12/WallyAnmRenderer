@@ -474,6 +474,8 @@ public sealed partial class ExportModal
         List<(string, Task<(XDocument, ViewBox)>)> animationTasks = [];
         for (long frame = _startFrame; frame <= _endFrame; frame += direction)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             string filename = _fileNameFormat.Replace(FILENAME_FORMAT_FRAME_CHAR.ToString(), frame.ToString().PadLeft(digitCount, '0'));
             string path = Path.Combine(result.Path, filename);
             if (Path.GetExtension(path) != extension)
@@ -509,7 +511,9 @@ public sealed partial class ExportModal
             await Task.WhenAll(documents.Select(async x =>
             {
                 (string path, XDocument document, _) = x;
+                cancellationToken.ThrowIfCancellationRequested();
                 await ExportDocument(path, document, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
                 _status = "Exported " + path;
             }));
         }
@@ -534,9 +538,11 @@ public sealed partial class ExportModal
         {
             case ExportAsEnum.Svg:
                 await SaveToPathSvg(document, path, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
                 break;
             case ExportAsEnum.Png:
                 SaveToPathPng(document, path);
+                cancellationToken.ThrowIfCancellationRequested();
                 break;
         }
     }
