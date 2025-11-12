@@ -22,9 +22,10 @@
 * Translating internal names.
 * Creating custom colors.
 * Exporting as svg or png.
+* Exporting as an svg/png sequence.
 
 #### Planned features:
-* Exporting as png sequence/apng.
+* Exporting as gif (sequence export exists).
 * Bulk exporting of many animations.
 * Support for animation loop points.
 * Correct timing for attack animations.
