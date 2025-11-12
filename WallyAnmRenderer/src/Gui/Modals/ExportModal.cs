@@ -324,6 +324,7 @@ public sealed partial class ExportModal
 
             _startFrame = frame;
             _endFrame = frame;
+            _flip = flip;
         }
 
         if (!ImGui.BeginPopupModal(NAME, ref _open, ImGuiWindowFlags.AlwaysAutoResize)) return;
@@ -360,6 +361,8 @@ public sealed partial class ExportModal
         }
 
         ImGui.InputDouble("Anim scale", ref _animScale);
+
+        ImGui.Checkbox("Flip animation", ref _flip);
 
         if (_cancellationSource.IsCancellationRequested)
         {
