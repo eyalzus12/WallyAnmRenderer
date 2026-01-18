@@ -170,6 +170,8 @@ public sealed class Loader : ILoader
             return shape;
         if (swf.TextTags.TryGetValue(tagId, out DefineTextBaseTag? text))
             return text;
+        if (swf.EditTextTags.TryGetValue(tagId, out DefineEditTextTag? editText))
+            return editText;
         return null;
     }
 

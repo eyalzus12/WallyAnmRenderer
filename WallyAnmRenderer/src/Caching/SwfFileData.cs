@@ -26,6 +26,7 @@ public sealed class SwfFileData
     public Dictionary<ushort, DefineSpriteTag> SpriteTags { get; } = [];
     public Dictionary<ushort, ShapeBaseTag> ShapeTags { get; } = [];
     public Dictionary<ushort, DefineTextBaseTag> TextTags { get; } = [];
+    public Dictionary<ushort, DefineEditTextTag> EditTextTags { get; } = [];
     public Dictionary<ushort, BitmapBaseTag> BitmapTags { get; } = [];
     public Dictionary<string, uint[]> SpriteA { get; } = [];
 
@@ -76,6 +77,10 @@ public sealed class SwfFileData
             else if (tag is DefineTextBaseTag text)
             {
                 swf.TextTags[text.CharacterID] = text;
+            }
+            else if (tag is DefineEditTextTag editText)
+            {
+                swf.EditTextTags[editText.CharacterID] = editText;
             }
             else if (tag is BitmapBaseTag bitmap)
             {
@@ -160,3 +165,43 @@ public sealed class SwfFileData
         }
     }
 }
+
+/*
+Tags with a CharacterID:
+* PlaceObjectBaseTag:
+    * PlaceObjectTag
+    * PlaceObject2Tag
+    * PlaceObject3Tag
+* RemoveObjectTag
+* DefineScalingGridTag
+* BitmapBaseTag:
+  * DefineBitsTag
+  * DefineBitsJPEG2Tag
+  * DefineBitsJPEG3Tag
+  * DefineBitsJPEG4Tag
+  * DefineBitsLosslessTag
+  * DefineBitsLossless2Tag
+* DefineMorphShapeTag
+* DefineMorphShape2Tag
+* DefineTextBaseTag:
+  * DefineTextTag
+  * DefineText2Tag
+* DefineEditTextTag
+
+Tags with a ShapeID:
+* ShapeBaseTag:
+  * DefineShapeTag
+  * DefineShape2Tag
+  * DefineShape3Tag
+  * DefineShape4Tag
+
+Tags with a SpriteID:
+* DefineSprite
+* DoInitActionTag
+
+So we are currently missing:
+* DefineScalingGridTag
+* DefineMorphShapeTag
+* DefineMorphShape2Tag
+* DoInitActionTag
+*/

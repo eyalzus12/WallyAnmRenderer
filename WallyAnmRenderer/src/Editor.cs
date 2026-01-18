@@ -23,6 +23,7 @@ public sealed class Editor
     public const int INITIAL_SCREEN_HEIGHT = 720;
 
     public const string LOADING_TEXT = "Loading...";
+    public const string ERROR_TEXT = "Error!";
     public static readonly RlColor LOADING_TEXT_COLOR = RlColor.RayWhite with { A = 64 };
 
     private Camera2D _cam;
@@ -156,13 +157,25 @@ public sealed class Editor
 
         Gui();
         bool finishedLoading = true;
+        bool hadError = false;
 
         IGfxType? gfxType = null;
         Task<BoneSprite[]>? spritesTask = null;
         BoneSprite? highlightedSprite = null;
         if (Animator?.Loader.SwzFiles?.Game is not null)
         {
-            var info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
+            (IGfxType gfx, bool flip)? info = null;
+            try
+            {
+                info = GfxInfo.ToGfxType(Animator.Loader.SwzFiles.Game);
+            }
+            catch (Exception e)
+            {
+                Rl.TraceLog(TraceLogLevel.Error, e.Message);
+                Rl.TraceLog(TraceLogLevel.Trace, e.StackTrace);
+                hadError = true;
+            }
+
             if (info is null)
             {
                 finishedLoading = false;
@@ -178,7 +191,15 @@ public sealed class Editor
 
                     spritesTask = Animator.GetAnimationInfo(gfxType, animation, frame, flip ? Transform2D.FLIP_X : Transform2D.IDENTITY);
                     if (!spritesTask.IsCompletedSuccessfully)
+                    {
+                        if (spritesTask.IsFaulted && spritesTask.Exception is Exception e)
+                        {
+                            Rl.TraceLog(TraceLogLevel.Error, e.Message);
+                            Rl.TraceLog(TraceLogLevel.Trace, e.StackTrace);
+                            hadError = true;
+                        }
                         finishedLoading = false;
+                    }
                 }
             }
         }
@@ -213,6 +234,12 @@ public sealed class Editor
                     ValueTask<BoneShape[]> shapesTask = Animator.SpriteToShapes(swfSprite);
                     if (!shapesTask.IsCompletedSuccessfully)
                     {
+                        if (shapesTask.IsFaulted && shapesTask.AsTask().Exception is Exception e)
+                        {
+                            Rl.TraceLog(TraceLogLevel.Error, e.Message);
+                            Rl.TraceLog(TraceLogLevel.Trace, e.StackTrace);
+                            hadError = true;
+                        }
                         finishedLoading = false;
                         continue;
                     }
@@ -256,12 +283,12 @@ public sealed class Editor
             }
         }
 
-        if (GfxInfo.AnimationPicked && !finishedLoading)
+        if (GfxInfo.AnimationPicked && (!finishedLoading || hadError))
         {
-            int textSize = Rl.MeasureText(LOADING_TEXT, 100);
+            int textSize = Rl.MeasureText(hadError ? ERROR_TEXT : LOADING_TEXT, 100);
             float width = ViewportWindow.Bounds.Width;
             float height = ViewportWindow.Bounds.Height;
-            Rl.DrawText(LOADING_TEXT, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, LOADING_TEXT_COLOR);
+            Rl.DrawText(hadError ? ERROR_TEXT : LOADING_TEXT, (int)((width - textSize) / 2.0), (int)(height / 2.0) - 160, 100, LOADING_TEXT_COLOR);
         }
 
         Rl.EndMode2D();
