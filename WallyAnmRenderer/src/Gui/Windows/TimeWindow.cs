@@ -53,6 +53,12 @@ public sealed class TimeWindow
                 {
                     FrameSeeked?.Invoke(this, i);
                 }
+
+                if (i == loopStart)
+                    ImGui.SetItemTooltip("Loop start frame");
+                else if (i == recoveryStart)
+                    ImGui.SetItemTooltip("Loop end frame");
+
                 ImGui.SameLine();
                 ImGui.Spacing();
                 ImGui.PopID();
