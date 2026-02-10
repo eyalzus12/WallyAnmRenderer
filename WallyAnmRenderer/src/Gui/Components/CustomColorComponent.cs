@@ -89,7 +89,7 @@ public static class CustomColorComponent
                     ImGui.TableNextColumn();
                     if (col is null) continue;
                     uint currentColor = colorScheme[col.Value];
-                    ImGui.PushID((int)col.Value);
+                    ImGui.PushID((nint)col.Value);
                     uint newColor = ImGuiEx.ColorPicker3Hex(string.Empty, currentColor, new(45, 45));
                     ImGui.PopID();
                     if (currentColor != newColor)

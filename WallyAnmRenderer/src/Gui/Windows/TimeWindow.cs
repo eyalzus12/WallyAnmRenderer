@@ -74,13 +74,21 @@ public sealed class TimeWindow
         if (ImGui.Button("Next frame"))
             FrameMove?.Invoke(this, 1);
 
-        ImGui.SeparatorText("Raw info");
+        ImGui.SeparatorText("Raw data");
         ImGui.Text($"Frame count: {frames}");
+        ImGui.SetItemTooltip("Number of frames");
         ImGui.Text($"Base start: {data.BaseStart}");
+        ImGui.SetItemTooltip("Offset to animation start");
         ImGui.Text($"Preview frame: {data.PreviewFrame}");
+        ImGui.SetItemTooltip("Frame of taunt to show in UI");
         ImGui.Text($"Loop start: {loopStart}");
+        ImGui.SetItemTooltip("Loop start");
         ImGui.Text($"Recovery start: {recoveryStart}");
+        ImGui.SetItemTooltip("Loop end");
         ImGui.Text($"Free start: {data.FreeStart}");
+        ImGui.SetItemTooltip("UNUSED (always equal to frame count)");
+        ImGui.Text($"Run end: [{string.Join(", ", data.RunEndFrames)}]");
+        ImGui.SetItemTooltip("UNUSED (always empty)");
 
         ImGui.End();
     }

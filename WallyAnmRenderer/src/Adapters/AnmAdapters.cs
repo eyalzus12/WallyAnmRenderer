@@ -28,6 +28,7 @@ public readonly struct AnmAnimationAdapter(AnmAnimation anmAnimation) : IAnmAnim
     public uint FreeStart => anmAnimation.FreeStart;
     public uint PreviewFrame => anmAnimation.PreviewFrame;
     public uint BaseStart => anmAnimation.BaseStart;
+    public uint[] RunEndFrames => anmAnimation.RunEndFrames;
     public IAnmFrame[] Frames { get; } = [.. anmAnimation.Frames.Select((frame) => new AnmFrameAdapter(frame))];
 }
 
@@ -72,7 +73,7 @@ public static class Anm904Migrator
         FreeStart = animation.FreeStart,
         PreviewFrame = animation.PreviewFrame,
         BaseStart = animation.BaseStart,
-        Data = [.. animation.Data],
+        RunEndFrames = [.. animation.RunEndFrames],
         Frames = [.. animation.Frames.Select(MigrateFrame)],
     };
 
