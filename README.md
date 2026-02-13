@@ -1,6 +1,6 @@
-# Wally Anm Renderer. An animation renderer for Brawlhalla.
+# Wally Anm Renderer. An external animation renderer for Brawlhalla.
 
-**Currently under development.**
+<img width="1366" height="705" alt="screenshot000" src="https://github.com/user-attachments/assets/24b2ea52-0c14-4e85-aff7-27a1b52a3380" />
 
 #### Existing features:
 * Load any .anm files and pick an animation.
