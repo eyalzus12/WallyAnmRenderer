@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Numerics;
 using ImGuiNET;
 using BrawlhallaAnimLib.Bones;
 using BrawlhallaAnimLib.Math;
@@ -10,7 +11,7 @@ public sealed class AnimationInfoWindow
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
 
-    public void Show(BoneSprite[]? sprites, ref BoneSprite? highlight)
+    public void Show(BoneSprite[]? sprites, ref BoneSprite? highlighted, ref RlColor highlightTint)
     {
         Dictionary<string, uint> spriteNameNode = [];
         Dictionary<uint, uint> spriteIdNode = [];
@@ -20,6 +21,11 @@ public sealed class AnimationInfoWindow
 
         if (sprites is not null)
         {
+            ImGui.TextWrapped("Hover on an item from this list to highlight it in the viewport");
+            Vector3 highlightTint2 = RaylibUtils.RlColorToVector3(highlightTint);
+            if (ImGui.ColorEdit3("Highlight tint", ref highlightTint2, ImGuiColorEditFlags.NoInputs))
+                highlightTint = RaylibUtils.Vector3ToRlColor(highlightTint2);
+
             foreach (BoneSprite sprite in sprites)
             {
                 string spriteText;
@@ -50,7 +56,7 @@ public sealed class AnimationInfoWindow
                 {
                     if (ImGui.IsItemHovered())
                     {
-                        highlight = sprite;
+                        highlighted = sprite;
                     }
 
                     if (sprite is SwfBoneSprite boneSprite)
@@ -81,7 +87,7 @@ public sealed class AnimationInfoWindow
                 }
                 else if (ImGui.IsItemHovered())
                 {
-                    highlight = sprite;
+                    highlighted = sprite;
                 }
                 ImGui.PopID();
             }

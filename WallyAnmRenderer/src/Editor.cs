@@ -37,6 +37,7 @@ public sealed class Editor
     public Animator? Animator { get; private set; }
     public GfxInfo GfxInfo { get; } = new();
     private RlColor _bgColor = new(0, 0, 51, 255); // #000033
+    private RlColor _highlightTint = new(255, 255, 0); // #FFFF00
 
     public ViewportWindow ViewportWindow { get; } = new();
     public PathsWindow PathsWindow { get; } = new();
@@ -131,7 +132,7 @@ public sealed class Editor
         PathsWindow.Open = true;
 
         Rl.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.MaximizedWindow);
-        Rl.InitWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "WallyAnmRenderer");
+        Rl.InitWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, nameof(WallyAnmRenderer));
         Rl.MaximizeWindow(); // why is the config flag not working smh
 
         Rl.SetExitKey(KeyboardKey.Null);
@@ -210,7 +211,7 @@ public sealed class Editor
 
         // done separate from other UI to have access to the animation information
         if (Animator is not null && GfxInfo.AnimationPicked && AnimationInfoWindow.Open)
-            AnimationInfoWindow.Show(sprites, ref highlightedSprite);
+            AnimationInfoWindow.Show(sprites, ref highlightedSprite, ref _highlightTint);
         if (GfxInfoWindow.Open)
             GfxInfoWindow.Show(gfxType);
 
@@ -258,7 +259,9 @@ public sealed class Editor
                             texture.Texture,
                             0, 0, texture.Width, texture.Height,
                             center * shape.Transform * texture.Transform,
-                            tintB: highlighted ? 0 : 1,
+                            tintR: highlighted ? _highlightTint.R / 255f : 1,
+                            tintG: highlighted ? _highlightTint.G / 255f : 1,
+                            tintB: highlighted ? _highlightTint.B / 255f : 1,
                             tintA: (float)sprite.Opacity
                         );
                     }
@@ -276,7 +279,9 @@ public sealed class Editor
                         texture.Texture,
                         0, 0, texture.Width, texture.Height,
                         center * bitmapSprite.Transform * texture.Transform,
-                        tintB: highlighted ? 0 : 1,
+                        tintR: highlighted ? _highlightTint.R / 255f : 1,
+                        tintG: highlighted ? _highlightTint.G / 255f : 1,
+                        tintB: highlighted ? _highlightTint.B / 255f : 1,
                         tintA: (float)sprite.Opacity
                     );
                 }
