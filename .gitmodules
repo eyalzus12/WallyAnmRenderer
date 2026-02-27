@@ -16,3 +16,6 @@
 [submodule "BrawlhallaLangReader"]
 	path = BrawlhallaLangReader
 	url = https://github.com/eyalzus12/BrawlhallaLangReader.git
+[submodule "raylib-cs-custom"]
+	path = raylib-cs-custom
+	url = https://github.com/eyalzus12/raylib-cs-custom.git

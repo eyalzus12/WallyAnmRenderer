@@ -30,6 +30,8 @@
     <ProjectReference Include="..\WallyAnmSpinzor\WallyAnmSpinzor.csproj" />
     <ProjectReference Include="..\BrawlhallaLangReader\BrawlhallaLangReader.csproj" />
     <ProjectReference Include="..\BrawlhallaAnimLib\BrawlhallaAnimLib.csproj" />
+    <ProjectReference Include="..\raylib-cs-custom\Raylib-cs\Raylib-cs.csproj" />
+    <ProjectReference Include="..\raylib-cs-custom\Raylib-cs.Native\Raylib-cs.Native.csproj" />
   </ItemGroup>
   
   <ItemGroup>
@@ -37,7 +39,6 @@
     <PackageReference Include="Svg.Skia" Version="3.0.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.0" />
     <PackageReference Include="rlImgui-cs" Version="3.1.0" />
-    <PackageReference Include="Raylib-cs" Version="7.0.1" />
     <PackageReference Include="NativeFileDialogSharp" Version="0.5.0" />
   </ItemGroup>
 
