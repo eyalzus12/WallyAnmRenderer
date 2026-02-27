@@ -34,6 +34,7 @@ public sealed class AvatarTypes : ICsvReader
             _gfx[avatarName] = gfx;
         }
 
+        // sort (TODO: this is bad)
         _infos = _infos.OrderBy(x => x.Value.InventoryOrderID)
                         .ThenBy(x => x.Value.InventorySubOrderID)
                         .ThenBy(x => x.Value.AvatarID)

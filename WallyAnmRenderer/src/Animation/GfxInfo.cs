@@ -15,7 +15,7 @@ public sealed class GfxInfo : IGfxInfo
     public string? AnimClass { get; set; }
     public string? AnimFile { get; set; }
     public string? Animation { get; set; }
-    public double AnimScale { get; set; } = 2;
+    public double AnimScale { get; set; } = 4;
     public bool Flip { get; set; } = false;
 
     public string? CostumeType { get; set; }

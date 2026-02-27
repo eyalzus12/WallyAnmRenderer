@@ -6,9 +6,9 @@ using BrawlhallaAnimLib.Reading;
 
 namespace WallyAnmRenderer;
 
-public readonly record struct CompnaionTypeInfo(string CompanionName, string DisplayNameKey)
+public readonly record struct CompanionTypeInfo(string CompanionName, string DisplayNameKey)
 {
-    public static CompnaionTypeInfo From(XElement element)
+    public static CompanionTypeInfo From(XElement element)
     {
         string companionName = element.Attribute("CompanionName")?.Value ?? throw new ArgumentException("Missing CompanionName");
         string displayNameKey = element.Element("DisplayNameKey")?.Value ?? throw new ArgumentException("Missing DisplayNameKey");
@@ -18,7 +18,7 @@ public readonly record struct CompnaionTypeInfo(string CompanionName, string Dis
 
 public sealed class CompanionTypes
 {
-    private readonly Dictionary<string, CompnaionTypeInfo> _infos = [];
+    private readonly Dictionary<string, CompanionTypeInfo> _infos = [];
     private readonly Dictionary<string, CompanionTypesGfx> _gfx = [];
 
     public CompanionTypes(XElement element)
@@ -28,7 +28,7 @@ public sealed class CompanionTypes
             string name = child.Attribute("CompanionName")!.Value;
             if (name == "Template") continue;
 
-            CompnaionTypeInfo info = CompnaionTypeInfo.From(child);
+            CompanionTypeInfo info = CompanionTypeInfo.From(child);
             _infos[info.CompanionName] = info;
             CompanionTypesGfx gfx = new(child);
             _gfx[info.CompanionName] = gfx;
@@ -40,7 +40,7 @@ public sealed class CompanionTypes
         return _gfx.TryGetValue(name, out companion);
     }
 
-    public bool TryGetInfo(string name, [MaybeNullWhen(false)] out CompnaionTypeInfo info)
+    public bool TryGetInfo(string name, [MaybeNullWhen(false)] out CompanionTypeInfo info)
     {
         return _infos.TryGetValue(name, out info);
     }

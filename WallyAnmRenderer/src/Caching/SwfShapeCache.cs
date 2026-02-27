@@ -41,7 +41,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
     private const int SWF_UNIT_DIVISOR = 20;
     private const double ANIM_SCALE_MULTIPLIER = 1.2;
     // supersampling to try and get rid of texture holes.
-    private const float RASTER_SCALE = 3;
+    private const float SUPERSAMPLE_SCALE = 3;
 
     public readonly record struct TextureInfo(SwfFileData Swf, string SpriteName, ushort ShapeId, double AnimScale, Dictionary<uint, uint> ColorSwapDict);
     public readonly record struct ShapeData(RlImage Img, Transform2D Transform);
@@ -96,7 +96,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
             throw new Exception("Loading svg failed");
         }
 
-        using SKBitmap bitmap1 = svg.Picture.ToBitmap(SKColors.Transparent, RASTER_SCALE, RASTER_SCALE, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb())!;
+        using SKBitmap bitmap1 = svg.Picture.ToBitmap(SKColors.Transparent, SUPERSAMPLE_SCALE, SUPERSAMPLE_SCALE, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb())!;
         svg.Dispose();
 
         if (currentVersion != CacheVersion) return default;

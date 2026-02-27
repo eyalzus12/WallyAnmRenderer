@@ -37,37 +37,41 @@ public sealed class PathsWindow
                     _brawlPath = result.Path;
             });
         }
-        ImGui.Text($"Path: {brawlPath}");
-        ImGui.Separator();
 
-        string keyInput = key?.ToString() ?? "";
-        if (ImGui.InputText("Decryption key", ref keyInput, 9, ImGuiInputTextFlags.CharsDecimal))
+        if (brawlPath is not null)
         {
-            if (uint.TryParse(keyInput, out uint newKey))
+            ImGui.Text($"Path: {brawlPath}");
+            ImGui.Separator();
+
+            string keyInput = key?.ToString() ?? "";
+            if (ImGui.InputText("Decryption key", ref keyInput, 9, ImGuiInputTextFlags.CharsDecimal))
             {
-                _key = newKey;
+                if (uint.TryParse(keyInput, out uint newKey))
+                {
+                    _key = newKey;
+                }
             }
-        }
 
-        if (brawlPath is not null && ImGui.Button("Find key"))
-        {
-            Task.Run(() =>
+            if (ImGui.Button("Find key"))
             {
-                try
+                Task.Run(() =>
                 {
-                    _loadingError = null;
-                    _loadingStatus = "searching key...";
-                    _key = AbcUtils.FindDecryptionKeyFromPath(Path.Combine(brawlPath, "BrawlhallaAir.swf"));
-                }
-                catch (Exception e)
-                {
-                    _loadingError = e.Message;
-                }
-                finally
-                {
-                    _loadingStatus = null;
-                }
-            });
+                    try
+                    {
+                        _loadingError = null;
+                        _loadingStatus = "searching key...";
+                        _key = AbcUtils.FindDecryptionKeyFromPath(Path.Combine(brawlPath, "BrawlhallaAir.swf"));
+                    }
+                    catch (Exception e)
+                    {
+                        _loadingError = e.Message;
+                    }
+                    finally
+                    {
+                        _loadingStatus = null;
+                    }
+                });
+            }
         }
 
         if (key is not null && brawlPath is not null && ImGui.Button("Load files"))

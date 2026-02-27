@@ -11,7 +11,6 @@ namespace WallyAnmRenderer;
 public sealed class PickerWindow
 {
     private static readonly Vector4 NOTE_COLOR = ImGuiEx.RGBHexToVec4(0x00AAFF);
-    private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
     private static readonly string[] ITEM_TEAM_OPTIONS = ["None", "Red", "Blue"];
     private static readonly string[] PODIUM_TEAM_OPTIONS = ["None", "Red", "Blue"];
     private static readonly string[] BUBBLE_TEAM_OPTIONS = ["None", "Red", "Blue"];
@@ -338,7 +337,7 @@ public sealed class PickerWindow
 
         ImGui.PushID("held");
         ImGui.SeparatorText("Held item");
-        ImGui.TextColored(NOTE_COLOR, "Use Animation_Player.swf/a__HeldItemAnimation");
+        ImGui.TextColored(NOTE_COLOR, "Use a__HeldItemAnimation from Animation_Player.swf");
 
         // team
         int team = gfxInfo.ItemTypeTeam;
@@ -362,18 +361,17 @@ public sealed class PickerWindow
         ImGui.PopID(); ImGui.PushID("equip");
         ImGui.SeparatorText("Equipped item");
 
+        ImGui.PushTextWrapPos();
         if (gfxInfo.EquipItemType is not null && itemTypes.TryGetGfx(gfxInfo.EquipItemType, out ItemTypesGfx? equipItem))
         {
-            ImGui.TextColored(NOTE_COLOR, $"Use {equipItem.EquipAnimFile}/{equipItem.EquipAnimClass}");
-
-            ImGui.PushTextWrapPos();
-            ImGui.TextColored(NOTE_COLOR, "You may not notice changes if you selected a weapon");
-            ImGui.PopTextWrapPos();
+            ImGui.TextColored(NOTE_COLOR, $"Use {equipItem.EquipAnimClass} from {equipItem.EquipAnimFile}");
+            ImGui.TextColored(NOTE_COLOR, "If you selected a weapon, you may not notice any changes.");
         }
         else
         {
-            ImGui.TextColored(NOTE_COLOR, "Intended animation depends on item");
+            ImGui.TextColored(NOTE_COLOR, "Each item is intended to be used with a specific animation file and class.");
         }
+        ImGui.PopTextWrapPos();
 
         IEnumerable<string?> equipItemTypes = shouldShowItemTypes
             .Where((shouldShow) => shouldShow.Equip)
@@ -392,18 +390,17 @@ public sealed class PickerWindow
         ImGui.PopID(); ImGui.PushID("world");
         ImGui.SeparatorText("World item");
 
+        ImGui.PushTextWrapPos();
         if (gfxInfo.WorldItemType is not null && itemTypes.TryGetGfx(gfxInfo.WorldItemType, out ItemTypesGfx? worldItem))
         {
-            ImGui.TextColored(NOTE_COLOR, $"Use {worldItem.WorldAnimFile}/{worldItem.WorldAnimClass}");
-
-            ImGui.PushTextWrapPos();
-            ImGui.TextColored(NOTE_COLOR, "You may not notice changes if you selected a weapon");
-            ImGui.PopTextWrapPos();
+            ImGui.TextColored(NOTE_COLOR, $"Use {worldItem.WorldAnimClass} from {worldItem.WorldAnimFile}");
+            ImGui.TextColored(NOTE_COLOR, "If you selected a weapon, you may not notice any changes.");
         }
         else
         {
-            ImGui.TextColored(NOTE_COLOR, "Intended animation depends on item");
+            ImGui.TextColored(NOTE_COLOR, "Each item is intended to be used with a specific animation file and class.");
         }
+        ImGui.PopTextWrapPos();
 
         IEnumerable<string?> worldItemTypes = shouldShowItemTypes
             .Where((shouldShow) => shouldShow.World)
@@ -465,10 +462,6 @@ public sealed class PickerWindow
             return;
         }
 
-        ImGui.PushTextWrapPos();
-        ImGui.TextColored(NOTE_COLOR, "NOTE: Each companion is intended to be used with its unique anm file");
-        ImGui.PopTextWrapPos();
-
         CompanionTypes? companionTypes = loader.SwzFiles.Game.CompanionTypes;
 
         if (companionTypes is null)
@@ -477,12 +470,23 @@ public sealed class PickerWindow
             return;
         }
 
+        ImGui.PushTextWrapPos();
+        if (gfxInfo.CompanionType is not null && companionTypes.TryGetGfx(gfxInfo.CompanionType, out CompanionTypesGfx? gfx))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {gfx.AnimClass} from {gfx.AnimFile}");
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Each companion is intended to be used with a specific animation file and class.");
+        }
+        ImGui.PopTextWrapPos();
+
         string companionToName(string? companionType)
         {
             if (companionType is null) return "None##none";
 
             string companionName = companionType;
-            if (companionTypes.TryGetInfo(companionType, out CompnaionTypeInfo info))
+            if (companionTypes.TryGetInfo(companionType, out CompanionTypeInfo info))
             {
                 string displayNameKey = info.DisplayNameKey;
                 if (loader.TryGetStringName(displayNameKey, out string? realCompanionName))
@@ -513,6 +517,17 @@ public sealed class PickerWindow
         gfxInfo.PodiumTypeTeam = ImGuiEx.EnumCombo("Team", gfxInfo.PodiumTypeTeam, PODIUM_TEAM_OPTIONS);
 
         PodiumTypes podiumTypes = loader.SwzFiles.Game.PodiumTypes;
+
+        ImGui.PushTextWrapPos();
+        if (gfxInfo.PodiumType is not null && podiumTypes.TryGetGfx(gfxInfo.PodiumType, out PodiumTypesGfx? gfx))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {gfx.AnimRig} from {gfx.AnimFile}");
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Each podium is intended to be used with a specific animation file and class.");
+        }
+        ImGui.PopTextWrapPos();
 
         string podiumToName(string? podiumType)
         {
@@ -547,11 +562,18 @@ public sealed class PickerWindow
             return;
         }
 
-        ImGui.PushTextWrapPos();
-        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_LoadingFrames");
-        ImGui.PopTextWrapPos();
-
         SeasonBorderTypes seasonBorderTypes = loader.SwzFiles.Game.SeasonBorderTypes;
+
+        ImGui.PushTextWrapPos();
+        if (gfxInfo.SeasonBorderType is not null && seasonBorderTypes.TryGetGfx(gfxInfo.SeasonBorderType, out SeasonBorderTypesGfx? gfx))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {gfx.AnimRig} from {gfx.AnimFile}");
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Each loading frame is intended to be used with a specific animation file and class.");
+        }
+        ImGui.PopTextWrapPos();
 
         string seasonBorderToName(string? seasonBorderType)
         {
@@ -587,7 +609,7 @@ public sealed class PickerWindow
         }
 
         ImGui.PushTextWrapPos();
-        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_PlayerThemes");
+        ImGui.TextColored(NOTE_COLOR, "These are intended to be used with Animation_PlayerThemes");
         ImGui.PopTextWrapPos();
 
         ImGui.PushTextWrapPos();
@@ -595,6 +617,17 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         PlayerThemeTypes playerThemeTypes = loader.SwzFiles.Game.PlayerThemeTypes;
+
+        ImGui.PushTextWrapPos();
+        if (gfxInfo.PlayerThemeType is not null && playerThemeTypes.TryGetGfx(gfxInfo.PlayerThemeType, out PlayerThemeTypesGfx? gfx))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {gfx.AnimRig} from {gfx.AnimFile}");
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Each UI theme is intended to be used with a specific animation file and class.");
+        }
+        ImGui.PopTextWrapPos();
 
         string playerThemeToName(string? playerThemeType)
         {
@@ -664,11 +697,18 @@ public sealed class PickerWindow
             return;
         }
 
-        ImGui.PushTextWrapPos();
-        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_Emojis");
-        ImGui.PopTextWrapPos();
-
         EmojiTypes emojiTypes = loader.SwzFiles.Game.EmojiTypes;
+
+        ImGui.PushTextWrapPos();
+        if (gfxInfo.EmojiType is not null && emojiTypes.TryGetGfx(gfxInfo.EmojiType, out EmojiTypesGfx? gfx))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {gfx.AnimRig} from {gfx.AnimFile}");
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Each emoji is intended to be used with a specific animation file and class.");
+        }
+        ImGui.PopTextWrapPos();
 
         string emojiToName(string? emojiType)
         {
@@ -703,11 +743,18 @@ public sealed class PickerWindow
             return;
         }
 
-        ImGui.PushTextWrapPos();
-        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_GameUI");
-        ImGui.PopTextWrapPos();
-
         EndMatchVoicelineTypes endMatchVoicelineTypes = loader.SwzFiles.Game.EndMatchVoicelineTypes;
+
+        ImGui.PushTextWrapPos();
+        if (gfxInfo.EndMatchVoicelineType is not null && endMatchVoicelineTypes.TryGetGfx(gfxInfo.EndMatchVoicelineType, out EndMatchVoicelineTypesGfx? gfx))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {gfx.AnimRig} from {gfx.AnimFile}");
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Each voiceline is intended to be used with a specific animation file and class.");
+        }
+        ImGui.PopTextWrapPos();
 
         string voicelineToName(string? endMatchVoicelineType)
         {
@@ -741,15 +788,22 @@ public sealed class PickerWindow
             return;
         }
 
-        ImGui.PushTextWrapPos();
-        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_ClientThemeLogos");
-        ImGui.PopTextWrapPos();
-
         ClientThemeTypes clientThemeTypes = loader.SwzFiles.Game.ClientThemeTypes;
+
+        ImGui.PushTextWrapPos();
+        if (gfxInfo.ClientThemeType is not null && clientThemeTypes.TryGetGfx(gfxInfo.ClientThemeType, out ClientThemeTypesGfx? gfx))
+        {
+            ImGui.TextColored(NOTE_COLOR, $"Use {gfx.AnimRig} from {gfx.AnimFile}");
+        }
+        else
+        {
+            ImGui.TextColored(NOTE_COLOR, "Each event logo is intended to be used with a specific animation file and class.");
+        }
+        ImGui.PopTextWrapPos();
 
         static string clientThemeToName(string? clientThemeType)
         {
-            return clientThemeType ?? "None#none";
+            return clientThemeType ?? "None##none";
         }
 
         PickerListBox<string?> picker = new()
@@ -804,7 +858,7 @@ public sealed class PickerWindow
     private static void CrateColorsSection(Loader loader, GfxInfo gfxInfo)
     {
         ImGui.PushTextWrapPos();
-        ImGui.TextColored(NOTE_COLOR, "NOTE: Pure black is treated by the game and program as no swap");
+        ImGui.TextColored(NOTE_COLOR, "Pure black is treated by the game and program as no swap");
         ImGui.PopTextWrapPos();
 
         uint ogCrateColorA = gfxInfo.CrateColorA;
@@ -852,7 +906,7 @@ public sealed class PickerWindow
     public static void GamemodesSection(GfxInfo gfxInfo)
     {
         ImGui.PushTextWrapPos();
-        ImGui.TextColored(NOTE_COLOR, "NOTE: These are intended to be used with Animation_GameModes, each their own animation class");
+        ImGui.TextColored(NOTE_COLOR, "These are intended to be used with Animation_GameModes, each with their own animation class");
         ImGui.PopTextWrapPos();
 
         ImGui.SeparatorText("Bubble tag (a__AnimationTagBubble)");

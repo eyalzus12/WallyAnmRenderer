@@ -360,7 +360,7 @@ public sealed partial class ExportModal
                 break;
         }
 
-        ImGui.InputDouble("Anim scale", ref _animScale);
+        ImGui.InputDouble("Render quality", ref _animScale);
 
         ImGui.Checkbox("Flip animation", ref _flip);
 
