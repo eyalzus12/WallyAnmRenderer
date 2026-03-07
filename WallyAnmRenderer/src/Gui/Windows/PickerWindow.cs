@@ -186,7 +186,7 @@ public sealed class PickerWindow
             ImGui.TreePop();
         }
 
-        if (ImGui.TreeNode("End of Match Voicelines"))
+        if (ImGui.TreeNode("End of Match Fanfares text"))
         {
             EndMatchVoicelineTypesSection(loader, gfxInfo);
             ImGui.TreePop();
@@ -752,7 +752,7 @@ public sealed class PickerWindow
         }
         else
         {
-            ImGui.TextColored(NOTE_COLOR, "Each voiceline is intended to be used with a specific animation file and class.");
+            ImGui.TextColored(NOTE_COLOR, "Each fanfare text is intended to be used with a specific animation file and class.");
         }
         ImGui.PopTextWrapPos();
 
@@ -776,7 +776,7 @@ public sealed class PickerWindow
             OnSelect = (voicelineType) => gfxInfo.EndMatchVoicelineType = voicelineType,
             ShouldShow = CreateShouldShowFromFilter<string?>(_endMatchVoicelineTypeFilter),
         };
-        ImGui.InputText("Filter voicelines", ref _endMatchVoicelineTypeFilter, 256);
+        ImGui.InputText("Filter fanfare text", ref _endMatchVoicelineTypeFilter, 256);
         picker.Show(gfxInfo.EndMatchVoicelineType);
     }
 
