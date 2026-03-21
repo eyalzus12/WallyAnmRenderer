@@ -1,10 +1,9 @@
 using System;
-using System.Xml;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using Raylib_cs;
-using Svg.Skia;
-using SkiaSharp;
+using ImageMagick;
 using SwfLib.Tags.ShapeTags;
 using SwiffCheese.Shapes;
 using SwiffCheese.Exporting.Svg;
@@ -14,8 +13,6 @@ namespace WallyAnmRenderer;
 
 public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfShapeCache.ShapeData, Texture2DWrapper>
 {
-    private readonly static SKSamplingOptions SAMPLING_OPTIONS = new(SKFilterMode.Linear, SKMipmapMode.Linear);
-
     // this is how the game checks the cache.
     // AnimScale only matters for digits.
     // (deviation from the game: we check the shapeId. this is to handle animations correctly.)
@@ -40,15 +37,13 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
 
     private const int SWF_UNIT_DIVISOR = 20;
     private const double ANIM_SCALE_MULTIPLIER = 1.2;
-    // supersampling to try and get rid of texture holes.
-    private const float SUPERSAMPLE_SCALE = 3;
 
     public readonly record struct TextureInfo(SwfFileData Swf, string SpriteName, ushort ShapeId, double AnimScale, Dictionary<uint, uint> ColorSwapDict);
     public readonly record struct ShapeData(RlImage Img, Transform2D Transform);
 
     protected override IEqualityComparer<TextureInfo>? KeyEqualityComparer { get; } = new TextureInfoHasher();
 
-    protected override ShapeData LoadIntermediate(TextureInfo textureInfo)
+    protected unsafe override ShapeData LoadIntermediate(TextureInfo textureInfo)
     {
         ulong currentVersion = CacheVersion;
 
@@ -85,41 +80,59 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
 
         if (currentVersion != CacheVersion) return default;
 
-        using XmlReader reader = exporter.Document.CreateReader();
-        using SKSvg svg = SKSvg.CreateFromXmlReader(reader);
-        reader.Dispose();
+        using MemoryStream ms = new();
+        exporter.Document.Save(ms);
+        ms.Position = 0;
 
         if (currentVersion != CacheVersion) return default;
 
-        if (svg.Picture is null)
+        MagickReadSettings mgSettings = new()
         {
-            throw new Exception("Loading svg failed");
+            Format = MagickFormat.Svg,
+            BackgroundColor = MagickColors.Transparent,
+            ColorSpace = ColorSpace.sRGB,
+        };
+        using MagickImage mgImage = new(ms, mgSettings);
+        ms.Dispose();
+
+        if (currentVersion != CacheVersion) return default;
+
+        mgImage.Alpha(AlphaOption.On);
+        mgImage.Alpha(AlphaOption.Associate);
+        mgImage.Resize(new MagickGeometry((uint)imageW, (uint)imageH));
+
+        if (currentVersion != CacheVersion) return default;
+
+        int width = (int)mgImage.Width;
+        int height = (int)mgImage.Height;
+        byte[] mgPixels = mgImage.GetPixels().ToByteArray(PixelMapping.RGBA)!;
+        mgImage.Dispose();
+
+        if (currentVersion != CacheVersion) return default;
+
+        RlImage rlImage2;
+        fixed (byte* mgPixelsPtr = mgPixels)
+        {
+            RlImage rlImage = new()
+            {
+                Data = mgPixelsPtr,
+                Width = width,
+                Height = height,
+                Mipmaps = 1,
+                Format = PixelFormat.UncompressedR8G8B8A8,
+            };
+            rlImage2 = RaylibEx.ImageCopyWithMipmaps(rlImage);
         }
-
-        using SKBitmap bitmap1 = svg.Picture.ToBitmap(SKColors.Transparent, SUPERSAMPLE_SCALE, SUPERSAMPLE_SCALE, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb())!;
-        svg.Dispose();
-
-        if (currentVersion != CacheVersion) return default;
-
-        using SKBitmap bitmap2 = bitmap1.Resize(new SKSizeI(imageW, imageH), SAMPLING_OPTIONS);
-        bitmap1.Dispose();
-
-        if (currentVersion != CacheVersion) return default;
-
-        RlImage img1 = RaylibUtils.SKBitmapAsRlImage(bitmap2);
-        RlImage img2 = RaylibEx.ImageCopyWithMipmaps(img1);
-        bitmap2.Dispose(); // also unloads img1
+        mgPixels = null!;
 
         if (currentVersion != CacheVersion)
         {
-            Rl.UnloadImage(img2);
+            Rl.UnloadImage(rlImage2);
             return default;
         }
 
-        // no need for alpha premult since we specify it in the ToBitmap
-
         Transform2D.Invert(transform, out Transform2D inv);
-        return new ShapeData(img2, inv);
+        return new ShapeData(rlImage2, inv);
     }
 
     protected override Texture2DWrapper IntermediateToValue(ShapeData shapeData)

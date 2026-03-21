@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -17,8 +15,7 @@ using BrawlhallaAnimLib.Math;
 using BrawlhallaAnimLib.Swf;
 using ImGuiNET;
 using NativeFileDialogSharp;
-using SkiaSharp;
-using Svg.Skia;
+using ImageMagick;
 using SwfLib.Tags.ShapeTags;
 using SwiffCheese.Exporting.Svg;
 using SwiffCheese.Shapes;
@@ -178,9 +175,7 @@ public sealed partial class ExportModal
             XDocument document = new(new XDeclaration("1.0", "UTF-8", "no"), svg);
 
             string path = Path.Combine(loader.AssetLoader.BrawlPath, bitmapSprite.SpriteData.File);
-            SKEncodedImageFormat format;
-            using (SKCodec codec = SKCodec.Create(path))
-                format = codec.EncodedFormat;
+            MagickFormat format = new MagickImageInfo(path).Format;
 
             ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
             (double, double)[] points = [(offX, offY), (offX + width, offY), (offX, offY + height), (offX + width, offY + height)];
@@ -190,22 +185,17 @@ public sealed partial class ExportModal
                 viewBox.ExtendWith(nx, ny);
             }
 
+            // TODO: more
             string mimeType = format switch
             {
-                SKEncodedImageFormat.Bmp => "image/bmp",
-                SKEncodedImageFormat.Gif => "image/gif",
-                SKEncodedImageFormat.Ico => "image/vnd.microsoft.icon",
-                SKEncodedImageFormat.Jpeg => "image/jpeg",
-                SKEncodedImageFormat.Png => "image/png",
-                //SKEncodedImageFormat.Wbmp => throw new NotSupportedException(),
-                SKEncodedImageFormat.Webp => "image/webp",
-                //SKEncodedImageFormat.Pkm => throw new NotSupportedException(),
-                //SKEncodedImageFormat.Ktx => throw new NotSupportedException(),
-                //SKEncodedImageFormat.Astc => throw new NotSupportedException(),
-                //SKEncodedImageFormat.Dng => throw new NotSupportedException(),
-                //SKEncodedImageFormat.Heif => throw new NotSupportedException(),
-                SKEncodedImageFormat.Avif => "image/avif",
-                SKEncodedImageFormat.Jpegxl => "image/jxl",
+                MagickFormat.Bmp => "image/bmp",
+                MagickFormat.Gif => "image/gif",
+                MagickFormat.Ico => "image/vnd.microsoft.icon",
+                MagickFormat.Jpeg => "image/jpeg",
+                MagickFormat.Png => "image/png",
+                MagickFormat.WebP => "image/webp",
+                MagickFormat.Avif => "image/avif",
+                MagickFormat.Jxl => "image/jxl",
                 _ => throw new NotSupportedException(format.ToString()),
             };
 
@@ -541,7 +531,7 @@ public sealed partial class ExportModal
                 cancellationToken.ThrowIfCancellationRequested();
                 break;
             case ExportAsEnum.Png:
-                SaveToPathPng(document, path);
+                await SaveToPathPng(document, path, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 break;
         }
@@ -565,14 +555,21 @@ public sealed partial class ExportModal
         await document.SaveAsync(writer, cancellationToken);
     }
 
-    private static void SaveToPathPng(XDocument document, string path)
+    private static async Task SaveToPathPng(XDocument document, string path, CancellationToken cancellationToken = default)
     {
-        using XmlReader reader = document.CreateReader();
-        using SKSvg svg = SKSvg.CreateFromXmlReader(reader);
-        reader.Dispose();
-        if (svg.Picture is null)
-            throw new Exception("Loading svg failed");
-        using FileStream file = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
-        svg.Picture.ToImage(file, SKColor.Empty, SKEncodedImageFormat.Png, int.MaxValue, 1, 1, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb());
+        using MemoryStream ms = new();
+        document.Save(ms);
+        ms.Position = 0;
+
+        MagickReadSettings mgSettings = new()
+        {
+            Format = MagickFormat.Svg,
+            BackgroundColor = MagickColors.Transparent,
+            ColorSpace = ColorSpace.sRGB,
+        };
+        using MagickImage mgImage = new(ms, mgSettings);
+        ms.Dispose();
+
+        await mgImage.WriteAsync(path, cancellationToken);
     }
 }

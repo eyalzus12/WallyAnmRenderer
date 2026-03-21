@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using BrawlhallaAnimLib.Math;
 using Raylib_cs;
-using SkiaSharp;
+using ImageMagick;
 
 namespace WallyAnmRenderer;
 
@@ -24,27 +24,33 @@ public class TextureCache : UploadCache<TextureCache.SpriteData, (RlImage, Trans
 
     public readonly record struct SpriteData(string FilePath, double OffsetX, double OffsetY);
 
-    private static SKBitmap LoadSKBitmap(string path)
+    protected unsafe override (RlImage, Transform2D) LoadIntermediate(SpriteData spriteData)
     {
-        SKImageInfo info;
-        using (SKCodec codec = SKCodec.Create(path))
-            info = codec.Info;
-        SKImageInfo desiredInfo = info
-            .WithColorType(SKColorType.Rgba8888)
-            .WithAlphaType(SKAlphaType.Premul);
+        using MagickImage mgImage = new(spriteData.FilePath);
+        mgImage.Alpha(AlphaOption.On);
+        mgImage.Alpha(AlphaOption.Associate);
 
-        SKBitmap bitmap = SKBitmap.Decode(path, desiredInfo);
-        return bitmap;
-    }
+        int width = (int)mgImage.Width;
+        int height = (int)mgImage.Height;
+        byte[] mgPixels = mgImage.GetPixels().ToByteArray(PixelMapping.RGBA)!;
+        mgImage.Dispose();
 
-    protected override (RlImage, Transform2D) LoadIntermediate(SpriteData spriteData)
-    {
-        using SKBitmap bitmap = LoadSKBitmap(spriteData.FilePath);
-        RlImage img1 = RaylibUtils.SKBitmapAsRlImage(bitmap);
-        RlImage img2 = RaylibEx.ImageCopyWithMipmaps(img1);
-        bitmap.Dispose(); // also unloads img1
+        RlImage rlImage2;
+        fixed (byte* mgPixelsPtr = mgPixels)
+        {
+            RlImage rlImage = new()
+            {
+                Data = mgPixelsPtr,
+                Width = width,
+                Height = height,
+                Mipmaps = 1,
+                Format = PixelFormat.UncompressedR8G8B8A8,
+            };
+            rlImage2 = RaylibEx.ImageCopyWithMipmaps(rlImage);
+        }
+        mgPixels = null!;
 
-        return (img2, Transform2D.CreateTranslate(spriteData.OffsetX, spriteData.OffsetY));
+        return (rlImage2, Transform2D.CreateTranslate(spriteData.OffsetX, spriteData.OffsetY));
     }
 
     protected override Texture2DWrapper IntermediateToValue((RlImage, Transform2D) i)
