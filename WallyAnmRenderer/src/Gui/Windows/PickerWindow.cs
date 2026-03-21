@@ -162,7 +162,7 @@ public sealed class PickerWindow
             ImGui.TreePop();
         }
 
-        if (ImGui.TreeNode("UI themes"))
+        if (ImGui.TreeNode("Insignias"))
         {
             PlayerThemeTypesSection(loader, gfxInfo);
             ImGui.TreePop();
@@ -613,7 +613,7 @@ public sealed class PickerWindow
         ImGui.PopTextWrapPos();
 
         ImGui.PushTextWrapPos();
-        ImGui.TextColored(new(1, 1, 0, 1), "Some older UI themes may not work due to BMG-ness.");
+        ImGui.TextColored(new(1, 1, 0, 1), "Some older Insignias may not work due to BMG-ness.");
         ImGui.PopTextWrapPos();
 
         PlayerThemeTypes playerThemeTypes = loader.SwzFiles.Game.PlayerThemeTypes;
@@ -625,7 +625,7 @@ public sealed class PickerWindow
         }
         else
         {
-            ImGui.TextColored(NOTE_COLOR, "Each UI theme is intended to be used with a specific animation file and class.");
+            ImGui.TextColored(NOTE_COLOR, "Each insignia is intended to be used with a specific animation file and class.");
         }
         ImGui.PopTextWrapPos();
 
@@ -650,7 +650,7 @@ public sealed class PickerWindow
             OnSelect = (playerThemeType) => gfxInfo.PlayerThemeType = playerThemeType,
             ShouldShow = CreateShouldShowFromFilter<string?>(_playerThemeTypeFilter),
         };
-        ImGui.InputText("Filter UI themes", ref _playerThemeTypeFilter, 256);
+        ImGui.InputText("Filter insignias", ref _playerThemeTypeFilter, 256);
         picker.Show(gfxInfo.PlayerThemeType);
     }
 

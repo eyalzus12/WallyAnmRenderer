@@ -209,7 +209,7 @@ public sealed class GfxInfo : IGfxInfo
             }
             else
             {
-                throw new ArgumentException($"Invalid ui theme type {PlayerThemeType}");
+                throw new ArgumentException($"Invalid player theme type {PlayerThemeType}");
             }
         }
 

@@ -13,7 +13,7 @@
   * Color
   * Podium
   * Loading frame
-  * UI theme
+  * Insignia
   * Avatar
   * Emoji
 * A full implementation of the game's animation system.
