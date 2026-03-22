@@ -50,7 +50,7 @@ public sealed partial class ExportModal
     {
         SingleFrame = 0,
         MultiFrame = 1,
-        Animation = 2,
+        Animated = 2,
     };
     private static readonly string[] EXPORT_MODE = ["Single frame", "Frame sequence", "Animated image"];
     private ExportModeEnum _exportMode = ExportModeEnum.SingleFrame;
@@ -173,7 +173,6 @@ public sealed partial class ExportModal
             double offX = bitmapSprite.SpriteData.XOffset;
             double offY = bitmapSprite.SpriteData.YOffset;
 
-            XNamespace xmlns = XNamespace.Get("http://www.w3.org/2000/svg");
             XElement imageElement = new(xmlns + "image");
             imageElement.SetAttributeValue("x", bitmapSprite.SpriteData.XOffset);
             imageElement.SetAttributeValue("y", bitmapSprite.SpriteData.YOffset);
@@ -340,7 +339,7 @@ public sealed partial class ExportModal
         ImGui.Combo("Export mode", ref currentExportMode, EXPORT_MODE, EXPORT_MODE.Length);
         _exportMode = (ExportModeEnum)currentExportMode;
 
-        if (_exportMode == ExportModeEnum.Animation)
+        if (_exportMode == ExportModeEnum.Animated)
         {
             int currentExportAs = (int)_exportAnimAs;
             ImGui.Combo("Export as", ref currentExportAs, EXPORT_ANIM_AS, EXPORT_ANIM_AS.Length);
@@ -367,7 +366,7 @@ public sealed partial class ExportModal
                 ImGui.InputText("File name format", ref _fileNameFormat, 256);
                 ImGui.Checkbox("Size canvas such that all frames fit", ref _canvasContain);
                 break;
-            case ExportModeEnum.Animation:
+            case ExportModeEnum.Animated:
                 ImGuiEx.InputLong("Start Frame", ref _startFrame);
                 ImGuiEx.InputLong("End Frame", ref _endFrame);
                 ImGui.Checkbox("Size canvas such that all frames fit", ref _canvasContain);
@@ -399,7 +398,7 @@ public sealed partial class ExportModal
                         case ExportModeEnum.MultiFrame:
                             await SaveMultiFrame(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
                             break;
-                        case ExportModeEnum.Animation:
+                        case ExportModeEnum.Animated:
                             await SaveAnimated(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
                             break;
                     }
@@ -500,6 +499,7 @@ public sealed partial class ExportModal
 
             animationTasks.Add((path, ExportAnimation(loader, gfx, animation, _animScale, frame, _flip).AsTask()));
         }
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (_canvasContain)
         {
@@ -524,6 +524,7 @@ public sealed partial class ExportModal
                 svg.SetAttributeValue("height", viewBox.Height);
                 svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
             }
+            cancellationToken.ThrowIfCancellationRequested();
 
             await Task.WhenAll(documents.Select(async x =>
             {
