@@ -543,8 +543,8 @@ public sealed partial class ExportModal
                 (XDocument document, _) = await task;
                 cancellationToken.ThrowIfCancellationRequested();
                 await ExportDocument(path, document, cancellationToken);
-                _status = "Exported " + path;
                 cancellationToken.ThrowIfCancellationRequested();
+                _status = "Exported " + path;
             }));
         }
     }
@@ -598,6 +598,7 @@ public sealed partial class ExportModal
                 svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
             }
         }
+        cancellationToken.ThrowIfCancellationRequested();
 
         using MagickImageCollection magickImages = [];
         foreach ((XDocument document, _) in documents)
@@ -607,6 +608,7 @@ public sealed partial class ExportModal
             using MemoryStream ms = new();
             document.Save(ms);
             ms.Position = 0;
+            cancellationToken.ThrowIfCancellationRequested();
 
             MagickReadSettings mgSettings = new()
             {
@@ -616,12 +618,15 @@ public sealed partial class ExportModal
             };
             MagickImage mgImage = new(ms, mgSettings);
             ms.Dispose();
+            cancellationToken.ThrowIfCancellationRequested();
 
             mgImage.AnimationDelay = 4;
             mgImage.GifDisposeMethod = GifDisposeMethod.Background;
             magickImages.Add(mgImage);
+            cancellationToken.ThrowIfCancellationRequested();
         }
-        _status = "Saving...";
+        cancellationToken.ThrowIfCancellationRequested();
+        _status = "Saving... This is gonna take a while.";
         await magickImages.WriteAsync(path, cancellationToken);
     }
 
