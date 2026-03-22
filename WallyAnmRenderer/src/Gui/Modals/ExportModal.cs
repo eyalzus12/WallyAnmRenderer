@@ -29,23 +29,33 @@ public sealed partial class ExportModal
 
     public const string NAME = "Export animation";
 
-    private enum ExportAsEnum
+    private enum ExportFrameAsEnum
     {
         Svg = 0,
         Png = 1,
     }
-    private static readonly string[] EXPORT_AS = [".svg", ".png"];
-    private ExportAsEnum _exportAs = ExportAsEnum.Svg;
+    private static readonly string[] EXPORT_FRAME_AS = [".svg", ".png"];
+    private ExportFrameAsEnum _exportFrameAs = ExportFrameAsEnum.Svg;
+
+    private enum ExportAnimationAsEnum
+    {
+        Webp = 0,
+        Gif = 1,
+        Apng = 2,
+    }
+    private static readonly string[] EXPORT_ANIM_AS = [".webp", ".gif", ".apng"];
+    private ExportAnimationAsEnum _exportAnimAs = ExportAnimationAsEnum.Webp;
 
     private enum ExportModeEnum
     {
         SingleFrame = 0,
         MultiFrame = 1,
+        Animation = 2,
     };
-    private static readonly string[] EXPORT_MODE = ["Single frame", "Frame sequence"];
+    private static readonly string[] EXPORT_MODE = ["Single frame", "Frame sequence", "Animated image"];
     private ExportModeEnum _exportMode = ExportModeEnum.SingleFrame;
 
-    private bool _canvasContain = false;
+    private bool _canvasContain = true;
 
     private string _fileNameFormat = $"Exported animation {FILENAME_FORMAT_FRAME_CHAR}";
 
@@ -326,13 +336,22 @@ public sealed partial class ExportModal
             return;
         }
 
-        int currentExportAs = (int)_exportAs;
-        ImGui.Combo("Export as", ref currentExportAs, EXPORT_AS, EXPORT_AS.Length);
-        _exportAs = (ExportAsEnum)currentExportAs;
-
         int currentExportMode = (int)_exportMode;
         ImGui.Combo("Export mode", ref currentExportMode, EXPORT_MODE, EXPORT_MODE.Length);
         _exportMode = (ExportModeEnum)currentExportMode;
+
+        if (_exportMode == ExportModeEnum.Animation)
+        {
+            int currentExportAs = (int)_exportAnimAs;
+            ImGui.Combo("Export as", ref currentExportAs, EXPORT_ANIM_AS, EXPORT_ANIM_AS.Length);
+            _exportAnimAs = (ExportAnimationAsEnum)currentExportAs;
+        }
+        else
+        {
+            int currentExportAs = (int)_exportFrameAs;
+            ImGui.Combo("Export as", ref currentExportAs, EXPORT_FRAME_AS, EXPORT_FRAME_AS.Length);
+            _exportFrameAs = (ExportFrameAsEnum)currentExportAs;
+        }
 
         ImGui.Text("Frames start at 0");
         switch (_exportMode)
@@ -346,6 +365,11 @@ public sealed partial class ExportModal
                 ImGuiEx.InputLong("End Frame", ref _endFrame);
                 ImGui.Text("@ Will be replaced with the frame number.");
                 ImGui.InputText("File name format", ref _fileNameFormat, 256);
+                ImGui.Checkbox("Size canvas such that all frames fit", ref _canvasContain);
+                break;
+            case ExportModeEnum.Animation:
+                ImGuiEx.InputLong("Start Frame", ref _startFrame);
+                ImGuiEx.InputLong("End Frame", ref _endFrame);
                 ImGui.Checkbox("Size canvas such that all frames fit", ref _canvasContain);
                 break;
         }
@@ -370,10 +394,13 @@ public sealed partial class ExportModal
                     switch (_exportMode)
                     {
                         case ExportModeEnum.SingleFrame:
-                            await SaveSingleFrame(prefs, animator.Loader, gfx, animation);
+                            await SaveSingleFrame(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
                             break;
                         case ExportModeEnum.MultiFrame:
                             await SaveMultiFrame(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
+                            break;
+                        case ExportModeEnum.Animation:
+                            await SaveAnimated(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
                             break;
                     }
                 }
@@ -412,12 +439,12 @@ public sealed partial class ExportModal
         ImGui.EndPopup();
     }
 
-    private async Task SaveSingleFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation)
+    private async Task SaveSingleFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken cancellationToken = default)
     {
-        string extension = _exportAs switch
+        string extension = _exportFrameAs switch
         {
-            ExportAsEnum.Svg => "svg",
-            ExportAsEnum.Png => "png",
+            ExportFrameAsEnum.Svg => "svg",
+            ExportFrameAsEnum.Png => "png",
             _ => "*",
         };
         DialogResult result = Dialog.FileSave(extension, prefs.ExportPath);
@@ -433,7 +460,7 @@ public sealed partial class ExportModal
             path = Path.ChangeExtension(path, extension);
 
         (XDocument document, _) = await ExportAnimation(loader, gfx, animation, _animScale, _startFrame, _flip);
-        await ExportDocument(path, document);
+        await ExportDocument(path, document, cancellationToken);
     }
 
     private async Task SaveMultiFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken cancellationToken = default)
@@ -452,10 +479,10 @@ public sealed partial class ExportModal
         int direction = Math.Sign(_endFrame - _startFrame);
         if (direction == 0) direction = 1;
 
-        string extension = _exportAs switch
+        string extension = _exportFrameAs switch
         {
-            ExportAsEnum.Svg => "svg",
-            ExportAsEnum.Png => "png",
+            ExportFrameAsEnum.Svg => "svg",
+            ExportFrameAsEnum.Png => "png",
             _ => "*",
         };
 
@@ -522,15 +549,91 @@ public sealed partial class ExportModal
         }
     }
 
+    private async Task SaveAnimated(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken cancellationToken = default)
+    {
+        string extension = _exportAnimAs switch
+        {
+            ExportAnimationAsEnum.Webp => "webp",
+            ExportAnimationAsEnum.Gif => "gif",
+            ExportAnimationAsEnum.Apng => "apng",
+            _ => "*",
+        };
+        DialogResult result = Dialog.FileSave(extension, prefs.ExportPath);
+        if (result.IsError) _errors.Add(result.ErrorMessage);
+        if (!result.IsOk) return;
+
+        string? newExportPath = Path.GetDirectoryName(result.Path);
+        if (newExportPath is not null)
+            prefs.ExportPath = newExportPath;
+
+        string path = result.Path;
+        if (Path.GetExtension(path) != extension)
+            path = Path.ChangeExtension(path, extension);
+
+        int direction = Math.Sign(_endFrame - _startFrame);
+        if (direction == 0) direction = 1;
+
+        List<Task<(XDocument, ViewBox)>> animationTasks = [];
+        for (long frame = _startFrame; frame <= _endFrame; frame += direction)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            animationTasks.Add(ExportAnimation(loader, gfx, animation, _animScale, frame, _flip).AsTask());
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        (XDocument, ViewBox)[] documents = await Task.WhenAll(animationTasks);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (_canvasContain)
+        {
+            ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
+            foreach ((_, ViewBox viewBox2) in documents)
+                viewBox.ExtendWith(viewBox2);
+            foreach ((XDocument document, _) in documents)
+            {
+                XElement svg = document.Element(xmlns + "svg")!;
+                svg.SetAttributeValue("width", viewBox.Width);
+                svg.SetAttributeValue("height", viewBox.Height);
+                svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
+            }
+        }
+
+        using MagickImageCollection magickImages = [];
+        foreach ((XDocument document, _) in documents)
+        {
+            _status = $"Exporting... ({magickImages.Count}/{documents.Length})";
+
+            using MemoryStream ms = new();
+            document.Save(ms);
+            ms.Position = 0;
+
+            MagickReadSettings mgSettings = new()
+            {
+                Format = MagickFormat.Svg,
+                BackgroundColor = MagickColors.Transparent,
+                ColorSpace = ColorSpace.RGB,
+            };
+            MagickImage mgImage = new(ms, mgSettings);
+            ms.Dispose();
+
+            mgImage.AnimationDelay = 4;
+            mgImage.GifDisposeMethod = GifDisposeMethod.Background;
+            magickImages.Add(mgImage);
+        }
+        _status = "Saving...";
+        await magickImages.WriteAsync(path, cancellationToken);
+    }
+
     private async Task ExportDocument(string path, XDocument document, CancellationToken cancellationToken = default)
     {
-        switch (_exportAs)
+        switch (_exportFrameAs)
         {
-            case ExportAsEnum.Svg:
+            case ExportFrameAsEnum.Svg:
                 await SaveToPathSvg(document, path, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 break;
-            case ExportAsEnum.Png:
+            case ExportFrameAsEnum.Png:
                 await SaveToPathPng(document, path, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 break;
@@ -565,7 +668,7 @@ public sealed partial class ExportModal
         {
             Format = MagickFormat.Svg,
             BackgroundColor = MagickColors.Transparent,
-            ColorSpace = ColorSpace.sRGB,
+            ColorSpace = ColorSpace.RGB,
         };
         using MagickImage mgImage = new(ms, mgSettings);
         ms.Dispose();

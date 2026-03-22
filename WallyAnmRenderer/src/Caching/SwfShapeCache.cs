@@ -90,7 +90,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         {
             Format = MagickFormat.Svg,
             BackgroundColor = MagickColors.Transparent,
-            ColorSpace = ColorSpace.sRGB,
+            ColorSpace = ColorSpace.RGB,
         };
         using MagickImage mgImage = new(ms, mgSettings);
         ms.Dispose();
