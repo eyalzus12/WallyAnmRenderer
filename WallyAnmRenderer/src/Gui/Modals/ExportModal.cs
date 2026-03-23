@@ -369,7 +369,7 @@ public sealed partial class ExportModal
             case ExportModeEnum.Animated:
                 ImGuiEx.InputLong("Start Frame", ref _startFrame);
                 ImGuiEx.InputLong("End Frame", ref _endFrame);
-                ImGui.Checkbox("Size canvas such that all frames fit", ref _canvasContain);
+                // canvas contain always true for animated
                 break;
         }
 
@@ -586,24 +586,23 @@ public sealed partial class ExportModal
         (XDocument, ViewBox)[] documents = await Task.WhenAll(animationTasks);
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (_canvasContain)
+        // always do canvas contain
+        ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
+        foreach ((_, ViewBox viewBox2) in documents)
+            viewBox.ExtendWith(viewBox2);
+        foreach ((XDocument document, _) in documents)
         {
-            ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
-            foreach ((_, ViewBox viewBox2) in documents)
-                viewBox.ExtendWith(viewBox2);
-            foreach ((XDocument document, _) in documents)
-            {
-                XElement svg = document.Element(xmlns + "svg")!;
-                svg.SetAttributeValue("width", viewBox.Width);
-                svg.SetAttributeValue("height", viewBox.Height);
-                svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
-            }
+            XElement svg = document.Element(xmlns + "svg")!;
+            svg.SetAttributeValue("width", viewBox.Width);
+            svg.SetAttributeValue("height", viewBox.Height);
+            svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
         }
         cancellationToken.ThrowIfCancellationRequested();
 
         using MagickImageCollection magickImages = [];
         foreach ((XDocument document, _) in documents)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _status = $"Exporting... ({magickImages.Count}/{documents.Length})";
 
             using MemoryStream ms = new();
@@ -624,10 +623,9 @@ public sealed partial class ExportModal
             mgImage.AnimationDelay = 4;
             mgImage.GifDisposeMethod = GifDisposeMethod.Background;
             magickImages.Add(mgImage);
-            cancellationToken.ThrowIfCancellationRequested();
         }
         cancellationToken.ThrowIfCancellationRequested();
-        _status = "Saving... This is gonna take a while.";
+        _status = "Saving...";
         await magickImages.WriteAsync(path, cancellationToken);
     }
 

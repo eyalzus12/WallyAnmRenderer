@@ -3,6 +3,9 @@ global using RlColor = Raylib_cs.Color;
 global using RlImage = Raylib_cs.Image;
 using WallyAnmRenderer;
 
+// TODO: ?
+ImageMagick.OpenCL.IsEnabled = true;
+
 PathPreferences prefs = await PathPreferences.Load();
 Editor editor = new(prefs);
 editor.Run();

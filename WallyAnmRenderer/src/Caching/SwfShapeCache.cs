@@ -99,6 +99,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
 
         mgImage.Alpha(AlphaOption.On);
         mgImage.Alpha(AlphaOption.Associate);
+        // TODO: can't we just resize the texture when we render it?
         mgImage.Resize(new MagickGeometry((uint)imageW, (uint)imageH));
 
         if (currentVersion != CacheVersion) return default;
