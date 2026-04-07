@@ -194,19 +194,7 @@ public sealed partial class ExportModal
                 viewBox.ExtendWith(nx, ny);
             }
 
-            // TODO: more
-            string mimeType = format switch
-            {
-                MagickFormat.Bmp => "image/bmp",
-                MagickFormat.Gif => "image/gif",
-                MagickFormat.Ico => "image/vnd.microsoft.icon",
-                MagickFormat.Jpeg => "image/jpeg",
-                MagickFormat.Png => "image/png",
-                MagickFormat.WebP => "image/webp",
-                MagickFormat.Avif => "image/avif",
-                MagickFormat.Jxl => "image/jxl",
-                _ => throw new NotSupportedException(format.ToString()),
-            };
+            string mimeType = MagickFormatInfo.Create(format)?.MimeType ?? throw new ArgumentException($"Unknown format: {format}");
 
             byte[] bytes = await File.ReadAllBytesAsync(path);
             string base64 = Convert.ToBase64String(bytes);
