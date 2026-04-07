@@ -365,6 +365,13 @@ public sealed partial class ExportModal
 
         ImGui.Checkbox("Flip animation", ref _flip);
 
+        if(_exportMode == ExportModeEnum.Animated)
+        {
+            ImGui.PushTextWrapPos();
+            
+            ImGui.PopTextWrapPos();
+        }
+
         if (_cancellationSource.IsCancellationRequested)
         {
             _cancellationSource.Dispose();
@@ -613,7 +620,7 @@ public sealed partial class ExportModal
             magickImages.Add(mgImage);
         }
         cancellationToken.ThrowIfCancellationRequested();
-        _status = "Saving...";
+        _status = "Saving... This may take some time.";
         await magickImages.WriteAsync(path, cancellationToken);
     }
 

@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Numerics;
 using System.Diagnostics;
 using System.Text;
 using BrawlhallaAnimLib.Gfx;
@@ -15,6 +14,7 @@ namespace WallyAnmRenderer;
 
 public sealed class CustomColorList
 {
+    private const int NAME_FIND_ITERATIONS = 1000;
     public const string CUSTOM_COLORS_FOLDER = "CustomColors";
     public const string FILE_EXTENSION = ".wcolor";
 
@@ -126,7 +126,7 @@ public sealed class CustomColorList
         if (ImGuiEx.DisabledButton("Create new", loadingColors))
         {
             string? name = null;
-            for (int i = 1; i <= 100; ++i)
+            for (int i = 1; i <= NAME_FIND_ITERATIONS; ++i)
             {
                 string fileName = $"My Custom Color {i}";
                 if (!_colors.Any((color) => color.Name == fileName))
@@ -155,7 +155,7 @@ public sealed class CustomColorList
 
             bool selected = selectedColor == color;
             ImGui.SetNextItemAllowOverlap();
-            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1, 0.5f, 0, 1));
+            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, Colors.SELECTED_OPTION);
             if (ImGui.Selectable(color.Name, selected))
             {
                 ColorSchemeSelected?.Invoke(this, color);

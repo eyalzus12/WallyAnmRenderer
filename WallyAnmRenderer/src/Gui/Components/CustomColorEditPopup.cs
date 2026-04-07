@@ -43,7 +43,7 @@ public sealed class CustomColorEditPopup
         if (!valid)
         {
             ImGui.PushTextWrapPos();
-            ImGui.TextColored(new(1, 1, 0, 1), "Two custom colors cannot have the same name!");
+            ImGui.TextColored(Colors.WARN_TEXT, "Two custom colors cannot have the same name!");
             ImGui.PopTextWrapPos();
         }
 
@@ -51,7 +51,7 @@ public sealed class CustomColorEditPopup
         ImGui.PushTextWrapPos();
         ImGui.Text("Pure black (");
         ImGui.SameLine(0, 0);
-        ImGui.TextColored(new(0, 0, 0, 1), "#000000");
+        ImGui.TextColored(Colors.BLACK, "#000000");
         ImGui.SameLine(0, 0);
         ImGui.Text(") means \"don't swap\"");
         ImGui.PopTextWrapPos();

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Threading.Tasks;
 using ImGuiNET;
 using SwfLib.Tags;
@@ -12,8 +11,6 @@ namespace WallyAnmRenderer;
 
 public sealed class AnmWindow
 {
-    private static readonly Vector4 SELECTED_COLOR = ImGuiEx.RGBHexToVec4(0xFF7F00);
-    private static readonly Vector4 YELLOW = ImGuiEx.RGBHexToVec4(0xFFFF00);
     private static readonly string[] ANM_FORMAT_OPTIONS = ["Current", "?.??-9.04"];
 
     private bool _open = true;
@@ -71,7 +68,7 @@ public sealed class AnmWindow
         if (assetLoader.AnmFormat != AnmFormatEnum.Current)
         {
             ImGui.PushTextWrapPos();
-            ImGui.TextColored(YELLOW, "You selected an older anm format. Unless you are working with older patches, loading anm files will fail.");
+            ImGui.TextColored(Colors.WARN_TEXT, "You've selected an older anm format. Unless you are working with older patches, loading anm files will fail.");
             ImGui.PopTextWrapPos();
         }
 
@@ -141,7 +138,7 @@ public sealed class AnmWindow
                                         animClass == info.AnimClass &&
                                         animation == info.Animation;
 
-                                    if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                                    if (selected) ImGui.PushStyleColor(ImGuiCol.Text, Colors.SELECTED_OPTION);
                                     if (ImGui.Selectable(animation, selected))
                                     {
                                         info.SourceFilePath = relativePath;
@@ -242,7 +239,7 @@ public sealed class AnmWindow
                                 spriteName == info.AnimClass &&
                                 string.IsNullOrEmpty(info.Animation);
 
-                            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, SELECTED_COLOR);
+                            if (selected) ImGui.PushStyleColor(ImGuiCol.Text, Colors.SELECTED_OPTION);
                             if (ImGui.Selectable(spriteName, selected))
                             {
                                 info.SourceFilePath = relativePath;
