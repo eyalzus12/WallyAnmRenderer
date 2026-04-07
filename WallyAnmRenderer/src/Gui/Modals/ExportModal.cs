@@ -361,16 +361,16 @@ public sealed partial class ExportModal
                 break;
         }
 
+
         ImGui.InputDouble("Render quality", ref _animScale);
-
-        ImGui.Checkbox("Flip animation", ref _flip);
-
-        if(_exportMode == ExportModeEnum.Animated)
+        if (_exportMode == ExportModeEnum.Animated && _animScale > 6)
         {
             ImGui.PushTextWrapPos();
-            
+            ImGui.TextColored(Colors.WARN_TEXT, "Specifying a high render quality will make the export take a long time");
             ImGui.PopTextWrapPos();
         }
+
+        ImGui.Checkbox("Flip animation", ref _flip);
 
         if (_cancellationSource.IsCancellationRequested)
         {
