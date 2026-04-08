@@ -23,13 +23,6 @@ public static class ImGuiEx
         return ImGui.InputScalar(label, ImGuiDataType.S64, valuePtr, stepPtr, stepFastPtr);
     }
 
-    public static uint InputUInt(ReadOnlySpan<char> label, uint value, uint step = 1, uint stepFast = 100)
-    {
-        uint v = value;
-        InputUInt(label, ref v, step, stepFast);
-        return v;
-    }
-
     public static unsafe bool DragDouble(ReadOnlySpan<char> label, ref double value, float speed = 1, double minValue = double.MinValue, double maxValue = double.MaxValue)
     {
         IntPtr valuePtr = (IntPtr)Unsafe.AsPointer(ref value);
@@ -81,6 +74,7 @@ public static class ImGuiEx
         ImGui.PopStyleColor();
     }
 
+    // 0xRRGGBB -> (RR/255, GG/255, BB/255, 1)
     public static Vector4 RGBHexToVec4(uint hex)
     {
         float r = ((hex >> 16) & 0xFF) / 255f;

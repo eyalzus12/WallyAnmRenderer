@@ -9,10 +9,6 @@ public sealed class TimeWindow
 {
     private const int BASE_WIDTH = 34;
     private const int TEXT_WIDTH_MULT = 7;
-    private static readonly Vector4 Orange = new(1, 0.5f, 0, 1);
-    private static readonly Vector4 Green = new(0, 1, 0, 1);
-    private static readonly Vector4 Cyan = new(0, 1, 1, 1);
-    private static readonly Vector4 Yellow = new(1, 1, 0, 1);
 
     private bool _open = true;
     public bool Open { get => _open; set => _open = value; }
@@ -45,10 +41,10 @@ public sealed class TimeWindow
                 ImGui.Text(text);
                 ImGui.SameLine();
                 Vector4 color =
-                    i == currentFrame ? Yellow :
-                    i == loopStart ? Cyan :
-                    i == recoveryStart ? Orange :
-                    Green;
+                    i == currentFrame ? Colors.CURRENT_FRAME :
+                    i == loopStart ? Colors.LOOP_START_FRAME :
+                    i == recoveryStart ? Colors.RECOVERY_START_FRAME :
+                    Colors.NORMAL_FRAME;
                 if (ImGui.ColorButton(text, color, ImGuiColorEditFlags.NoTooltip | ImGuiColorEditFlags.NoDragDrop))
                 {
                     FrameSeeked?.Invoke(this, i);

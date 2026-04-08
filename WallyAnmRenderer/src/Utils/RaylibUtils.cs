@@ -2,7 +2,6 @@ using System;
 using System.Numerics;
 using BrawlhallaAnimLib.Math;
 using Raylib_cs;
-using SkiaSharp;
 
 namespace WallyAnmRenderer;
 
@@ -50,29 +49,6 @@ public class RaylibUtils
     }
 
     public static double Cross(double X1, double Y1, double X2, double Y2) => X1 * Y2 - X2 * Y1;
-
-    public static unsafe RlImage SKBitmapAsRlImage(SKBitmap bitmap)
-    {
-        PixelFormat format = bitmap.ColorType switch
-        {
-            SKColorType.Rgb565 => PixelFormat.UncompressedR5G6B5,
-            SKColorType.Rgba8888 => PixelFormat.UncompressedR8G8B8A8,
-            SKColorType.Rgb888x => PixelFormat.UncompressedR8G8B8,
-            SKColorType.Gray8 => PixelFormat.UncompressedGrayscale,
-            SKColorType.RgbaF16 => PixelFormat.UncompressedR16G16B16A16,
-            SKColorType.RgbaF32 => PixelFormat.UncompressedR32G32B32A32,
-            _ => throw new NotImplementedException($"Unsupported color type {bitmap.ColorType}"),
-        };
-
-        return new()
-        {
-            Data = (void*)bitmap.GetPixels(),
-            Width = bitmap.Width,
-            Height = bitmap.Height,
-            Mipmaps = 1,
-            Format = format,
-        };
-    }
 
     public static Vector3 RlColorToVector3(RlColor color)
     {

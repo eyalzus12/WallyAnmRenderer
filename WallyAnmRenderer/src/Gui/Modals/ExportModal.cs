@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -17,8 +15,7 @@ using BrawlhallaAnimLib.Math;
 using BrawlhallaAnimLib.Swf;
 using ImGuiNET;
 using NativeFileDialogSharp;
-using SkiaSharp;
-using Svg.Skia;
+using ImageMagick;
 using SwfLib.Tags.ShapeTags;
 using SwiffCheese.Exporting.Svg;
 using SwiffCheese.Shapes;
@@ -32,23 +29,33 @@ public sealed partial class ExportModal
 
     public const string NAME = "Export animation";
 
-    private enum ExportAsEnum
+    private enum ExportFrameAsEnum
     {
         Svg = 0,
         Png = 1,
     }
-    private static readonly string[] EXPORT_AS = [".svg", ".png"];
-    private ExportAsEnum _exportAs = ExportAsEnum.Svg;
+    private static readonly string[] EXPORT_FRAME_AS = [".svg", ".png"];
+    private ExportFrameAsEnum _exportFrameAs = ExportFrameAsEnum.Svg;
+
+    private enum ExportAnimationAsEnum
+    {
+        Webp = 0,
+        Gif = 1,
+        Apng = 2,
+    }
+    private static readonly string[] EXPORT_ANIM_AS = [".webp", ".gif", ".apng"];
+    private ExportAnimationAsEnum _exportAnimAs = ExportAnimationAsEnum.Webp;
 
     private enum ExportModeEnum
     {
         SingleFrame = 0,
         MultiFrame = 1,
+        Animated = 2,
     };
-    private static readonly string[] EXPORT_MODE = ["Single frame", "Frame sequence"];
+    private static readonly string[] EXPORT_MODE = ["Single frame", "Frame sequence", "Animated image"];
     private ExportModeEnum _exportMode = ExportModeEnum.SingleFrame;
 
-    private bool _canvasContain = false;
+    private bool _canvasContain = true;
 
     private string _fileNameFormat = $"Exported animation {FILENAME_FORMAT_FRAME_CHAR}";
 
@@ -166,7 +173,6 @@ public sealed partial class ExportModal
             double offX = bitmapSprite.SpriteData.XOffset;
             double offY = bitmapSprite.SpriteData.YOffset;
 
-            XNamespace xmlns = XNamespace.Get("http://www.w3.org/2000/svg");
             XElement imageElement = new(xmlns + "image");
             imageElement.SetAttributeValue("x", bitmapSprite.SpriteData.XOffset);
             imageElement.SetAttributeValue("y", bitmapSprite.SpriteData.YOffset);
@@ -178,9 +184,7 @@ public sealed partial class ExportModal
             XDocument document = new(new XDeclaration("1.0", "UTF-8", "no"), svg);
 
             string path = Path.Combine(loader.AssetLoader.BrawlPath, bitmapSprite.SpriteData.File);
-            SKEncodedImageFormat format;
-            using (SKCodec codec = SKCodec.Create(path))
-                format = codec.EncodedFormat;
+            MagickFormat format = new MagickImageInfo(path).Format;
 
             ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
             (double, double)[] points = [(offX, offY), (offX + width, offY), (offX, offY + height), (offX + width, offY + height)];
@@ -190,24 +194,7 @@ public sealed partial class ExportModal
                 viewBox.ExtendWith(nx, ny);
             }
 
-            string mimeType = format switch
-            {
-                SKEncodedImageFormat.Bmp => "image/bmp",
-                SKEncodedImageFormat.Gif => "image/gif",
-                SKEncodedImageFormat.Ico => "image/vnd.microsoft.icon",
-                SKEncodedImageFormat.Jpeg => "image/jpeg",
-                SKEncodedImageFormat.Png => "image/png",
-                //SKEncodedImageFormat.Wbmp => throw new NotSupportedException(),
-                SKEncodedImageFormat.Webp => "image/webp",
-                //SKEncodedImageFormat.Pkm => throw new NotSupportedException(),
-                //SKEncodedImageFormat.Ktx => throw new NotSupportedException(),
-                //SKEncodedImageFormat.Astc => throw new NotSupportedException(),
-                //SKEncodedImageFormat.Dng => throw new NotSupportedException(),
-                //SKEncodedImageFormat.Heif => throw new NotSupportedException(),
-                SKEncodedImageFormat.Avif => "image/avif",
-                SKEncodedImageFormat.Jpegxl => "image/jxl",
-                _ => throw new NotSupportedException(format.ToString()),
-            };
+            string mimeType = MagickFormatInfo.Create(format)?.MimeType ?? throw new ArgumentException($"Unknown format: {format}");
 
             byte[] bytes = await File.ReadAllBytesAsync(path);
             string base64 = Convert.ToBase64String(bytes);
@@ -336,13 +323,22 @@ public sealed partial class ExportModal
             return;
         }
 
-        int currentExportAs = (int)_exportAs;
-        ImGui.Combo("Export as", ref currentExportAs, EXPORT_AS, EXPORT_AS.Length);
-        _exportAs = (ExportAsEnum)currentExportAs;
-
         int currentExportMode = (int)_exportMode;
         ImGui.Combo("Export mode", ref currentExportMode, EXPORT_MODE, EXPORT_MODE.Length);
         _exportMode = (ExportModeEnum)currentExportMode;
+
+        if (_exportMode == ExportModeEnum.Animated)
+        {
+            int currentExportAs = (int)_exportAnimAs;
+            ImGui.Combo("Export as", ref currentExportAs, EXPORT_ANIM_AS, EXPORT_ANIM_AS.Length);
+            _exportAnimAs = (ExportAnimationAsEnum)currentExportAs;
+        }
+        else
+        {
+            int currentExportAs = (int)_exportFrameAs;
+            ImGui.Combo("Export as", ref currentExportAs, EXPORT_FRAME_AS, EXPORT_FRAME_AS.Length);
+            _exportFrameAs = (ExportFrameAsEnum)currentExportAs;
+        }
 
         ImGui.Text("Frames start at 0");
         switch (_exportMode)
@@ -358,9 +354,21 @@ public sealed partial class ExportModal
                 ImGui.InputText("File name format", ref _fileNameFormat, 256);
                 ImGui.Checkbox("Size canvas such that all frames fit", ref _canvasContain);
                 break;
+            case ExportModeEnum.Animated:
+                ImGuiEx.InputLong("Start Frame", ref _startFrame);
+                ImGuiEx.InputLong("End Frame", ref _endFrame);
+                // canvas contain always true for animated
+                break;
         }
 
+
         ImGui.InputDouble("Render quality", ref _animScale);
+        if (_exportMode == ExportModeEnum.Animated && _animScale > 6)
+        {
+            ImGui.PushTextWrapPos();
+            ImGui.TextColored(Colors.WARN_TEXT, "Specifying a high render quality will make the export take a long time");
+            ImGui.PopTextWrapPos();
+        }
 
         ImGui.Checkbox("Flip animation", ref _flip);
 
@@ -380,10 +388,13 @@ public sealed partial class ExportModal
                     switch (_exportMode)
                     {
                         case ExportModeEnum.SingleFrame:
-                            await SaveSingleFrame(prefs, animator.Loader, gfx, animation);
+                            await SaveSingleFrame(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
                             break;
                         case ExportModeEnum.MultiFrame:
                             await SaveMultiFrame(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
+                            break;
+                        case ExportModeEnum.Animated:
+                            await SaveAnimated(prefs, animator.Loader, gfx, animation, _cancellationSource.Token);
                             break;
                     }
                 }
@@ -422,12 +433,12 @@ public sealed partial class ExportModal
         ImGui.EndPopup();
     }
 
-    private async Task SaveSingleFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation)
+    private async Task SaveSingleFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken cancellationToken = default)
     {
-        string extension = _exportAs switch
+        string extension = _exportFrameAs switch
         {
-            ExportAsEnum.Svg => "svg",
-            ExportAsEnum.Png => "png",
+            ExportFrameAsEnum.Svg => "svg",
+            ExportFrameAsEnum.Png => "png",
             _ => "*",
         };
         DialogResult result = Dialog.FileSave(extension, prefs.ExportPath);
@@ -443,7 +454,7 @@ public sealed partial class ExportModal
             path = Path.ChangeExtension(path, extension);
 
         (XDocument document, _) = await ExportAnimation(loader, gfx, animation, _animScale, _startFrame, _flip);
-        await ExportDocument(path, document);
+        await ExportDocument(path, document, cancellationToken);
     }
 
     private async Task SaveMultiFrame(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken cancellationToken = default)
@@ -462,10 +473,10 @@ public sealed partial class ExportModal
         int direction = Math.Sign(_endFrame - _startFrame);
         if (direction == 0) direction = 1;
 
-        string extension = _exportAs switch
+        string extension = _exportFrameAs switch
         {
-            ExportAsEnum.Svg => "svg",
-            ExportAsEnum.Png => "png",
+            ExportFrameAsEnum.Svg => "svg",
+            ExportFrameAsEnum.Png => "png",
             _ => "*",
         };
 
@@ -483,6 +494,7 @@ public sealed partial class ExportModal
 
             animationTasks.Add((path, ExportAnimation(loader, gfx, animation, _animScale, frame, _flip).AsTask()));
         }
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (_canvasContain)
         {
@@ -507,6 +519,7 @@ public sealed partial class ExportModal
                 svg.SetAttributeValue("height", viewBox.Height);
                 svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
             }
+            cancellationToken.ThrowIfCancellationRequested();
 
             await Task.WhenAll(documents.Select(async x =>
             {
@@ -526,22 +539,101 @@ public sealed partial class ExportModal
                 (XDocument document, _) = await task;
                 cancellationToken.ThrowIfCancellationRequested();
                 await ExportDocument(path, document, cancellationToken);
-                _status = "Exported " + path;
                 cancellationToken.ThrowIfCancellationRequested();
+                _status = "Exported " + path;
             }));
         }
     }
 
+    private async Task SaveAnimated(PathPreferences prefs, Loader loader, IGfxType gfx, string animation, CancellationToken cancellationToken = default)
+    {
+        string extension = _exportAnimAs switch
+        {
+            ExportAnimationAsEnum.Webp => "webp",
+            ExportAnimationAsEnum.Gif => "gif",
+            ExportAnimationAsEnum.Apng => "apng",
+            _ => "*",
+        };
+        DialogResult result = Dialog.FileSave(extension, prefs.ExportPath);
+        if (result.IsError) _errors.Add(result.ErrorMessage);
+        if (!result.IsOk) return;
+
+        string? newExportPath = Path.GetDirectoryName(result.Path);
+        if (newExportPath is not null)
+            prefs.ExportPath = newExportPath;
+
+        string path = result.Path;
+        if (Path.GetExtension(path) != extension)
+            path = Path.ChangeExtension(path, extension);
+
+        int direction = Math.Sign(_endFrame - _startFrame);
+        if (direction == 0) direction = 1;
+
+        List<Task<(XDocument, ViewBox)>> animationTasks = [];
+        for (long frame = _startFrame; frame <= _endFrame; frame += direction)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            animationTasks.Add(ExportAnimation(loader, gfx, animation, _animScale, frame, _flip).AsTask());
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        (XDocument, ViewBox)[] documents = await Task.WhenAll(animationTasks);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // always do canvas contain
+        ViewBox viewBox = new(double.NaN, double.NaN, double.NaN, double.NaN);
+        foreach ((_, ViewBox viewBox2) in documents)
+            viewBox.ExtendWith(viewBox2);
+        foreach ((XDocument document, _) in documents)
+        {
+            XElement svg = document.Element(xmlns + "svg")!;
+            svg.SetAttributeValue("width", viewBox.Width);
+            svg.SetAttributeValue("height", viewBox.Height);
+            svg.SetAttributeValue("viewBox", $"{viewBox.MinX} {viewBox.MinY} {viewBox.Width} {viewBox.Height}");
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+
+        using MagickImageCollection magickImages = [];
+        foreach ((XDocument document, _) in documents)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _status = $"Exporting... ({magickImages.Count}/{documents.Length})";
+
+            using MemoryStream ms = new();
+            document.Save(ms);
+            ms.Position = 0;
+            cancellationToken.ThrowIfCancellationRequested();
+
+            MagickReadSettings mgSettings = new()
+            {
+                Format = MagickFormat.Svg,
+                BackgroundColor = MagickColors.Transparent,
+                ColorSpace = ColorSpace.RGB,
+            };
+            MagickImage mgImage = new(ms, mgSettings);
+            ms.Dispose();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            mgImage.AnimationDelay = 4;
+            mgImage.GifDisposeMethod = GifDisposeMethod.Background;
+            magickImages.Add(mgImage);
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+        _status = "Saving... This may take some time.";
+        await magickImages.WriteAsync(path, cancellationToken);
+    }
+
     private async Task ExportDocument(string path, XDocument document, CancellationToken cancellationToken = default)
     {
-        switch (_exportAs)
+        switch (_exportFrameAs)
         {
-            case ExportAsEnum.Svg:
+            case ExportFrameAsEnum.Svg:
                 await SaveToPathSvg(document, path, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 break;
-            case ExportAsEnum.Png:
-                SaveToPathPng(document, path);
+            case ExportFrameAsEnum.Png:
+                await SaveToPathPng(document, path, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 break;
         }
@@ -565,14 +657,21 @@ public sealed partial class ExportModal
         await document.SaveAsync(writer, cancellationToken);
     }
 
-    private static void SaveToPathPng(XDocument document, string path)
+    private static async Task SaveToPathPng(XDocument document, string path, CancellationToken cancellationToken = default)
     {
-        using XmlReader reader = document.CreateReader();
-        using SKSvg svg = SKSvg.CreateFromXmlReader(reader);
-        reader.Dispose();
-        if (svg.Picture is null)
-            throw new Exception("Loading svg failed");
-        using FileStream file = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
-        svg.Picture.ToImage(file, SKColor.Empty, SKEncodedImageFormat.Png, int.MaxValue, 1, 1, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb());
+        using MemoryStream ms = new();
+        document.Save(ms);
+        ms.Position = 0;
+
+        MagickReadSettings mgSettings = new()
+        {
+            Format = MagickFormat.Svg,
+            BackgroundColor = MagickColors.Transparent,
+            ColorSpace = ColorSpace.RGB,
+        };
+        using MagickImage mgImage = new(ms, mgSettings);
+        ms.Dispose();
+
+        await mgImage.WriteAsync(path, cancellationToken);
     }
 }

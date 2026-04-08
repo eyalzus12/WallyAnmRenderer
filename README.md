@@ -76,7 +76,7 @@ run the project (inside the WallyAnmRenderer folder created by git clone):
 
 This list includes the dependencies from submodules.
 
-- Svg.Skia (3.0.0) - Library based on SkiaSharp (3.116.1) for Svg rendering.
+- Magick.NET (14.1.1.0) - Library for image manipulation. Used for svg rasterization.
 
 - NativeFileDialogSharp (0.5.0) - C# bindings for nativefiledialog, a C library for opening the platform's default file explorer dialog.
 

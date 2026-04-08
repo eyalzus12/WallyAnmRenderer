@@ -89,7 +89,7 @@ public abstract class UploadCache<K, I, V> where K : notnull
     /// </summary>
     public void Upload(int amount)
     {
-        Unload();
+        Unload(amount);
 
         for (int j = 0; j < amount; j++)
         {
@@ -114,10 +114,14 @@ public abstract class UploadCache<K, I, V> where K : notnull
         }
     }
 
-    private void Unload()
+    private void Unload(int amount)
     {
-        while (_deleteQueue.TryDequeue(out V? v))
+        for (int j = 0; j < amount; j++)
+        {
+            if (!_deleteQueue.TryDequeue(out V? v))
+                break;
             UnloadValue(v);
+        }
     }
 
     public void Clear()

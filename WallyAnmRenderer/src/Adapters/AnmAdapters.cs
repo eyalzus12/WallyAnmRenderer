@@ -82,6 +82,7 @@ public static class Anm904Migrator
         Id = frame.Id,
         FireSocket = frame.FireSocket,
         EBPlatformPos = frame.EBPlatformPos,
+        // EBPlatformRot was removed
         Bones = [.. frame.Bones.Select(MigrateBone)],
     };
 
