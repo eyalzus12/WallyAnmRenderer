@@ -19,13 +19,13 @@
 * A full implementation of the game's animation system.
 * Pause, frame step, and seeing exact animation timeline.
 * Listing the sprites and their data.
-* Translating internal names.
+* Seeing both the internal and the ingame name of various items.
 * Creating custom colors.
 * Exporting as svg or png.
-* Exporting as an svg/png sequence.
+* Exporting an animation as a seuquence of svg or png images.
+* Exporting an animation as gif, webp, or apng
 
 #### Planned features:
-* Exporting as gif (sequence export exists).
 * Bulk exporting of many animations.
 * Support for animation loop points.
 * Correct timing for attack animations.
