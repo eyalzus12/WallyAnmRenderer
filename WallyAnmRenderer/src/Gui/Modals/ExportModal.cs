@@ -210,7 +210,7 @@ public sealed partial class ExportModal
                 viewBox.ExtendWith(nx, ny);
             }
 
-            string mimeType = MagickFormatInfo.Create(format)?.MimeType ?? throw new ArgumentException($"Unknown format: {format}");
+            string mimeType = MagickFormatInfo.Create(format)?.MimeType ?? "application/octet-stream";
 
             byte[] bytes = await File.ReadAllBytesAsync(path);
             string base64 = Convert.ToBase64String(bytes);
