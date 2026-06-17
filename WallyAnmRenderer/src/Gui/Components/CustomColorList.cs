@@ -238,7 +238,7 @@ public sealed class CustomColorList
         }
         ColorScheme?[] result = await Task.WhenAll(tasks);
 
-        return [.. result.Where((c) => c is not null)];
+        return [.. result.Where((c) => c is not null).Select((c) => c!)];
     }
 
     public static async Task<ColorScheme> ParseColorSchemeAsync(string name, Stream stream)
