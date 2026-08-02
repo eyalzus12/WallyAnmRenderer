@@ -353,7 +353,7 @@ public sealed partial class ExportModal
 
         if (_animationDataTask is not null && _animationDataTask.IsCompletedSuccessfully)
         {
-            _endFrame = _animationDataTask.Result.FrameCount;
+            _endFrame = _animationDataTask.Result.FrameCount - 1;
             _animationDataTask = null;
         }
 
