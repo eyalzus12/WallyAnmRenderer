@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using BrawlhallaAnimLib.Gfx;
 using BrawlhallaAnimLib.Reading;
 using ImGuiNET;
+using NativeFileDialogSharp;
 
 namespace WallyAnmRenderer;
 
@@ -843,6 +846,34 @@ public sealed class PickerWindow
         void selectColorScheme(ColorScheme colorScheme)
         {
             ColorSchemeSelected?.Invoke(this, colorScheme);
+        }
+
+        if (ImGuiEx.DisabledButton("Export selected color", gfxInfo.ColorScheme is null))
+        {
+            Task.Run(async () =>
+            {
+                DialogResult result = Dialog.FileSave("wcolor");
+                if (result.IsError)
+                {
+                    Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, "Failed to save color: " + result.ErrorMessage);
+                    return;
+                }
+                if (!result.IsOk) return;
+
+                string path = result.Path;
+                if (Path.GetExtension(path) != CustomColorList.FILE_EXTENSION)
+                    path = Path.ChangeExtension(path, CustomColorList.FILE_EXTENSION);
+
+                try
+                {
+                    using FileStream file = FileUtils.CreateWriteAsync(path);
+                    await CustomColorList.WriteColorSchemeAsync(gfxInfo.ColorScheme!, file);
+                }
+                catch (Exception e)
+                {
+                    Rl.TraceLog(Raylib_cs.TraceLogLevel.Error, "Failed to save color: " + e.Message);
+                }
+            });
         }
 
         PickerListBox<ColorScheme> picker = new()

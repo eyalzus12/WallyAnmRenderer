@@ -20,8 +20,10 @@ public sealed class CustomColorEditPopup
     private bool _saving = false;
     private readonly List<string> _errors = [];
 
-    public void Update(ColorScheme color, ColorScheme originalColor, IEnumerable<ColorScheme> otherColors)
+    public bool Update(ColorScheme color, ColorScheme originalColor, IEnumerable<ColorScheme> otherColors)
     {
+        bool changed = false;
+
         if (_shouldOpen)
         {
             ImGui.OpenPopup(NAME);
@@ -31,7 +33,7 @@ public sealed class CustomColorEditPopup
             _errors.Clear();
         }
 
-        if (!ImGui.BeginPopupModal(NAME, ref _open)) return;
+        if (!ImGui.BeginPopupModal(NAME, ref _open)) return changed;
 
         string name = color.Name;
         ImGui.BeginDisabled(_saving);
@@ -56,11 +58,11 @@ public sealed class CustomColorEditPopup
         ImGui.Text(") means \"don't swap\"");
         ImGui.PopTextWrapPos();
         ImGui.PushID("main");
-        CustomColorComponent.MainTable(NAME, color);
+        changed = changed || CustomColorComponent.MainTable(NAME, color);
         ImGui.PopID();
         ImGui.TextWrapped("Note that no color scheme in the game uses these.");
         ImGui.PushID("hands");
-        CustomColorComponent.HandsTable(color);
+        changed = changed || CustomColorComponent.HandsTable(color);
         ImGui.PopID();
 
         ImGui.SeparatorText("Save");
@@ -84,6 +86,8 @@ public sealed class CustomColorEditPopup
         }
 
         ImGui.EndPopup();
+
+        return changed;
     }
 
     public async Task SaveAsync(ColorScheme color, string originalName)

@@ -116,6 +116,7 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
         RlImage rlImage2;
         fixed (byte* mgPixelsPtr = mgPixels)
         {
+            // copy away the memory to get the GC's grabby hands off
             RlImage rlImage = new()
             {
                 Data = mgPixelsPtr,

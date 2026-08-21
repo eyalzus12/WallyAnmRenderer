@@ -189,7 +189,11 @@ public sealed class CustomColorList
 
         if (_editedColor is not null && _originalColor is not null)
         {
-            _editModal.Update(_editedColor, _originalColor, _colors);
+            bool colorChanged = _editModal.Update(_editedColor, _originalColor, _colors);
+            if(colorChanged)
+            {
+                ColorSchemeSelected?.Invoke(this, _editedColor);
+            }
         }
 
         if (_errors.Count > 0)
