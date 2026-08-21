@@ -24,6 +24,8 @@ public class TextureCache : UploadCache<TextureCache.SpriteData, (RlImage, Trans
 
     public readonly record struct SpriteData(string FilePath, double OffsetX, double OffsetY);
 
+    protected override Texture2DWrapper DefaultValue => new();
+
     protected unsafe override (RlImage, Transform2D) LoadIntermediate(SpriteData spriteData)
     {
         using MagickImage mgImage = new(spriteData.FilePath);
@@ -82,4 +84,5 @@ public class TextureCache : UploadCache<TextureCache.SpriteData, (RlImage, Trans
     {
         return base.TryGetCached(new(filePath, 0, 0), out texture);
     }
+    public Maybe<Texture2DWrapper> GetCachedOrLoad(string filePath) => base.GetCachedOrLoad(new(filePath, 0, 0));
 }

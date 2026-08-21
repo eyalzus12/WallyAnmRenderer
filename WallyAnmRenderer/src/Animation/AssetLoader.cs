@@ -82,13 +82,7 @@ public sealed class AssetLoader(string brawlPath)
     public Texture2DWrapper? LoadTexture(ISpriteData spriteData)
     {
         string file = Path.GetFullPath(Path.Combine(_brawlPath, spriteData.File));
-        _textureCache.TryGetCached(file, out Texture2DWrapper? texture);
-        if (texture is not null)
-            return texture;
-        _textureCache.LoadInThread(new(file, spriteData.XOffset, spriteData.YOffset));
-        if (_textureCache.DidError(file))
-            return new();
-        return null;
+        return _textureCache.GetCachedOrLoad(file).ToNullable();
     }
 
     public Texture2DWrapper? LoadShapeFromSwf(string filePath, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, ColorTransform colorTransform)
@@ -99,13 +93,8 @@ public sealed class AssetLoader(string brawlPath)
         else if (!task.IsCompletedSuccessfully)
             return new();
         SwfFileData swf = task.Result;
-        _swfShapeCache.TryGetCached(spriteName, shapeId, animScale, out Texture2DWrapper? texture);
-        if (texture is not null)
-            return texture;
-        _swfShapeCache.LoadInThread(swf, spriteName, shapeId, animScale, colorSwapDict, colorTransform);
-        if (_swfShapeCache.DidError(spriteName, shapeId, animScale))
-            return new();
-        return null;
+
+        return _swfShapeCache.GetCachedOrLoad(swf, spriteName, shapeId, animScale, colorSwapDict, colorTransform).ToNullable();
     }
 
     public const int MAX_TEXTURE_UPLOADS_PER_FRAME = 5;

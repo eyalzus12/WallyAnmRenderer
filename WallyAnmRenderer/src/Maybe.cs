@@ -103,7 +103,12 @@ public static class Maybe
         return value;
     }
 
-    public static Maybe<T> Unwrap<T>(this Maybe<Maybe<T>> maybe)
+    public static T? ToNullable<T>(this Maybe<T> maybe) where T : class
+    {
+        return ((Maybe<T?>)maybe!).ValueOr((T?)null);
+    }
+
+    public static Maybe<T> Flatten<T>(this Maybe<Maybe<T>> maybe)
     {
         if (maybe.TryGetValue(out Maybe<T> inside))
             return inside;

@@ -43,6 +43,8 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
 
     protected override IEqualityComparer<TextureInfo>? KeyEqualityComparer { get; } = new TextureInfoHasher();
 
+    protected override Texture2DWrapper DefaultValue => new();
+
     protected unsafe override ShapeData LoadIntermediate(TextureInfo textureInfo)
     {
         ulong currentVersion = CacheVersion;
@@ -176,5 +178,11 @@ public sealed class SwfShapeCache : UploadCache<SwfShapeCache.TextureInfo, SwfSh
     {
         TextureInfo fake = new(null!, spriteName, shapeId, animScale, null!, default);
         return TryGetCached(fake, out texture);
+    }
+
+    public Maybe<Texture2DWrapper> GetCachedOrLoad(SwfFileData swf, string spriteName, ushort shapeId, double animScale, Dictionary<uint, uint> colorSwapDict, ColorTransform colorTransform)
+    {
+        TextureInfo fake = new(swf, spriteName, shapeId, animScale, colorSwapDict, colorTransform);
+        return GetCachedOrLoad(fake);
     }
 }

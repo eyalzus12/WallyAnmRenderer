@@ -40,6 +40,19 @@ public abstract class UploadCache<K, I, V> where K : notnull
         return _cache.TryGetValue(k, out v);
     }
 
+    protected abstract V DefaultValue { get; }
+
+    public Maybe<V> GetCachedOrLoad(K k)
+    {
+        TryGetCached(k, out V? v);
+        if (v is not null)
+            return v;
+        LoadInThread(k);
+        if (DidError(k))
+            return DefaultValue;
+        return Maybe<V>.None;
+    }
+
     public bool DidError(K k) => _errored.Contains(k);
 
     public void Load(K k)
@@ -62,6 +75,9 @@ public abstract class UploadCache<K, I, V> where K : notnull
         ulong currentVersion = CacheVersion;
         Task.Run(() =>
         {
+            if (currentVersion != CacheVersion)
+                return;
+
             try
             {
                 I i = LoadIntermediate(k);

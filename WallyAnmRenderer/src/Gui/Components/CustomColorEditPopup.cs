@@ -58,11 +58,11 @@ public sealed class CustomColorEditPopup
         ImGui.Text(") means \"don't swap\"");
         ImGui.PopTextWrapPos();
         ImGui.PushID("main");
-        changed = changed || CustomColorComponent.MainTable(NAME, color);
+        changed |= CustomColorComponent.MainTable(NAME, color);
         ImGui.PopID();
         ImGui.TextWrapped("Note that no color scheme in the game uses these.");
         ImGui.PushID("hands");
-        changed = changed || CustomColorComponent.HandsTable(color);
+        changed |= CustomColorComponent.HandsTable(color);
         ImGui.PopID();
 
         ImGui.SeparatorText("Save");
