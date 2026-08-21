@@ -47,6 +47,8 @@ public sealed class GfxInfo : IGfxInfo
     public GfxEyesOverride EyesOverride { get; set; } = GfxEyesOverride.NoChange;
     public GfxAccentOverride AccentOverride { get; set; } = GfxAccentOverride.NoChange;
 
+    // TODO: add UseCustomArtsFromCostume once you have support for CastGfx.CustomArt
+
     [MemberNotNullWhen(true, nameof(AnimClass))]
     [MemberNotNullWhen(true, nameof(AnimFile))]
     [MemberNotNullWhen(true, nameof(Animation))]

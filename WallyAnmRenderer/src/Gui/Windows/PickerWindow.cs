@@ -286,7 +286,8 @@ public sealed class PickerWindow
         {
             Options = weaponSkinTypes.WeaponSkins.Prepend(null),
             OptionToString = weaponSkinToName,
-            OnSelect = (weaponSkinType) => {
+            OnSelect = (weaponSkinType) =>
+            {
                 gfxInfo.WeaponSkinType = weaponSkinType;
                 loader.AssetLoader.ClearSwfShapeCache();
             },
