@@ -109,6 +109,22 @@ public sealed partial class ExportModal
         }
     }
 
+    private static void NamespacePathsGradientStrokes(XElement g, string ns)
+    {
+        IEnumerable<XElement> paths = g.Elements(svgns + "path");
+        foreach (XElement path in paths)
+        {
+            string? stroke = path.Attribute("stroke")?.Value;
+            if (stroke is null) continue;
+
+            Regex re = GradientUrlRegex();
+            Match match = re.Match(stroke);
+            if (!match.Success) continue;
+
+            path.SetAttributeValue("stroke", $"url(#{ns}::{match.Groups[1]})");
+        }
+    }
+
     private record struct ViewBox(double MinX, double MinY, double MaxX, double MaxY)
     {
         public readonly double Width => MaxX - MinX;
@@ -269,6 +285,7 @@ public sealed partial class ExportModal
             if (g is not null)
             {
                 NamespacePathsGradientFills(g, shapeId);
+                NamespacePathsGradientStrokes(g, shapeId);
 
                 // the 'g' element will always have an identity matrix as its transform
                 // so we can just override the transform matrix with the true one
@@ -279,7 +296,7 @@ public sealed partial class ExportModal
                 );
                 newG.SetAttributeValue("transform", transformString);
 
-                // copy over transform
+                // copy over opacity
                 if (main.Attribute("opacity")?.Value is string opacity)
                     newG.SetAttributeValue("opacity", opacity);
 
